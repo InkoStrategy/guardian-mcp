@@ -12,8 +12,10 @@ const DEFAULT_CHAINS = {
   56: { name: 'bsc', rpcs: ['https://bsc-rpc.publicnode.com', 'https://bsc-dataseed.bnbchain.org'] },
   137: { name: 'polygon', rpcs: ['https://polygon-bor-rpc.publicnode.com', 'https://polygon-rpc.com'] },
   196: { name: 'xlayer', rpcs: ['https://rpc.xlayer.tech', 'https://xlayerrpc.okx.com'] },
+  250: { name: 'fantom', rpcs: ['https://rpcapi.fantom.network', 'https://fantom-rpc.publicnode.com', 'https://rpc.ftm.tools'] },
   8453: { name: 'base', rpcs: ['https://base-rpc.publicnode.com', 'https://mainnet.base.org'] },
   42161: { name: 'arbitrum', rpcs: ['https://arbitrum-one-rpc.publicnode.com', 'https://arb1.arbitrum.io/rpc'] },
+  43114: { name: 'avalanche', rpcs: ['https://api.avax.network/ext/bc/C/rpc', 'https://avalanche-c-chain-rpc.publicnode.com'] },
 };
 
 const RPC_TIMEOUT_MS = Number.parseInt(process.env.RPC_TIMEOUT_MS || '4000', 10);

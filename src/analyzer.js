@@ -2,6 +2,7 @@
 
 const { AbiCoder, getAddress, isAddress, isHexString, dataSlice, MaxUint256, ZeroAddress } = require('ethers');
 const { createChainReader, RpcError, supportedChainIds } = require('./rpc');
+const contextAnalyzer = require('./context-analyzer');
 
 const abi = AbiCoder.defaultAbiCoder();
 
@@ -102,7 +103,13 @@ function normalizeInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new ValidationError('Request body must be a JSON object');
   }
-  const { to, data, chainId, value } = input;
+  const { to, data, chainId, value, context } = input;
+  let validatedContext = null;
+  try {
+    validatedContext = contextAnalyzer.validateContext(context);
+  } catch (err) {
+    throw new ValidationError(err.message);
+  }
   if (typeof to !== 'string' || !isAddress(to)) {
     throw new ValidationError('"to" must be a valid 0x-prefixed EVM address (40 hex chars)');
   }
@@ -118,7 +125,26 @@ function normalizeInput(input) {
     data: calldata.toLowerCase(),
     chainId: parseChainId(chainId),
     value: parseValue(value),
+    context: validatedContext,
   };
+}
+
+/** Risk-score weights. Verdict is still the max severity; the score is an additive signal for ranking/alerting. */
+const RISK_WEIGHTS = { WARN: 15, DENY: 40 };
+const RISK_BONUS = { intent_mismatch: 20, injection_pattern: 50 };
+
+/**
+ * Additive risk score in [0, 100].
+ * ALLOW-level findings add 0, every WARN adds 15, every DENY adds 40,
+ * intent_mismatch adds a further 20 and injection_pattern a further 50. Capped at 100.
+ */
+function computeRiskScore(findings) {
+  let score = 0;
+  for (const f of findings || []) {
+    score += RISK_WEIGHTS[f.severity] || 0;
+    score += RISK_BONUS[f.code] || 0;
+  }
+  return Math.min(100, Math.max(0, score));
 }
 
 function decodeCalldata(data) {
@@ -239,11 +265,39 @@ async function analyze(input, deps) {
     }
   }
 
+  // ---------- Agent-integrity layer (intent / context / runtime) ----------
+  const contextAnalyzed = tx.context !== null;
+  let intentAnalysis = null;
+  let contextSignals = [];
+  let contextFindings = [];
+  let contextSources = null;
+  if (contextAnalyzed) {
+    try {
+      const ctx = contextAnalyzer.analyzeContext(tx.context, decoded, tx.value, {
+        env: deps.env,
+        sessionStore: deps.sessionStore,
+        now: deps.now,
+      });
+      contextFindings = ctx.findings;
+      intentAnalysis = ctx.intent_analysis;
+      contextSignals = ctx.context_signals;
+      contextSources = ctx.sources;
+    } catch (err) {
+      // Fail-safe: a bug in the context layer must never silently produce ALLOW.
+      const failed = finding('context_analysis_failed', 'WARN', 'Context analysis failed unexpectedly (' + (err && err.message ? err.message : String(err)) + '). Fail-safe: verdict is at least WARN.', { layer: 'context' });
+      contextFindings = [failed];
+      contextSignals = [{ code: failed.code, severity: failed.severity, message: failed.message }];
+    }
+    for (const f of contextFindings) findings.push(f);
+  }
+
   // ---------- Verdict ----------
   let verdict = 'ALLOW';
   for (const f of findings) if (SEVERITY[f.severity] > SEVERITY[verdict]) verdict = f.severity;
 
   const reasons = Array.from(new Set(findings.map((f) => f.code)));
+  const riskScore = computeRiskScore(findings);
+  const sessionRiskScore = computeRiskScore(contextFindings);
   return {
     verdict,
     reasons,
@@ -258,15 +312,35 @@ async function analyze(input, deps) {
       findings,
       addressChecks,
       rpc,
+      risk_score: riskScore,
+      context_analyzed: contextAnalyzed,
+      intent_analysis: intentAnalysis,
+      context_signals: contextSignals,
+      context_sources: contextSources,
+      session_risk_score: sessionRiskScore,
       analyzedAt: new Date().toISOString(),
     },
   };
 }
 
+/** Catalogue of every rule with severity and description (served by GET /rules). */
+const RULE_CATALOG = [
+  { code: 'zero_address', severity: 'DENY', layer: 'transaction', description: 'Target, transfer recipient, spender or operator is the zero address or 0x...dEaD.' },
+  { code: 'set_approval_for_all', severity: 'DENY', layer: 'transaction', description: 'setApprovalForAll(operator, true): full control over every token of the collection.' },
+  { code: 'approval_to_eoa', severity: 'DENY', layer: 'transaction', description: 'approve / increaseAllowance / permit / setApprovalForAll to an address without contract code (a plain wallet).' },
+  { code: 'unlimited_approval', severity: 'WARN', layer: 'transaction', description: 'Approval amount is MAX_UINT256 or above 2^255 (effectively unlimited).' },
+  { code: 'fresh_recipient', severity: 'WARN', layer: 'transaction', description: 'Recipient of an ERC-20/721/1155 or native transfer has nonce 0, zero balance and no code.' },
+  { code: 'unknown_selector', severity: 'WARN', layer: 'transaction', description: 'Function selector is not recognised or calldata cannot be decoded.' },
+  { code: 'calldata_to_eoa', severity: 'WARN', layer: 'transaction', description: 'Calldata is attached but the target has no contract code.' },
+  { code: 'rpc_unavailable', severity: 'WARN', layer: 'transaction', description: 'On-chain checks could not run. Fail-safe: never ALLOW.' },
+].concat(contextAnalyzer.CONTEXT_RULES);
+
 module.exports = {
   analyze,
   normalizeInput,
   decodeCalldata,
+  computeRiskScore,
   ValidationError,
-  RULES: ['unlimited_approval', 'set_approval_for_all', 'approval_to_eoa', 'fresh_recipient', 'zero_address', 'unknown_selector', 'calldata_to_eoa', 'rpc_unavailable'],
+  RULES: RULE_CATALOG.map((r) => r.code),
+  RULE_CATALOG,
 };

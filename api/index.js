@@ -1,7 +1,8 @@
 'use strict';
 
-const { analyze, ValidationError, RULES } = require('../src/analyzer');
+const { analyze, ValidationError, RULES, RULE_CATALOG } = require('../src/analyzer');
 const { supportedChainIds, chainName } = require('../src/rpc');
+const { getTrustedDomains, getSessionTtlMs, getLargeAmountRaw } = require('../src/context-analyzer');
 const x402 = require('../src/x402');
 const pkg = require('../package.json');
 
@@ -54,8 +55,27 @@ function info(req) {
     service: 'Guardian MCP',
     version: pkg.version,
     description: 'Deterministic security verdicts (ALLOW / WARN / DENY) for EVM transactions.',
-    endpoint: { method: 'POST', path: '/analyze', body: { to: '0x...', data: '0x...', chainId: 1, value: '0' } },
+    endpoint: {
+      method: 'POST',
+      path: '/analyze',
+      body: {
+        to: '0x...',
+        data: '0x...',
+        chainId: 1,
+        value: '0',
+        context: {
+          agent_goal: 'swap tokens | transfer | approve | mint | read | unknown',
+          recent_sources: ['https://example.com/doc.pdf', 'user input', 'api:coingecko'],
+          recent_tool_calls: ['read_file', 'web_fetch', 'analyze', 'swap'],
+          session_id: 'uuid',
+          intent_match: true,
+        },
+      },
+      optional: ['data', 'chainId', 'value', 'context'],
+    },
+    layers: ['transaction', 'intent', 'context', 'runtime'],
     rules: RULES,
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health' },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
       ? { protocol: 'x402', x402Version: x402.X402_VERSION, price: cfg.price, asset: cfg.asset, network: cfg.network }
@@ -76,6 +96,26 @@ module.exports = async function handler(req, res) {
 
   if (method === 'GET' && (path === '/' || path === '/health' || path === '/api' || path === '/api/index')) {
     return send(res, 200, info(req));
+  }
+  if (method === 'GET' && (path === '/rules' || path === '/api/rules')) {
+    return send(res, 200, {
+      ok: true,
+      count: RULE_CATALOG.length,
+      verdictPolicy: 'verdict = highest severity among triggered rules; risk_score = 15 per WARN + 40 per DENY + 20 for intent_mismatch + 50 for injection_pattern, capped at 100',
+      rules: RULE_CATALOG,
+    });
+  }
+  if (method === 'GET' && (path === '/trusted-domains' || path === '/api/trusted-domains')) {
+    const trusted = getTrustedDomains();
+    return send(res, 200, {
+      ok: true,
+      source: trusted.source,
+      configured: trusted.configured,
+      domains: trusted.domains,
+      count: trusted.domains.length,
+      sessionTtlMs: getSessionTtlMs(),
+      largeAmountRaw: getLargeAmountRaw().toString(),
+    });
   }
 
   if (method !== 'POST') {

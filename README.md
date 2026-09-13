@@ -1,8 +1,18 @@
 # Guardian MCP
 
-Детерминированный анализ безопасности EVM‑транзакций. Принимает `to` + `data`, возвращает вердикт
-**ALLOW / WARN / DENY** с причинами и подробностями. Готов к публикации как A2MCP‑сервис на OKX.AI,
-поддерживает платежи x402 (по умолчанию выключены, сервис бесплатный).
+Система контроля целостности AI‑агента для on‑chain действий. Принимает транзакцию (`to` + `data`) и,
+опционально, контекст агента, возвращает вердикт **ALLOW / WARN / DENY**, причины, риск‑скор 0–100 и
+подробности. Готов к публикации как A2MCP‑сервис на OKX.AI, поддерживает платежи x402 (по умолчанию
+выключены, сервис бесплатный).
+
+Четыре слоя защиты, все детерминированные, без внешних API:
+
+| Слой | Что проверяет |
+|---|---|
+| **Transaction firewall** | Безлимитные approve, approve на кошелёк, `setApprovalForAll`, нулевой адрес, свежий получатель, неизвестный селектор, вызов кошелька с calldata |
+| **Intent verification** | Соответствует ли транзакция заявленной цели агента (`context.agent_goal`); эскалация read‑only агента до approve/transfer |
+| **Context analysis** | Был ли агент под влиянием недоверенного или фишингового контента перед транзакцией (белый список доменов, тайпосквоттинг, гомоглифы, punycode, подозрительные TLD) |
+| **Runtime signals** | Что агент делал перед транзакцией (`web_fetch` / `read_file` прямо перед подписанием) и сколько недоверенных доменов накопилось за сессию |
 
 ## API
 
@@ -14,8 +24,22 @@
 |-----------|----------------------|-------------|--------------------------------------------------------------------------|
 | `to`      | string               | да          | Адрес назначения транзакции, `0x` + 40 hex                               |
 | `data`    | string               | нет         | Calldata, `0x`‑hex. Пусто или `0x` = нативный перевод                    |
-| `chainId` | number \| string     | нет         | По умолчанию `1`. Поддерживаются: 1, 10, 56, 137, 196, 8453, 42161      |
+| `chainId` | number \| string     | нет         | По умолчанию `1`. Поддерживаются: 1, 10, 56, 137, 196, 250, 8453, 42161, 43114 |
 | `value`   | string \| number     | нет         | Сумма нативной монеты в wei (десятичная строка или `0x`‑hex). По умолчанию `0` |
+| `context` | object               | нет         | Контекст агента (см. ниже). Без него сервис работает как обычный firewall, `details.context_analyzed = false` |
+
+Поля `context` (все опциональны):
+
+| Поле                | Тип       | Описание |
+|---------------------|-----------|----------|
+| `agent_goal`        | string    | Заявленная цель: `swap tokens`, `transfer`, `approve`, `mint`, `read` / `analyze`, `unknown`. Понимает синонимы (`send`, `trade`, `research`…) |
+| `recent_sources`    | string[]  | Источники, которые агент недавно читал: URL, `api:coingecko`, `user input`. До 100 элементов |
+| `recent_tool_calls` | string[]  | Имена инструментов в порядке вызова, например `["read_file","web_fetch","analyze","swap"]`. До 200 элементов |
+| `session_id`        | string    | Идентификатор сессии для накопления сигналов (TTL `SESSION_TTL_MS`) |
+| `intent_match`      | boolean   | Собственная оценка агента. `false` даёт `intent_mismatch` даже при совпадении по нашей таблице |
+
+Новые поля в `details`: `risk_score` (0–100), `context_analyzed`, `intent_analysis`, `context_signals`,
+`context_sources`, `session_risk_score` (вклад только контекстных сигналов).
 
 Ответ (JSON):
 
@@ -45,7 +69,18 @@
 
 Информация о сервисе: версия, список правил, поддерживаемые сети, статус платёжного шлюза.
 
+### `GET /rules`
+
+Полный каталог правил: код, серьёзность, слой, описание, а также формула риск‑скора.
+
+### `GET /trusted-domains`
+
+Текущий белый список доменов (из `TRUSTED_DOMAINS` или значения по умолчанию плюс официальные домены брендов
+и хосты RPC), `sessionTtlMs`, `largeAmountRaw`.
+
 ## Правила
+
+### Слой транзакции
 
 | Код                    | Вердикт | Условие                                                                                   |
 |------------------------|---------|-------------------------------------------------------------------------------------------|
@@ -58,7 +93,26 @@
 | `calldata_to_eoa`      | WARN    | Есть calldata, но `to` — не контракт (скорее всего, ошибочный адрес)                       |
 | `rpc_unavailable`      | WARN    | Блокчейн не ответил. **Fail‑safe: никогда не ALLOW**                                      |
 
+### Слой целостности агента (только при наличии `context`)
+
+| Код                          | Вердикт     | Условие |
+|------------------------------|-------------|---------|
+| `goal_escalation`            | DENY        | `agent_goal` = `read` / `analyze`, а транзакция — approve, `setApprovalForAll`, перевод токена или нативный перевод |
+| `injection_pattern`          | DENY        | В `recent_sources` есть хост с фишинговым паттерном: имя бренда в неофициальном домене (`okx-airdrop.com`), тайпосквоттинг (`uniswop.org`), гомоглифы (`c0inbase.com`), punycode, IP вместо домена, подозрительный TLD (`.zip`, `.xyz`, `.top`…), фишинговые слова (`claim`, `airdrop`, `verify-wallet`…), цепочка из 5+ поддоменов |
+| `untrusted_source_before_tx` | WARN / DENY | Есть домены вне белого списка **и** транзакция — approve/transfer. `DENY`, если сумма крупная: безлимитный approve, `setApprovalForAll`, сумма ≥ `LARGE_AMOUNT_RAW` (сырые единицы, по умолчанию 10^18) или нативный перевод ≥ 0.1 |
+| `intent_mismatch`            | WARN        | `agent_goal` не совместим с типом транзакции (например, `transfer` при approve) или агент сам передал `intent_match: false`. `swap tokens` совместим с approve, так как approve — предусловие свопа |
+| `rapid_context_shift`        | WARN        | Последний инструмент перед транзакцией — `web_fetch` / `read_file` / `browse`… **и** цель не совпадает |
+| `memory_poisoning_signal`    | WARN        | В одной `session_id` за `SESSION_TTL_MS` накопилось больше 3 разных недоверенных доменов |
+| `context_analysis_failed`    | WARN        | Контекст‑анализатор упал. Fail‑safe: вердикт не ниже `WARN` |
+
 Итоговый вердикт = максимальная серьёзность среди сработавших правил. Правила без сработок → `ALLOW`.
+
+**Риск‑скор** (`details.risk_score`, 0–100, не влияет на вердикт): +15 за каждый `WARN`, +40 за каждый `DENY`,
+дополнительно +20 за `intent_mismatch` и +50 за `injection_pattern`. Кэп 100.
+
+Сессионное хранилище живёт в памяти процесса. На Vercel оно сохраняется в пределах «тёплого» инстанса функции;
+для строгого межинстансного учёта подключите внешнее хранилище через `deps.sessionStore` (интерфейс
+`record(sessionId, domains, now)` / `peek` / `ttlMs`).
 
 Декодируются: `approve`, `increaseAllowance`, `permit`, `setApprovalForAll`, `transfer`,
 `transferFrom`, `safeTransferFrom` (ERC‑721/1155), `safeBatchTransferFrom`. Популярные селекторы DEX,
@@ -68,11 +122,13 @@
 
 ```
 guardian-mcp/
-├── api/index.js          # Vercel Serverless Function: маршрутизация, CORS, x402, ответы
-├── src/analyzer.js       # Движок правил: валидация, декодирование calldata, вердикт
-├── src/rpc.js            # RPC‑слой: таймауты, фолбэки, общий бюджет времени, RpcError
-├── src/x402.js           # Платёжный шлюз x402 v2 (exact); выключен при X402_PRICE=0
-├── test/analyzer.test.js # 15 тестов node:test с инжектируемым читателем цепочки
+├── api/index.js                  # Vercel Serverless Function: маршрутизация, CORS, x402, /rules, /trusted-domains
+├── src/analyzer.js               # Движок правил транзакции, интеграция контекста, risk_score, каталог правил
+├── src/context-analyzer.js       # Intent / context / runtime сигналы, фишинг‑паттерны, сессионное хранилище
+├── src/rpc.js                    # RPC‑слой: таймауты, фолбэки по 9 сетям, общий бюджет времени
+├── src/x402.js                   # Платёжный шлюз x402 v2 (exact); выключен при X402_PRICE=0
+├── test/analyzer.test.js         # 15 тестов слоя транзакции
+├── test/context-analyzer.test.js # 18 тестов слоя целостности агента
 ├── vercel.json           # rewrite всех путей на функцию, maxDuration 10 с
 ├── package.json
 ├── .env.example
@@ -131,6 +187,10 @@ Vercel → проект → **Settings → Environment Variables**. Полный
 - `RPC_URL_<chainId>` — свои RPC (через запятую = порядок фолбэка). Рекомендуется для продакшена:
   публичные RPC могут ограничивать частоту запросов.
 - `RPC_TIMEOUT_MS`, `RPC_BUDGET_MS` — таймауты (по умолчанию 4000 / 7000 мс, укладываются в лимит функции 10 с).
+- `TRUSTED_DOMAINS` — белый список доменов для `context.recent_sources` через запятую (по умолчанию
+  `coingecko.com,api.etherscan.io`). Официальные домены брендов и хосты RPC доверены всегда.
+- `SESSION_TTL_MS` — время жизни сессионных сигналов (по умолчанию 3600000 = 1 час).
+- `LARGE_AMOUNT_RAW` — порог «крупной суммы» в сырых единицах для `untrusted_source_before_tx` (по умолчанию 10^18).
 
 ## Включение платежей x402
 
@@ -160,6 +220,29 @@ curl -s -X POST https://guardian-mcp.vercel.app/analyze \
 
 Ожидаемый ответ: `"verdict": "WARN"`, `"reasons": ["unlimited_approval"]` — безлимитный approve USDC для
 Uniswap V2 Router.
+
+### Пример с контекстом агента
+
+Агент с целью «проанализировать» прочитал PDF с фишингового домена и сразу пытается сделать безлимитный approve:
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "data": "0x095ea7b30000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488dffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "chainId": 1,
+    "context": {
+      "agent_goal": "analyze",
+      "recent_sources": ["https://okx-airdrop-claim.xyz/doc.pdf", "user input", "api:coingecko"],
+      "recent_tool_calls": ["read_file", "web_fetch", "analyze"],
+      "session_id": "11111111-2222-3333-4444-555555555555"
+    }
+  }'
+```
+
+Ожидаемый ответ: `"verdict": "DENY"`, `reasons` содержит `goal_escalation`, `injection_pattern`,
+`untrusted_source_before_tx`, `rapid_context_shift`, `unlimited_approval`; `details.risk_score = 100`.
 
 ## Безопасность
 
