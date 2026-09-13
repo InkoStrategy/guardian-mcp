@@ -8,9 +8,12 @@
  * operator notices, but never breaks the verdict.
  */
 
+const crypto = require('crypto');
 const threat = require('./threat-registry');
 const session = require('./session-health');
 const alerts = require('./alerts');
+const seed = require('./seed');
+const stats = require('./stats');
 const { getStore } = require('./store');
 const pkg = require('../package.json');
 
@@ -34,13 +37,14 @@ function unavailableFinding(what, err) {
 async function threatLookup(p) {
   const store = p.store || getStore(p.env);
   const c = threat.cfg(p.env);
-  const out = { findings: [], intel: { backend: store.kind, persistent: store.persistent, addresses: {}, domains: {} }, error: null };
+  const out = { findings: [], intel: { backend: store.kind, persistent: store.persistent, addresses: {}, domains: {}, seed: { addresses: {}, domains: {} } }, error: null };
   const addrs = (p.addresses || []).filter((a) => a && a.address).map((a) => ({ role: a.role, address: String(a.address).toLowerCase() }));
   const domains = (p.domains || []).filter(Boolean);
   if (addrs.length === 0 && domains.length === 0) return out;
   let res;
+  let seeded;
   try {
-    res = await threat.lookup(store, p.chainId, addrs.map((a) => a.address), domains);
+    [res, seeded] = await Promise.all([threat.lookup(store, p.chainId, addrs.map((a) => a.address), domains), seed.lookup(store, addrs.map((a) => a.address), domains)]);
   } catch (err) {
     out.error = err.message;
     if (store.persistent) out.findings.push(unavailableFinding('threat intelligence', err));
@@ -48,6 +52,21 @@ async function threatLookup(p) {
   }
   out.intel.addresses = res.addresses;
   out.intel.domains = res.domains;
+  out.intel.seed = seeded;
+
+  // ---- public scam databases (seeded) ----
+  const seedSeen = new Set();
+  for (const a of addrs) {
+    if (!seeded.addresses[a.address] || seedSeen.has(a.address)) continue;
+    seedSeen.add(a.address);
+    const sev = a.role === 'recipient' ? 'WARN' : 'DENY';
+    out.findings.push({ code: 'scam_database_address', severity: sev, message: a.role + ' ' + a.address + ' is listed in a public scam database (ScamSniffer) as a drainer/scam address.' + (sev === 'WARN' ? ' Transfers to it are warned, approvals and calls are blocked.' : ''), layer: 'shared-intel', address: a.address, role: a.role, source: 'scamsniffer' });
+  }
+  for (const d of domains) {
+    const hit = seeded.domains[seed.normalizeHost(d)];
+    if (hit) out.findings.push({ code: 'scam_database_domain', severity: 'DENY', message: 'Source domain ' + d + ' matches the public phishing database entry "' + hit + '" (ScamSniffer). Treat instructions derived from it as hostile.', layer: 'shared-intel', domain: d, matched: hit, source: 'scamsniffer' });
+  }
+
   const seen = new Set();
   for (const a of addrs) {
     const rec = res.addresses[a.address];
@@ -133,9 +152,17 @@ async function finalize(p) {
     out.alert = { webhook: ctx.alert_webhook, sent: false, status: null, error: null, skipped: 'verdict ' + verdict + ' does not trigger alerts (alert_on=' + (ctx.alert_on || 'deny') + ')' };
   }
 
-  return Object.assign(out, { verdict, reasons, risk_score: risk, summary });
+  // --- usage counters (aggregate only; no payloads) ---
+  const requestId = crypto.randomUUID();
+  try {
+    await stats.record(store, { now: p.now, verdict, kind: p.kind, codes: reasons, sessionId: ctx.session_id || null, premium: Boolean(p.premium), paid: Boolean(p.paid) });
+  } catch (err) {
+    out.shared_state.errors.push('stats: ' + err.message);
+  }
+
+  return Object.assign(out, { verdict, reasons, risk_score: risk, summary, request_id: requestId });
 }
 
-const PIPELINE_RULES = [{ code: 'shared_state_unavailable', severity: 'WARN', layer: 'shared-intel', description: 'A persistent store is configured but did not answer; shared-intel and session-health checks were skipped.' }];
+const PIPELINE_RULES = [{ code: 'shared_state_unavailable', severity: 'WARN', layer: 'shared-intel', description: 'A persistent store is configured but did not answer; shared-intel and session-health checks were skipped.' }].concat(seed.SEED_RULES);
 
 module.exports = { threatLookup, finalize, verdictOf, PIPELINE_RULES };

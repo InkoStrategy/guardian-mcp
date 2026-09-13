@@ -92,6 +92,34 @@ function createMemoryStore() {
         const e = live(key);
         return e && e.type === 'set' ? e.value.size : 0;
       }
+      case 'SISMEMBER': {
+        const e = live(key);
+        return e && e.type === 'set' && e.value.has(String(args[0])) ? 1 : 0;
+      }
+      case 'SMISMEMBER': {
+        const e = live(key);
+        return args.map((m) => (e && e.type === 'set' && e.value.has(String(m)) ? 1 : 0));
+      }
+      case 'RENAME': {
+        const e = live(key);
+        if (!e) throw new Error('ERR no such key');
+        data.set(String(args[0]), e);
+        data.delete(key);
+        return 'OK';
+      }
+      case 'PFADD': {
+        // Approximated with an exact set; fine for the in-memory fallback.
+        const e = ensure(key, 'set');
+        let added = 0;
+        for (const m of args) if (!e.value.has(String(m))) { e.value.add(String(m)); added = 1; }
+        return added;
+      }
+      case 'PFCOUNT': {
+        const e = live(key);
+        return e && e.type === 'set' ? e.value.size : 0;
+      }
+      case 'MGET':
+        return [key].concat(args).map((k) => { const e = live(k); return e && e.type === 'string' ? e.value : null; });
       case 'SMEMBERS': {
         const e = live(key);
         return e && e.type === 'set' ? Array.from(e.value) : [];
@@ -154,9 +182,12 @@ function createMemoryStore() {
         return e && e.type === 'string' ? e.value : null;
       }
       case 'SET': {
+        const flags = args.slice(1).map((a) => String(a).toUpperCase());
+        if (flags.includes('NX') && live(key)) return null;
+        if (flags.includes('XX') && !live(key)) return null;
         const e = { type: 'string', value: String(args[0]), expiresAt: 0 };
-        const exIdx = args.findIndex((a) => String(a).toUpperCase() === 'EX');
-        if (exIdx !== -1) e.expiresAt = now() + Number(args[exIdx + 1]) * 1000;
+        const exIdx = flags.indexOf('EX');
+        if (exIdx !== -1) e.expiresAt = now() + Number(args[exIdx + 2]) * 1000;
         data.set(key, e);
         return 'OK';
       }

@@ -391,6 +391,7 @@ async function analyzeSignature(input, deps) {
     details: Object.assign(details, {
       findings,
       risk_score: fin.risk_score,
+      request_id: fin.request_id,
       session_health: fin.session_health,
       alert: fin.alert,
       shared_state: fin.shared_state,

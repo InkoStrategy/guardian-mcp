@@ -8,8 +8,34 @@ const registry = require('../src/registry');
 const threat = require('../src/threat-registry');
 const sessionHealth = require('../src/session-health');
 const { getStore } = require('../src/store');
+const stats = require('../src/stats');
+const feedback = require('../src/feedback');
+const seed = require('../src/seed');
+const pricing = require('../src/pricing');
+const dashboard = require('../src/dashboard');
 const x402 = require('../src/x402');
 const crypto = require('crypto');
+
+const RULE_CODES = new Set(RULE_CATALOG.map((r) => r.code).concat(SIGNATURE_RULES.map((r) => r.code)));
+
+function timingSafeEqual(a, b) {
+  const x = Buffer.from(String(a || ''));
+  const y = Buffer.from(String(b || ''));
+  return x.length > 0 && x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
+function isAdmin(req) {
+  const token = process.env.ADMIN_TOKEN;
+  if (!token) return false;
+  const header = req.headers['x-admin-token'] || (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  return timingSafeEqual(header, token);
+}
+
+function isCron(req) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+  return timingSafeEqual((req.headers.authorization || '').replace(/^Bearer\s+/i, ''), secret);
+}
 
 const ALL_RULES = RULE_CATALOG.concat(SIGNATURE_RULES);
 const pkg = require('../package.json');
@@ -101,7 +127,8 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis'], note: pricing.cfg().mode === 'free' ? 'Nothing is charged.' : 'Premium layers may require x402 payment.' },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
       ? { protocol: 'x402', x402Version: x402.X402_VERSION, price: cfg.price, asset: cfg.asset, network: cfg.network }
@@ -132,6 +159,55 @@ module.exports = async function handler(req, res) {
     });
   }
   const apiPath = path.replace(/^\/api(?=\/)/, '');
+  if (method === 'GET' && apiPath === '/dashboard') {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.setHeader('cache-control', 'public, max-age=60');
+    return res.end(dashboard.html());
+  }
+  if (method === 'GET' && (apiPath === '/stats' || apiPath === '/admin/stats')) {
+    const internal = apiPath === '/admin/stats';
+    if (internal && !isAdmin(req)) return send(res, 401, { ok: false, error: 'admin token required (X-Admin-Token)' });
+    try {
+      const store = getStore();
+      const snap = await stats.snapshot(store, { internal, ruleCodes: internal ? Array.from(RULE_CODES) : [] });
+      if (internal) {
+        snap.recent_feedback = await feedback.recent(store, 50);
+        snap.pricing = await pricing.resolve(store, process.env);
+      }
+      res.setHeader('cache-control', internal ? 'no-store' : 'public, max-age=60');
+      return send(res, 200, Object.assign({ ok: true }, snap));
+    } catch (err) {
+      return send(res, 503, { ok: false, error: 'stats unavailable: ' + err.message });
+    }
+  }
+  if ((method === 'GET' || method === 'POST') && apiPath === '/cron/seed') {
+    if (!isCron(req) && !isAdmin(req)) return send(res, 401, { ok: false, error: 'CRON_SECRET bearer or admin token required' });
+    try {
+      const result = await seed.run(getStore(), { force: (req.url || '').includes('force=1') });
+      return send(res, 200, Object.assign({ ok: true }, result));
+    } catch (err) {
+      console.error('seed failed', err);
+      return send(res, 502, { ok: false, error: 'seed failed: ' + err.message });
+    }
+  }
+  if (method === 'POST' && apiPath === '/feedback') {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return send(res, 400, { error: 'Invalid JSON body: ' + err.message });
+    }
+    try {
+      const fb = feedback.normalize(body, RULE_CODES);
+      const result = await feedback.submit(getStore(), fb, reporterOf(req));
+      return send(res, 200, Object.assign({ ok: true, thanks: 'Recorded. False positives and missed attacks tune the rules; verdicts themselves never change retroactively.' }, result));
+    } catch (err) {
+      if (err.name === 'ValidationError') return send(res, 400, { ok: false, error: err.message });
+      if (err.status === 429) return send(res, 429, { ok: false, error: err.message });
+      return send(res, 503, { ok: false, error: 'feedback unavailable: ' + err.message });
+    }
+  }
   if (method === 'GET' && apiPath === '/threats/stats') {
     try {
       return send(res, 200, Object.assign({ ok: true }, await threat.stats(getStore())));
