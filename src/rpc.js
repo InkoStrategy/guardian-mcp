@@ -70,12 +70,20 @@ async function readAddressState(provider, address) {
     provider.getTransactionCount(address),
     provider.getBalance(address),
   ]);
+  const hasCode = typeof code === 'string' && code !== '0x' && code.length > 2;
   return {
     address,
-    isContract: typeof code === 'string' && code !== '0x' && code.length > 2,
+    isContract: hasCode,
     txCount: Number(txCount),
     balance: balance.toString(),
+    codeSize: hasCode ? (code.length - 2) / 2 : 0,
+    code: hasCode ? code : '0x',
   };
+}
+
+/** ethers surfaces an on-chain revert as CALL_EXCEPTION; that is a valid answer, not an RPC failure. */
+function isRevert(err) {
+  return Boolean(err) && (err.code === 'CALL_EXCEPTION' || (err.error && err.error.code === 3) || (typeof err.message === 'string' && /execution reverted|revert/i.test(err.message) && err.code !== 'TIMEOUT'));
 }
 
 /**
@@ -110,6 +118,12 @@ function createChainReader(chainId) {
         lastEndpoint = urls[i];
         return result;
       } catch (err) {
+        if (isRevert(err)) {
+          // The node answered; the call itself reverted. Do not fail over.
+          activeIndex = i;
+          lastEndpoint = urls[i];
+          throw err;
+        }
         errors.push(err);
         providers[i] = null;
       }
@@ -122,6 +136,10 @@ function createChainReader(chainId) {
     chainId,
     chainName: chainName(chainId),
     addressState: (address) => attempt((p) => readAddressState(p, address), `addressState(${address})`),
+    /** eth_call. Reverts propagate as CALL_EXCEPTION (see isRevert); transport errors as RpcError. */
+    call: (tx) => attempt((p) => p.call(tx), `call(${tx.to})`),
+    getStorage: (address, slot) => attempt((p) => p.getStorage(address, slot), `getStorage(${address})`),
+    estimateGas: (tx) => attempt((p) => p.estimateGas(tx), `estimateGas(${tx.to})`),
     get endpoint() {
       return lastEndpoint;
     },
@@ -131,6 +149,7 @@ function createChainReader(chainId) {
 module.exports = {
   DEFAULT_CHAINS,
   RpcError,
+  isRevert,
   createChainReader,
   supportedChainIds,
   chainName,

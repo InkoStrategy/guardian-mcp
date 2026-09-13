@@ -1,6 +1,6 @@
 {
   "name": "guardian-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Guardian MCP - deterministic security verdicts (ALLOW/WARN/DENY) for EVM transactions. A2MCP service for OKX.AI with optional x402 payments.",
   "private": true,
   "license": "MIT",

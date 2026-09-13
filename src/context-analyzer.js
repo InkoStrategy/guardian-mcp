@@ -122,6 +122,7 @@ const MAX_SESSIONS = 10000;
 const MAX_SOURCES = 100;
 const MAX_TOOL_CALLS = 200;
 const MAX_STRING = 2048;
+const MAX_KNOWN_ADDRESSES = 500;
 const MEMORY_POISONING_THRESHOLD = 3; // more than this many distinct untrusted domains per session
 
 // ---------------------------------------------------------------------------
@@ -403,6 +404,19 @@ function validateContext(context) {
   if (context.intent_match !== undefined && context.intent_match !== null) {
     if (typeof context.intent_match !== 'boolean') throw new Error('"context.intent_match" must be a boolean');
     out.intent_match = context.intent_match;
+  }
+  if (context.known_addresses !== undefined && context.known_addresses !== null) {
+    if (!Array.isArray(context.known_addresses)) throw new Error('"context.known_addresses" must be an array of EVM addresses');
+    if (context.known_addresses.length > MAX_KNOWN_ADDRESSES) throw new Error('"context.known_addresses" may contain at most ' + MAX_KNOWN_ADDRESSES + ' items');
+    out.known_addresses = context.known_addresses.map((a) => {
+      if (typeof a !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new Error('"context.known_addresses" must contain only 0x-prefixed EVM addresses');
+      return a.toLowerCase();
+    });
+  }
+  if (context.expected_amount !== undefined && context.expected_amount !== null) {
+    const s = String(context.expected_amount).trim();
+    if (!/^[0-9]+(\.[0-9]+)?$/.test(s) || s.length > 40) throw new Error('"context.expected_amount" must be a decimal number in human token units, e.g. "1500.25"');
+    out.expected_amount = s;
   }
   return out;
 }

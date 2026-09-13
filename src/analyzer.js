@@ -1,8 +1,12 @@
 'use strict';
 
 const { AbiCoder, getAddress, isAddress, isHexString, dataSlice, MaxUint256, ZeroAddress } = require('ethers');
-const { createChainReader, RpcError, supportedChainIds } = require('./rpc');
+const { createChainReader, RpcError, supportedChainIds, chainName } = require('./rpc');
 const contextAnalyzer = require('./context-analyzer');
+const registry = require('./registry');
+const intel = require('./intel');
+const nested = require('./nested');
+const summaryBuilder = require('./summary');
 
 const abi = AbiCoder.defaultAbiCoder();
 
@@ -31,10 +35,15 @@ const KNOWN = {
   '0x38ed1739': 'swapExactTokensForTokens(uint256,uint256,address[],address,uint256)',
   '0x8803dbee': 'swapTokensForExactTokens(uint256,uint256,address[],address,uint256)',
   '0xfb3bdb41': 'swapETHForExactTokens(uint256,address[],address,uint256)',
+  '0x472b43f3': 'swapExactTokensForTokens(uint256,uint256,address[],address)',
+  '0x42712a67': 'swapTokensForExactTokens(uint256,uint256,address[],address)',
   '0x414bf389': 'exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))',
   '0xc04b8d59': 'exactInput((bytes,address,uint256,uint256,uint256))',
   '0x04e45aaf': 'exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))',
   '0xb858183f': 'exactInput((bytes,address,uint256,uint256))',
+  '0xdf2ab5bb': 'sweepToken(address,uint256,address)',
+  '0x49404b7c': 'unwrapWETH9(uint256,address)',
+  '0x12210e8a': 'refundETH()',
   '0x5ae401dc': 'multicall(uint256,bytes[])',
   '0xac9650d8': 'multicall(bytes[])',
   '0x1f0464d1': 'multicall(bytes32,bytes[])',
@@ -62,10 +71,7 @@ const KNOWN = {
 
 const MAX_UINT256 = MaxUint256;
 const HALF_UINT256 = MAX_UINT256 >> 1n; // 2^255 - 1
-const BURN_ADDRESSES = new Set([
-  ZeroAddress.toLowerCase(),
-  '0x000000000000000000000000000000000000dead',
-]);
+const BURN_ADDRESSES = new Set([ZeroAddress.toLowerCase(), '0x000000000000000000000000000000000000dead']);
 
 class ValidationError extends Error {
   constructor(message) {
@@ -103,7 +109,7 @@ function normalizeInput(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     throw new ValidationError('Request body must be a JSON object');
   }
-  const { to, data, chainId, value, context } = input;
+  const { to, data, chainId, value, context, from } = input;
   let validatedContext = null;
   try {
     validatedContext = contextAnalyzer.validateContext(context);
@@ -113,6 +119,11 @@ function normalizeInput(input) {
   if (typeof to !== 'string' || !isAddress(to)) {
     throw new ValidationError('"to" must be a valid 0x-prefixed EVM address (40 hex chars)');
   }
+  let fromAddr = null;
+  if (from !== undefined && from !== null && from !== '') {
+    if (typeof from !== 'string' || !isAddress(from)) throw new ValidationError('"from" must be a valid 0x-prefixed EVM address');
+    fromAddr = getAddress(from);
+  }
   let calldata = data === undefined || data === null ? '0x' : data;
   if (typeof calldata !== 'string') throw new ValidationError('"data" must be a hex string');
   calldata = calldata.trim();
@@ -120,31 +131,15 @@ function normalizeInput(input) {
   if (!calldata.startsWith('0x')) calldata = '0x' + calldata;
   if (!isHexString(calldata)) throw new ValidationError('"data" must be a 0x-prefixed hex string with an even number of hex characters');
   if (calldata.length > 2 && calldata.length < 10) throw new ValidationError('"data" is shorter than a 4-byte function selector');
+  if (calldata.length > 2 + 2 * 128 * 1024) throw new ValidationError('"data" exceeds 128 KB');
   return {
     to: getAddress(to),
+    from: fromAddr,
     data: calldata.toLowerCase(),
     chainId: parseChainId(chainId),
     value: parseValue(value),
     context: validatedContext,
   };
-}
-
-/** Risk-score weights. Verdict is still the max severity; the score is an additive signal for ranking/alerting. */
-const RISK_WEIGHTS = { WARN: 15, DENY: 40 };
-const RISK_BONUS = { intent_mismatch: 20, injection_pattern: 50 };
-
-/**
- * Additive risk score in [0, 100].
- * ALLOW-level findings add 0, every WARN adds 15, every DENY adds 40,
- * intent_mismatch adds a further 20 and injection_pattern a further 50. Capped at 100.
- */
-function computeRiskScore(findings) {
-  let score = 0;
-  for (const f of findings || []) {
-    score += RISK_WEIGHTS[f.severity] || 0;
-    score += RISK_BONUS[f.code] || 0;
-  }
-  return Math.min(100, Math.max(0, score));
 }
 
 function decodeCalldata(data) {
@@ -175,13 +170,100 @@ function finding(code, severity, message, extra) {
 }
 
 function isBurn(address) {
-  return BURN_ADDRESSES.has(address.toLowerCase());
+  return BURN_ADDRESSES.has(String(address).toLowerCase());
 }
+
+/** Risk-score weights. Verdict is still the max severity; the score is an additive signal for ranking/alerting. */
+const RISK_WEIGHTS = { WARN: 15, DENY: 40 };
+const RISK_BONUS = { intent_mismatch: 20, injection_pattern: 50 };
+
+/**
+ * Additive risk score in [0, 100].
+ * ALLOW-level findings add 0, every WARN adds 15, every DENY adds 40,
+ * intent_mismatch adds a further 20 and injection_pattern a further 50. Capped at 100.
+ */
+function computeRiskScore(findings) {
+  let score = 0;
+  for (const f of findings || []) {
+    score += RISK_WEIGHTS[f.severity] || 0;
+    score += RISK_BONUS[f.code] || 0;
+  }
+  return Math.min(100, Math.max(0, score));
+}
+
+// ---------------------------------------------------------------------------
+// Static (offline) rules, applied to the top-level call and to every inner call
+// ---------------------------------------------------------------------------
+
+function applyStaticRules(decoded, tx, findings, via) {
+  const tag = via ? { via } : {};
+  if (decoded.kind === 'transfer' && decoded.args.recipient && isBurn(decoded.args.recipient)) {
+    findings.push(finding('zero_address', 'DENY', 'Transfer recipient ' + decoded.args.recipient + ' is a burn address; tokens will be lost.', Object.assign({ address: decoded.args.recipient }, tag)));
+  }
+  if (decoded.kind === 'approve' && isBurn(decoded.args.spender)) {
+    findings.push(finding('zero_address', 'DENY', 'Approval spender ' + decoded.args.spender + ' is the zero address.', Object.assign({ address: decoded.args.spender }, tag)));
+  }
+  if (decoded.kind === 'approvalForAll' && isBurn(decoded.args.operator)) {
+    findings.push(finding('zero_address', 'DENY', 'setApprovalForAll operator ' + decoded.args.operator + ' is the zero address.', Object.assign({ address: decoded.args.operator }, tag)));
+  }
+  if (decoded.kind === 'approve' && decoded.amountBig !== null) {
+    if (decoded.amountBig === MAX_UINT256) {
+      findings.push(finding('unlimited_approval', 'WARN', 'Approval amount is MAX_UINT256 (unlimited). Spender ' + decoded.args.spender + ' could move your entire balance of this token at any time.', Object.assign({ spender: decoded.args.spender, amount: decoded.args.amount }, tag)));
+    } else if (decoded.amountBig > HALF_UINT256) {
+      findings.push(finding('unlimited_approval', 'WARN', 'Approval amount exceeds 2^255 and is effectively unlimited for spender ' + decoded.args.spender + '.', Object.assign({ spender: decoded.args.spender, amount: decoded.args.amount, effectivelyUnlimited: true }, tag)));
+    }
+  }
+  if (decoded.kind === 'approvalForAll' && decoded.args.approved) {
+    findings.push(finding('set_approval_for_all', 'DENY', 'setApprovalForAll(true) grants operator ' + decoded.args.operator + ' control over EVERY token of this collection, now and in the future.', Object.assign({ operator: decoded.args.operator }, tag)));
+  }
+  if (decoded.kind === 'unknown') {
+    findings.push(finding('unknown_selector', 'WARN', 'Function selector ' + decoded.selector + ' is not recognised; the effect of this call cannot be determined.', Object.assign({ selector: decoded.selector }, tag)));
+  }
+  if (decoded.kind === 'malformed') {
+    findings.push(finding('unknown_selector', 'WARN', 'Calldata for ' + decoded.function + ' could not be decoded: ' + decoded.decodeError, Object.assign({ selector: decoded.selector }, tag)));
+  }
+}
+
+/** Which addresses need on-chain state, and in which role. */
+function collectRoles(decoded, tx, via) {
+  const roles = [];
+  if (decoded.kind === 'transfer' && decoded.args.recipient && !isBurn(decoded.args.recipient)) roles.push({ role: 'recipient', address: decoded.args.recipient, via });
+  if (decoded.kind === 'approve' && decoded.args.spender && !isBurn(decoded.args.spender)) roles.push({ role: 'spender', address: decoded.args.spender, via });
+  if (decoded.kind === 'approvalForAll' && decoded.args.approved && !isBurn(decoded.args.operator)) roles.push({ role: 'spender', address: decoded.args.operator, via });
+  return roles;
+}
+
+/** Address-poisoning and registry look-alike checks (offline). */
+function applyLookalikeRules(items, tx, findings) {
+  const known = (tx.context && tx.context.known_addresses) || [];
+  const knownSet = new Set(known.map((k) => k.toLowerCase()));
+  const seen = new Set();
+  for (const item of items) {
+    const a = String(item.address).toLowerCase();
+    const key = item.role + ':' + a;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    if (knownSet.has(a)) continue;
+    const imitated = known.find((k) => registry.isLookalike(a, k));
+    if (imitated) {
+      findings.push(finding('address_poisoning', 'DENY', item.role + ' ' + item.address + ' shares the visible prefix and suffix of your known address ' + imitated + ' but is a different address. This is the address-poisoning attack pattern.', { role: item.role, address: item.address, imitates: imitated, via: item.via || null }));
+      continue;
+    }
+    const reg = registry.findRegistryLookalike(tx.chainId, a);
+    if (reg) {
+      findings.push(finding('contract_lookalike', 'DENY', item.role + ' ' + item.address + ' imitates ' + reg.name + ' (' + reg.address + ') but is a different address.', { role: item.role, address: item.address, imitates: reg.address, imitatesName: reg.name, via: item.via || null }));
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
 
 /**
  * Analyse a transaction request.
- * @param {{to:string,data?:string,chainId?:number|string,value?:string|number}} input
- * @param {{reader?: object}} [deps] optional injected chain reader (tests)
+ * @param {{to:string,data?:string,chainId?:number|string,value?:string|number,from?:string,context?:object}} input
+ * @param {{reader?: object, env?: object, sessionStore?: object, now?: number}} [deps]
  */
 async function analyze(input, deps) {
   deps = deps || {};
@@ -189,73 +271,93 @@ async function analyze(input, deps) {
   const decoded = decodeCalldata(tx.data);
   const findings = [];
   const addressChecks = {};
+  const addressInfo = {};
   const rpc = { ok: true, endpoint: null, error: null };
+  const enrichment = { ran: false, skipped: null, errors: [] };
 
-  // ---------- Static (offline) rules ----------
+  // ---------- Static rules ----------
   if (isBurn(tx.to)) {
     findings.push(finding('zero_address', 'DENY', 'Transaction target ' + tx.to + ' is a burn address; anything sent there is unrecoverable.', { address: tx.to }));
   }
-  if (decoded.kind === 'transfer' && decoded.args.recipient && isBurn(decoded.args.recipient)) {
-    findings.push(finding('zero_address', 'DENY', 'Transfer recipient ' + decoded.args.recipient + ' is a burn address; tokens will be lost.', { address: decoded.args.recipient }));
-  }
-  if (decoded.kind === 'approve' && isBurn(decoded.args.spender)) {
-    findings.push(finding('zero_address', 'DENY', 'Approval spender ' + decoded.args.spender + ' is the zero address.', { address: decoded.args.spender }));
-  }
-  if (decoded.kind === 'approvalForAll' && isBurn(decoded.args.operator)) {
-    findings.push(finding('zero_address', 'DENY', 'setApprovalForAll operator ' + decoded.args.operator + ' is the zero address.', { address: decoded.args.operator }));
-  }
+  applyStaticRules(decoded, tx, findings, null);
 
-  if (decoded.kind === 'approve' && decoded.amountBig !== null) {
-    if (decoded.amountBig === MAX_UINT256) {
-      findings.push(finding('unlimited_approval', 'WARN', 'Approval amount is MAX_UINT256 (unlimited). Spender ' + decoded.args.spender + ' could move your entire balance of this token at any time.', { spender: decoded.args.spender, amount: decoded.args.amount }));
-    } else if (decoded.amountBig > HALF_UINT256) {
-      findings.push(finding('unlimited_approval', 'WARN', 'Approval amount exceeds 2^255 and is effectively unlimited for spender ' + decoded.args.spender + '.', { spender: decoded.args.spender, amount: decoded.args.amount, effectivelyUnlimited: true }));
+  // ---------- Nested calls (multicall / Universal Router / router helpers) ----------
+  let nestedInfo = null;
+  const innerDecoded = [];
+  if (decoded.kind === 'known') {
+    nestedInfo = nested.decodeNested(tx.to, tx.data);
+    for (const inner of nestedInfo.inner) {
+      const d = decodeCalldata(inner.data);
+      inner.function = d.function;
+      inner.kind = d.kind;
+      inner.args = d.args;
+      innerDecoded.push({ decoded: d, via: inner.via });
+      if (d.kind !== 'unknown' && d.kind !== 'known' && d.kind !== 'native') applyStaticRules(d, tx, findings, inner.via);
+    }
+    for (const r of nestedInfo.recipients) {
+      r.thirdParty = !nested.isSelfRecipient(r.address, { to: tx.to, from: tx.from });
+    }
+    for (const p of nestedInfo.permits) {
+      if (p.spender && p.spender.toLowerCase() !== tx.to.toLowerCase()) {
+        findings.push(finding('permit_spender_mismatch', 'DENY', 'Embedded Permit2 permit grants allowance to ' + p.spender + ', not to the router being called (' + tx.to + ').', { spender: p.spender, token: p.token, via: p.via }));
+      }
+      if (p.unlimited) {
+        findings.push(finding('unlimited_approval', 'WARN', 'Embedded Permit2 permit grants an unlimited allowance for ' + (p.token || 'a token') + ' to ' + p.spender + '.', { spender: p.spender, token: p.token, via: p.via, permit2: true }));
+      }
+    }
+    const thirdParty = nestedInfo.recipients.filter((r) => r.thirdParty);
+    for (const r of thirdParty) {
+      if (r.action === 'permit2_transfer') {
+        findings.push(finding('permit2_pull_to_third_party', 'DENY', 'The router pulls your tokens via Permit2 and sends ' + (r.amount || 'them') + ' straight to ' + r.address + '.', { recipient: r.address, token: r.token, via: r.via }));
+      } else if (r.action === 'pay_portion' && Number.isInteger(r.bips) && r.bips <= 100) {
+        r.feeLike = true; // <= 1% fee to an aggregator collector is routine
+      } else {
+        findings.push(finding('router_output_to_third_party', 'WARN', 'Router step ' + r.via.split(' > ').pop() + ' sends its output to ' + r.address + ', which is neither you nor the router.', { recipient: r.address, action: r.action, token: r.token, amount: r.amount, bips: r.bips, via: r.via }));
+      }
     }
   }
 
-  if (decoded.kind === 'approvalForAll' && decoded.args.approved) {
-    findings.push(finding('set_approval_for_all', 'DENY', 'setApprovalForAll(true) grants operator ' + decoded.args.operator + ' control over EVERY token of this collection, now and in the future.', { operator: decoded.args.operator }));
+  // ---------- Address roles ----------
+  const needsChain = [];
+  if (tx.data !== '0x') needsChain.push({ role: 'target', address: tx.to, via: null });
+  if (decoded.kind === 'native' && tx.value > 0n && !isBurn(tx.to)) needsChain.push({ role: 'recipient', address: tx.to, via: null });
+  for (const r of collectRoles(decoded, tx, null)) needsChain.push(r);
+  for (const inner of innerDecoded) for (const r of collectRoles(inner.decoded, tx, inner.via)) needsChain.push(r);
+  if (nestedInfo) {
+    for (const r of nestedInfo.recipients) if (r.thirdParty && !r.feeLike && !isBurn(r.address)) needsChain.push({ role: 'recipient', address: r.address, via: r.via });
+    for (const p of nestedInfo.permits) if (p.spender && !isBurn(p.spender)) needsChain.push({ role: 'spender', address: p.spender, via: p.via });
   }
 
-  if (decoded.kind === 'unknown') {
-    findings.push(finding('unknown_selector', 'WARN', 'Function selector ' + decoded.selector + ' is not recognised; the effect of this call cannot be determined.', { selector: decoded.selector }));
-  }
-  if (decoded.kind === 'malformed') {
-    findings.push(finding('unknown_selector', 'WARN', 'Calldata for ' + decoded.function + ' could not be decoded: ' + decoded.decodeError, { selector: decoded.selector }));
-  }
+  applyLookalikeRules(needsChain.filter((n) => n.role !== 'target').concat(decoded.kind === 'known' || decoded.kind === 'unknown' ? [{ role: 'target', address: tx.to }] : []), tx, findings);
 
   // ---------- On-chain rules ----------
-  const needsChain = [];
-  if (tx.data !== '0x') needsChain.push({ role: 'target', address: tx.to });
-  if (decoded.kind === 'native' && tx.value > 0n && !isBurn(tx.to)) needsChain.push({ role: 'recipient', address: tx.to });
-  if (decoded.kind === 'transfer' && decoded.args.recipient && !isBurn(decoded.args.recipient)) {
-    needsChain.push({ role: 'recipient', address: decoded.args.recipient });
-  }
-  if (decoded.kind === 'approve' && !isBurn(decoded.args.spender)) needsChain.push({ role: 'spender', address: decoded.args.spender });
-  if (decoded.kind === 'approvalForAll' && decoded.args.approved && !isBurn(decoded.args.operator)) {
-    needsChain.push({ role: 'spender', address: decoded.args.operator });
-  }
-
+  let reader = deps.reader;
+  let states = new Map();
   if (needsChain.length > 0) {
-    let reader = deps.reader;
     try {
       if (!reader) reader = createChainReader(tx.chainId);
       const unique = Array.from(new Map(needsChain.map((n) => [n.address.toLowerCase(), n.address])).values());
-      const states = await Promise.all(unique.map((a) => reader.addressState(a)));
-      const byAddr = new Map(states.map((s) => [s.address.toLowerCase(), s]));
+      const list = await Promise.all(unique.map((a) => reader.addressState(a)));
+      states = new Map(list.map((s) => [s.address.toLowerCase(), s]));
       rpc.endpoint = reader.endpoint || null;
 
+      const done = new Set();
       for (const item of needsChain) {
-        const state = byAddr.get(item.address.toLowerCase());
-        addressChecks[item.role] = Object.assign({}, state, { role: item.role });
+        const state = states.get(item.address.toLowerCase());
+        const key = item.role + ':' + item.address.toLowerCase();
+        const label = item.via ? item.role + '@' + item.via.split(' > ').pop() : item.role;
+        if (!addressChecks[label]) addressChecks[label] = { address: state.address, isContract: state.isContract, txCount: state.txCount, balance: state.balance, codeSize: state.codeSize, role: item.role, via: item.via || null };
+        if (done.has(key)) continue;
+        done.add(key);
+        const tag = item.via ? { via: item.via } : {};
         if (item.role === 'target' && !state.isContract) {
           findings.push(finding('calldata_to_eoa', 'WARN', 'Target ' + item.address + ' has no contract code, yet calldata is attached. The call will do nothing on-chain except transfer value; this usually means a wrong address.', { address: item.address }));
         }
         if (item.role === 'spender' && !state.isContract) {
-          findings.push(finding('approval_to_eoa', 'DENY', 'Approval granted to ' + item.address + ', which is an externally owned wallet, not a contract. Legitimate protocols never require approving a plain wallet; this pattern is used to drain tokens.', { address: item.address }));
+          findings.push(finding('approval_to_eoa', 'DENY', 'Approval granted to ' + item.address + ', which is an externally owned wallet, not a contract. Legitimate protocols never require approving a plain wallet; this pattern is used to drain tokens.', Object.assign({ address: item.address }, tag)));
         }
         if (item.role === 'recipient' && !state.isContract && state.txCount === 0 && BigInt(state.balance) === 0n) {
-          findings.push(finding('fresh_recipient', 'WARN', 'Recipient ' + item.address + ' has no transaction history and zero balance. Double-check the address; typos and address-poisoning attacks look exactly like this.', { address: item.address }));
+          findings.push(finding('fresh_recipient', 'WARN', 'Recipient ' + item.address + ' has no transaction history and zero balance. Double-check the address; typos and address-poisoning attacks look exactly like this.', Object.assign({ address: item.address }, tag)));
         }
       }
     } catch (err) {
@@ -263,6 +365,64 @@ async function analyze(input, deps) {
       rpc.error = err instanceof RpcError ? err.message : 'Unexpected RPC failure: ' + err.message;
       findings.push(finding('rpc_unavailable', 'WARN', 'On-chain checks could not be completed (' + rpc.error + '). Fail-safe: contract-code and address-history checks were skipped, so the verdict is downgraded to WARN.', { attemptedChecks: needsChain.map((n) => n.role) }));
     }
+  }
+
+  // ---------- Enrichment: token metadata, counterparty intelligence, simulation ----------
+  let tokenMeta = null;
+  let simulation = { ran: false, reason: tx.from ? null : 'no "from" supplied' };
+  let erc20State = null;
+  if (rpc.ok && reader && intel.canCall(reader)) {
+    enrichment.ran = true;
+    const isTokenCall = decoded.kind === 'approve' || decoded.kind === 'transfer' || decoded.kind === 'approvalForAll';
+    const jobs = [];
+    if (isTokenCall) {
+      jobs.push(intel.getTokenMeta(reader, tx.chainId, tx.to).then((m) => { tokenMeta = m; }).catch((e) => enrichment.errors.push('tokenMeta: ' + e.message)));
+    } else {
+      tokenMeta = registry.lookupToken(tx.chainId, tx.to);
+    }
+    for (const [addrLower, state] of states) {
+      jobs.push(intel.inspectContract(reader, tx.chainId, state.address, state).then((info) => {
+        info.fresh = !state.isContract && state.txCount === 0 && BigInt(state.balance) === 0n;
+        addressInfo[addrLower] = info;
+      }).catch((e) => enrichment.errors.push('inspect ' + addrLower + ': ' + e.message)));
+    }
+    if (tx.from) {
+      jobs.push(intel.simulate(reader, { from: tx.from, to: tx.to, data: tx.data, value: tx.value }).then((s) => { simulation = s; }).catch((e) => {
+        simulation = { ran: false, reason: e.message };
+        enrichment.errors.push('simulate: ' + e.message);
+        findings.push(finding('simulation_unavailable', 'WARN', 'Simulation was requested (from supplied) but the RPC did not answer: ' + e.message, {}));
+      }));
+      if (decoded.kind === 'transfer' || decoded.kind === 'approve') {
+        jobs.push(intel.readErc20State(reader, tx.to, tx.from, decoded.kind === 'approve' ? decoded.args.spender : null).then((s) => { erc20State = s; }).catch((e) => enrichment.errors.push('erc20State: ' + e.message)));
+      }
+    }
+    await Promise.all(jobs);
+  } else {
+    enrichment.skipped = !reader ? 'no reader' : !intel.canCall(reader) ? 'reader does not support eth_call' : 'rpc unavailable';
+    for (const [addrLower, state] of states) {
+      addressInfo[addrLower] = { address: state.address, known: registry.lookupContract(tx.chainId, state.address), isContract: state.isContract, codeSize: state.codeSize, proxy: null, tiny: false, fresh: !state.isContract && state.txCount === 0 && BigInt(state.balance) === 0n, lookalikeOf: null };
+    }
+    if (decoded.kind === 'approve' || decoded.kind === 'transfer' || decoded.kind === 'approvalForAll') tokenMeta = registry.lookupToken(tx.chainId, tx.to);
+  }
+  for (const [addrLower, state] of states) {
+    if (!addressInfo[addrLower]) addressInfo[addrLower] = { address: state.address, known: registry.lookupContract(tx.chainId, state.address), isContract: state.isContract, codeSize: state.codeSize, proxy: null, tiny: false, fresh: false, lookalikeOf: null };
+  }
+
+  // ---------- Rules that depend on enrichment ----------
+  const spenderItems = needsChain.filter((n) => n.role === 'spender');
+  const unlimitedSpenders = new Set(findings.filter((f) => f.code === 'unlimited_approval' && f.spender).map((f) => f.spender.toLowerCase()));
+  for (const item of spenderItems) {
+    const info = addressInfo[item.address.toLowerCase()];
+    if (!info || !info.isContract) continue;
+    if (unlimitedSpenders.has(item.address.toLowerCase()) && !info.known) {
+      findings.push(finding('unknown_spender', 'WARN', 'Unlimited allowance to ' + item.address + ', which is a contract but not a recognised protocol' + (info.proxy && info.proxy.type.includes('upgradeable') ? ' and is an upgradeable proxy whose logic can change after you approve' : '') + (info.tiny ? ' and has only ' + info.codeSize + ' bytes of code' : '') + '.', { address: item.address, proxy: info.proxy, codeSize: info.codeSize, via: item.via || null }));
+    }
+  }
+  if (simulation.ran && simulation.reverted) {
+    findings.push(finding('simulation_reverted', 'WARN', 'eth_call from ' + tx.from + ' reverts: ' + simulation.revert.reason + '. The transaction would fail and burn gas.', { reason: simulation.revert.reason, selector: simulation.revert.selector, kind: simulation.revert.kind }));
+  }
+  if (erc20State && decoded.kind === 'transfer' && decoded.amountBig !== null && erc20State.balance !== null && BigInt(erc20State.balance) < decoded.amountBig) {
+    findings.push(finding('insufficient_balance', 'WARN', 'Sender balance ' + intel.formatAmount(erc20State.balance, tokenMeta) + ' is below the transfer amount ' + intel.formatAmount(decoded.amountBig, tokenMeta) + '.', { balance: erc20State.balance, amount: decoded.args.amount }));
   }
 
   // ---------- Agent-integrity layer (intent / context / runtime) ----------
@@ -273,17 +433,12 @@ async function analyze(input, deps) {
   let contextSources = null;
   if (contextAnalyzed) {
     try {
-      const ctx = contextAnalyzer.analyzeContext(tx.context, decoded, tx.value, {
-        env: deps.env,
-        sessionStore: deps.sessionStore,
-        now: deps.now,
-      });
+      const ctx = contextAnalyzer.analyzeContext(tx.context, decoded, tx.value, { env: deps.env, sessionStore: deps.sessionStore, now: deps.now });
       contextFindings = ctx.findings;
       intentAnalysis = ctx.intent_analysis;
       contextSignals = ctx.context_signals;
       contextSources = ctx.sources;
     } catch (err) {
-      // Fail-safe: a bug in the context layer must never silently produce ALLOW.
       const failed = finding('context_analysis_failed', 'WARN', 'Context analysis failed unexpectedly (' + (err && err.message ? err.message : String(err)) + '). Fail-safe: verdict is at least WARN.', { layer: 'context' });
       contextFindings = [failed];
       contextSignals = [{ code: failed.code, severity: failed.severity, message: failed.message }];
@@ -294,25 +449,58 @@ async function analyze(input, deps) {
   // ---------- Verdict ----------
   let verdict = 'ALLOW';
   for (const f of findings) if (SEVERITY[f.severity] > SEVERITY[verdict]) verdict = f.severity;
-
   const reasons = Array.from(new Set(findings.map((f) => f.code)));
   const riskScore = computeRiskScore(findings);
   const sessionRiskScore = computeRiskScore(contextFindings);
+
+  const chain = chainName(tx.chainId);
+  const summaryParts = { verdict, decoded, tx, chainName: chain, tokenMeta, addressInfo, findings, nested: nestedInfo };
+  let summary;
+  let recommendations;
+  let safeAlternative;
+  try {
+    summary = summaryBuilder.buildSummary(summaryParts);
+    recommendations = summaryBuilder.buildRecommendations(findings);
+    safeAlternative = summaryBuilder.buildSafeAlternative(summaryParts);
+  } catch (err) {
+    summary = 'Verdict ' + verdict + ': ' + reasons.join(', ');
+    recommendations = summaryBuilder.buildRecommendations(findings);
+    safeAlternative = null;
+    enrichment.errors.push('summary: ' + err.message);
+  }
+
+  const counterparties = {};
+  for (const [a, info] of Object.entries(addressInfo)) {
+    counterparties[info.address || a] = { known: info.known, isContract: info.isContract, proxy: info.proxy, codeSize: info.codeSize, tiny: info.tiny, fresh: info.fresh };
+  }
+
   return {
     verdict,
     reasons,
+    summary,
     details: {
       chainId: tx.chainId,
+      chain,
       to: tx.to,
+      from: tx.from,
       value: tx.value.toString(),
       selector: decoded.selector,
       function: decoded.function,
       callType: decoded.kind,
       decoded: decoded.args,
+      amount: decoded.amountBig !== null ? intel.formatAmount(decoded.amountBig, tokenMeta) : decoded.kind === 'native' ? intel.formatAmount(tx.value, { decimals: 18, symbol: registry.nativeSymbol(tx.chainId) }) : null,
+      token: tokenMeta,
+      counterparties,
+      nested_calls: nestedInfo ? { inner: nestedInfo.inner.map((i) => ({ via: i.via, selector: i.selector, function: i.function, kind: i.kind, args: i.args })), recipients: nestedInfo.recipients, permits: nestedInfo.permits, routerPlan: nestedInfo.routerPlan, truncated: nestedInfo.truncated } : null,
+      simulation,
+      erc20State,
       findings,
       addressChecks,
       rpc,
+      enrichment,
       risk_score: riskScore,
+      recommendations,
+      safe_alternative: safeAlternative,
       context_analyzed: contextAnalyzed,
       intent_analysis: intentAnalysis,
       context_signals: contextSignals,
@@ -328,10 +516,19 @@ const RULE_CATALOG = [
   { code: 'zero_address', severity: 'DENY', layer: 'transaction', description: 'Target, transfer recipient, spender or operator is the zero address or 0x...dEaD.' },
   { code: 'set_approval_for_all', severity: 'DENY', layer: 'transaction', description: 'setApprovalForAll(operator, true): full control over every token of the collection.' },
   { code: 'approval_to_eoa', severity: 'DENY', layer: 'transaction', description: 'approve / increaseAllowance / permit / setApprovalForAll to an address without contract code (a plain wallet).' },
-  { code: 'unlimited_approval', severity: 'WARN', layer: 'transaction', description: 'Approval amount is MAX_UINT256 or above 2^255 (effectively unlimited).' },
+  { code: 'address_poisoning', severity: 'DENY', layer: 'transaction', description: 'Recipient or spender shares the visible prefix and suffix of an address in context.known_addresses but is a different address.' },
+  { code: 'contract_lookalike', severity: 'DENY', layer: 'transaction', description: 'Address imitates a well-known contract or token from the built-in registry (same 4+4 hex characters, different address).' },
+  { code: 'permit_spender_mismatch', severity: 'DENY', layer: 'transaction', description: 'A Permit2 permit embedded in a Universal Router call grants allowance to a contract other than the router.' },
+  { code: 'permit2_pull_to_third_party', severity: 'DENY', layer: 'transaction', description: 'A Universal Router PERMIT2_TRANSFER_FROM sends your tokens to an address that is neither you nor the router.' },
+  { code: 'unlimited_approval', severity: 'WARN', layer: 'transaction', description: 'Approval amount is MAX_UINT256 or above 2^255 (effectively unlimited), including Permit2 permits embedded in router calls.' },
+  { code: 'unknown_spender', severity: 'WARN', layer: 'transaction', description: 'Unlimited allowance to a contract that is not in the known-protocol registry; notes upgradeable proxies and tiny contracts.' },
+  { code: 'router_output_to_third_party', severity: 'WARN', layer: 'transaction', description: 'A swap, sweep, unwrap or transfer step inside a router call sends output to an address that is neither you nor the router.' },
   { code: 'fresh_recipient', severity: 'WARN', layer: 'transaction', description: 'Recipient of an ERC-20/721/1155 or native transfer has nonce 0, zero balance and no code.' },
   { code: 'unknown_selector', severity: 'WARN', layer: 'transaction', description: 'Function selector is not recognised or calldata cannot be decoded.' },
   { code: 'calldata_to_eoa', severity: 'WARN', layer: 'transaction', description: 'Calldata is attached but the target has no contract code.' },
+  { code: 'simulation_reverted', severity: 'WARN', layer: 'simulation', description: 'eth_call from the supplied "from" reverts; the decoded revert reason is included.' },
+  { code: 'simulation_unavailable', severity: 'WARN', layer: 'simulation', description: 'Simulation was requested ("from" supplied) but the RPC failed.' },
+  { code: 'insufficient_balance', severity: 'WARN', layer: 'simulation', description: 'ERC-20 balance of "from" is below the transfer amount.' },
   { code: 'rpc_unavailable', severity: 'WARN', layer: 'transaction', description: 'On-chain checks could not run. Fail-safe: never ALLOW.' },
 ].concat(contextAnalyzer.CONTEXT_RULES);
 
