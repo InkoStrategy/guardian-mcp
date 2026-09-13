@@ -140,9 +140,18 @@ async function gate(req, res, body, opts) {
   };
 }
 
+/** Ask the OKX facilitator which schemes/networks it supports (admin diagnostics). */
+async function supported(opts) {
+  const server = await getServer(opts);
+  if (!server.ready) return { ready: false, reason: server.reason };
+  const res = await server.facilitator.getSupported();
+  const kinds = (res && res.kinds) || [];
+  return { ready: true, kinds, networks: Array.from(new Set(kinds.map((k) => k.network))), configuredNetwork: server.cfg.network, configuredNetworkSupported: kinds.some((k) => k.network === server.cfg.network && k.scheme === 'exact') };
+}
+
 function status(env) {
   const cfg = config(env);
   return { route: ROUTE, ready: cfg.ready, reason: cfg.reason, price: cfg.price, network: cfg.network, payTo: cfg.payTo ? cfg.payTo : null, facilitator: 'https://web3.okx.com/facilitator' };
 }
 
-module.exports = { gate, getServer, config, status, nodeAdapter, ROUTE };
+module.exports = { gate, getServer, config, status, supported, nodeAdapter, ROUTE };

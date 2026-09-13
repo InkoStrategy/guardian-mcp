@@ -182,6 +182,15 @@ module.exports = async function handler(req, res) {
       return send(res, 503, { ok: false, error: 'stats unavailable: ' + err.message });
     }
   }
+  if (method === 'GET' && apiPath === '/admin/premium') {
+    if (!isAdmin(req)) return send(res, 401, { ok: false, error: 'admin token required (X-Admin-Token)' });
+    try {
+      const sup = await premium.supported(module.exports.premiumOptions);
+      return send(res, 200, Object.assign({ ok: true, status: premium.status() }, sup));
+    } catch (err) {
+      return send(res, 502, { ok: false, status: premium.status(), error: 'facilitator check failed: ' + err.message });
+    }
+  }
   if ((method === 'GET' || method === 'POST') && apiPath === '/cron/seed') {
     if (!isCron(req) && !isAdmin(req)) return send(res, 401, { ok: false, error: 'CRON_SECRET bearer or admin token required' });
     try {
