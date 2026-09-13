@@ -6,10 +6,15 @@
 транзакции. Готов к публикации как A2MCP‑сервис на OKX.AI, поддерживает платежи x402 (по умолчанию выключены,
 сервис бесплатный).
 
-Восемь слоёв защиты, все детерминированные, без внешних API (только RPC):
+Тринадцать слоёв защиты, все детерминированные, без внешних API (только RPC и общее хранилище):
 
 | Слой | Что делает |
 |---|---|
+| **Shared threat registry** | Каждый `DENY`, выведенный из фактов цепочки и calldata, анонимно записывается в общий реестр: chainId, адрес, селектор, код правила, время. Другой агент, который обращается к тому же адресу или читает тот же фишинговый домен, получает `flagged_address` / `known_drainer` / `known_phishing_domain`, даже если формально всё «чисто». Сетевой эффект: чем больше агентов, тем сильнее защита |
+| **Session health** | Скользящий риск‑профиль по `session_id`: сколько действий, сколько WARN/DENY, накопленный риск. 3+ WARN или 2+ DENY за час → `session_compromised_likely`, сессия блокируется до перезапуска. Серия мелких подозрительных действий становится видимой |
+| **Owner alerts** | При `DENY` (или `WARN`, если попросили) POST на `context.alert_webhook`: «Твой агент пытался сделать X, заблокировано по Y». HMAC‑подпись, SSRF‑защита. Владелец видит проблему сразу, а не из логов через сутки |
+| **Reputation** | По каждому контрагенту: тип, активность по nonce, уровень баланса, известный протокол, прокси, отчёты из общего реестра, скор 0–100 и уровень trusted / neutral / low / hostile. Честно указано, чего один RPC‑запрос не даёт |
+| **Differential** | Сравнение с эталонной транзакцией от доверенного источника (`context.reference_tx`): изменился ли получатель, spender, сумма, появился ли approve или Permit2 внутри, изменился ли план роутера |
 | **Transaction firewall** | Безлимитные approve, approve на кошелёк, `setApprovalForAll`, нулевой адрес, свежий получатель, неизвестный селектор, calldata на кошелёк |
 | **Nested calls** | Разбирает `multicall`, Uniswap Universal Router `execute` (план команд), `sweepToken` / `unwrapWETH9` / `exactInput*` / V2‑свопы. Видит approve, спрятанный в multicall, Permit2‑permit на чужой spender и вывод результата свопа третьему лицу |
 | **Counterparty intel** | Реестр 48 канонических контрактов и 29 токенов по 9 сетям, on‑chain `symbol/decimals/name`, определение EIP‑1967 / EIP‑1167 прокси и «пустых» контрактов, безлимитный approve на нераспознанный контракт |
@@ -43,6 +48,14 @@
 | `intent_match`      | boolean   | Собственная оценка агента. `false` даёт `intent_mismatch` |
 | `known_addresses`   | string[]  | Адресная книга агента: ранее проверенные адреса. Включает детектор address poisoning. До 500 |
 | `expected_amount`   | string    | Сумма операции в человеческих единицах (`"150.5"`). Для безлимитного approve сервис вернёт готовый calldata ограниченного approve в `safe_alternative` |
+| `alert_webhook`     | string    | Публичный https‑URL владельца. При `DENY` туда уходит JSON‑событие с человеческим сообщением. Приватные хосты, http и URL с учётными данными отклоняются |
+| `alert_on`          | string    | `deny` (по умолчанию) или `warn` |
+| `share_threat_intel`| boolean   | `false` отключает запись в общий реестр угроз для этого запроса (чтение остаётся) |
+| `reference_tx`      | object    | Эталон `{ to, data?, value?, chainId? }` от доверенного источника. Включает дифференциальную проверку |
+
+Новые поля в `details`: `threat_intel` (записи реестра по контрагентам и доменам, что было записано), `session_health`
+(профиль сессии), `alert` (результат доставки), `diff` (список изменений относительно эталона), `shared_state`
+(бэкенд хранилища и ошибки), `counterparties[*].reputation`.
 
 Ответ:
 
@@ -92,10 +105,20 @@
 Для нераспознанных typed data ищутся поля‑полномочия (`spender`, `operator`, `delegate`, `recipient`…) с чужими
 адресами. Spender и `verifyingContract` проверяются on‑chain (кошелёк, прокси, реестр, подделка адреса).
 
+### `GET /threats/stats`, `GET /threats/{chainId}/{address}`, `GET /threats/domain/{host}`
+
+Статистика общего реестра; запись по адресу (число отчётов, независимых репортёров, правила, селекторы, первое и
+последнее появление, серьёзность по текущим порогам); запись по домену.
+
+### `GET /session/{session_id}`
+
+Профиль сессии: статус `healthy` / `elevated` / `compromised_likely`, счётчики за окно и за всё время,
+накопленный риск, топ правил, последние события. `404`, если сессия не найдена или истекла.
+
 ### `GET /health`, `GET /rules`, `GET /trusted-domains`
 
-Информация о сервисе; полный каталог из 41 правила с серьёзностью, слоем и описанием; текущий белый список
-доменов и настройки.
+Информация о сервисе, включая бэкенд общего хранилища и его персистентность; полный каталог из 49 правил
+с серьёзностью, слоем и описанием; текущий белый список доменов и настройки.
 
 ## Правила
 
@@ -142,6 +165,26 @@
 | `unrecognized_authorization`, `authority_is_eoa` | WARN | Нераспознанные typed data с полями‑полномочиями |
 | `domain_chain_mismatch` | WARN | `domain.chainId` не совпадает с запрошенным |
 
+### Общий реестр, сессия, эталон
+
+| Код | Вердикт | Условие |
+|---|---|---|
+| `known_drainer` | DENY | Spender или целевой контракт набрал ≥ `THREAT_DENY_REPORTS` (3) отчётов от ≥ `THREAT_DENY_REPORTERS` (2) независимых репортёров. Для роли получателя перевода серьёзность ограничена `WARN`, чтобы нельзя было заблокировать чужие переводы фальшивыми отчётами |
+| `flagged_address` | WARN | Адрес имеет ≥ `THREAT_WARN_REPORTS` (1) отчёт в общем реестре |
+| `known_phishing_domain` | DENY | Домен из `recent_sources` (или домен SIWE) ранее был отмечен другими агентами как фишинг |
+| `session_compromised_likely` | DENY | За `SESSION_TTL_MS`: ≥ `SESSION_WARN_THRESHOLD` (3) WARN, или ≥ `SESSION_DENY_THRESHOLD` (2) DENY, или накопленный риск ≥ `SESSION_RISK_THRESHOLD` (150) |
+| `session_risk_elevated` | WARN | 2+ WARN, 1+ DENY или риск ≥ 60 за окно |
+| `template_critical_deviation` | DENY | Относительно `reference_tx`: сменились target, функция, получатель, spender, operator; ограниченный approve стал безлимитным; появился нативный value; внутри появился approve/permit или новый получатель; план роутера получил денежные команды |
+| `template_deviation` | WARN | Сумма или value выросли; план роутера отличается в неденежных командах |
+| `shared_state_unavailable` | WARN | Настроено персистентное хранилище, но оно не ответило |
+
+В общий реестр записываются только правила, выведенные из фактов цепочки и calldata: `approval_to_eoa`,
+`contract_lookalike`, `permit_spender_mismatch`, `permit2_pull_to_third_party`, `permit2_domain_mismatch`,
+`verifying_contract_is_eoa`, а из доменных паттернов только имперсонация бренда, тайпосквоттинг и punycode.
+Правила, зависящие от данных клиента (`address_poisoning`, цели агента, TLD‑эвристики), не записываются, чтобы
+клиент не мог отравить реестр. Адреса из встроенного реестра контрактов не записываются никогда. От клиента
+хранится только суточно‑солёный усечённый отпечаток для подсчёта независимых репортёров.
+
 ### Целостность агента (только при наличии `context`)
 
 | Код | Вердикт | Условие |
@@ -156,6 +199,23 @@
 
 Вердикт = максимальная серьёзность среди сработавших правил. **Риск‑скор** (`risk_score`, 0–100, не влияет на
 вердикт): +15 за `WARN`, +40 за `DENY`, +20 за `intent_mismatch`, +50 за `injection_pattern`, кэп 100.
+
+## Общее хранилище (обязательно для сетевого эффекта)
+
+Реестр угроз и профили сессий живут в key‑value хранилище. Без настройки используется память инстанса
+функции: всё работает, но данные не разделяются между инстансами и не переживают холодный старт. `GET /health`
+показывает `sharedState.persistent`.
+
+Для продакшена подключите Upstash Redis (бесплатный тариф достаточен):
+
+1. Vercel → проект `guardian-mcp` → вкладка **Storage** → **Create Database** → **Upstash Redis** (или
+   [Marketplace](https://vercel.com/marketplace/upstash)) → регион ближе к функции → **Create** → **Connect Project**.
+2. Vercel сам добавит переменные `UPSTASH_REDIS_REST_URL` и `UPSTASH_REDIS_REST_TOKEN` (или `KV_REST_API_URL` /
+   `KV_REST_API_TOKEN`). Сервис понимает обе пары.
+3. Передеплойте (`vercel --prod`). `GET /health` должен показать `"backend": "upstash", "persistent": true`.
+
+Работа идёт через REST API Upstash без SDK: `HINCRBY`, `SADD`, `ZADD`, `RPUSH` в пайплайнах, все операции
+атомарны на уровне команды. Таймаут `STORE_TIMEOUT_MS` (2500 мс). Записи реестра живут `THREAT_TTL_DAYS` (90).
 
 ## Реестр контрактов и токенов
 
@@ -176,12 +236,19 @@ guardian-mcp/
 ├── src/registry.js               # Канонические контракты и токены по сетям, детектор look-alike адресов
 ├── src/signature.js              # EIP-712 / personal_sign / eth_sign: permit, Permit2, Seaport, SIWE, blind signing
 ├── src/summary.js                # Человеческое резюме, рекомендации, safe_alternative
+├── src/store.js                  # Redis-подобное хранилище: Upstash / Vercel KV через REST или память
+├── src/threat-registry.js        # Общий реестр угроз (запись, поиск, пороги, отпечатки) и репутация адресов
+├── src/session-health.js         # Скользящий риск-профиль сессии
+├── src/alerts.js                 # Вебхук владельцу: SSRF-защита, HMAC, таймаут
+├── src/diff.js                   # Дифференциальная проверка против эталона
+├── src/pipeline.js               # Общий пост-процессор: threat lookup, сессия, запись, алерт
 ├── src/context-analyzer.js       # Intent / context / runtime сигналы, фишинг-паттерны, сессионное хранилище
 ├── src/rpc.js                    # RPC: таймауты, фолбэки по 9 сетям, бюджет времени, revert ≠ сбой
 ├── src/x402.js                   # Платёжный шлюз x402 v2 (exact); выключен при X402_PRICE=0
 ├── test/analyzer.test.js         # 15 тестов слоя транзакции
 ├── test/context-analyzer.test.js # 18 тестов слоя целостности агента
 ├── test/intel.test.js            # 18 тестов реестра, вложенных вызовов, симуляции, подписей, совместимости
+├── test/shared-layers.test.js    # 14 тестов общего реестра, сессии, алертов, репутации, дифф-проверки, HTTP
 ├── vercel.json, package.json, .env.example, .gitignore
 ```
 
@@ -230,6 +297,10 @@ Vercel → проект → **Settings → Environment Variables**. Полный
 - `SESSION_TTL_MS` — время жизни сессионных сигналов (1 час).
 - `LARGE_AMOUNT_RAW` — порог «крупной суммы» в сырых единицах (10^18).
 - `PERMIT_MAX_DEADLINE_DAYS` — допустимый срок permit / ордера (30 дней).
+- `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (или `KV_REST_API_URL`, `KV_REST_API_TOKEN`) — общее хранилище.
+- `THREAT_WARN_REPORTS`, `THREAT_DENY_REPORTS`, `THREAT_DENY_REPORTERS`, `THREAT_TTL_DAYS`, `THREAT_SALT` — пороги и соль реестра.
+- `SESSION_WARN_THRESHOLD`, `SESSION_DENY_THRESHOLD`, `SESSION_RISK_THRESHOLD` — пороги сессии.
+- `ALERT_SIGNING_SECRET` — HMAC‑подпись вебхуков (заголовок `X-Guardian-Signature: sha256=…`), `ALERT_TIMEOUT_MS` (2500).
 
 ## Включение платежей x402
 
@@ -264,6 +335,16 @@ curl -s -X POST https://guardian-mcp-rho.vercel.app/analyze -H "Content-Type: ap
 ```bash
 curl -s -X POST https://guardian-mcp-rho.vercel.app/analyze -H "Content-Type: application/json" -d '{"to":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","data":"0xa9059cbb000000000000000000000000abcdffffffffffffffffffffffffffffffff123400000000000000000000000000000000000000000000000000000000000f4240","from":"0x1111111111111111111111111111111111111111","context":{"agent_goal":"transfer","known_addresses":["0xabcd000000000000000000000000000000001234"]}}'
 ```
+
+Сессия, алерт владельцу и эталон одним запросом: агент следует шаблону перевода другу, но подставил другого
+получателя (ожидается `DENY`, `template_critical_deviation`, вебхук получит событие `guardian.deny`):
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/analyze -H "Content-Type: application/json" -d '{"to":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","data":"0xa9059cbb000000000000000000000000999999999999999999999999999999999999999900000000000000000000000000000000000000000000000000000000000003e8","context":{"session_id":"agent-42","alert_webhook":"https://hooks.example.com/guardian","reference_tx":{"to":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","data":"0xa9059cbb000000000000000000000000333333333333333333333333333333333333333300000000000000000000000000000000000000000000000000000000000003e8"}}}'
+```
+
+Затем `GET /session/agent-42` покажет профиль сессии, а `GET /threats/1/0x9999…9999` останется пустым: смена
+получателя это правило, зависящее от данных клиента, и в общий реестр оно не пишется.
 
 Подпись: слепая подпись 32‑байтового хэша (ожидается `DENY`, `blind_hash_signing`):
 

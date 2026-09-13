@@ -12,6 +12,7 @@ const registry = require('./registry');
 const { createChainReader, RpcError, supportedChainIds } = require('./rpc');
 const { inspectContract, formatAmount, getTokenMeta } = require('./intel');
 const contextAnalyzer = require('./context-analyzer');
+const pipeline = require('./pipeline');
 const { detectPhishingPattern } = contextAnalyzer;
 
 const UINT160_MAX = 2n ** 160n - 1n;
@@ -342,6 +343,20 @@ async function analyzeSignature(input, deps) {
     }
   }
 
+  // ---- shared threat intelligence ----
+  const threatTargets = [];
+  if (details.spender && details.spender.address) threatTargets.push({ role: 'spender', address: details.spender.address });
+  if (details.domain && details.domain.verifyingContract && isAddress(details.domain.verifyingContract)) threatTargets.push({ role: 'verifyingContract', address: details.domain.verifyingContract });
+  const sourceDomains = [];
+  for (const s of (req.context && req.context.recent_sources) || []) {
+    const parsed = contextAnalyzer.extractDomain(s);
+    if (parsed && parsed.domain && parsed.kind === 'url') sourceDomains.push(parsed.domain);
+  }
+  if (details.siwe && details.siwe.domain) sourceDomains.push(details.siwe.domain.toLowerCase());
+  const threatIntel = await pipeline.threatLookup({ store: deps.store, env, chainId: req.chainId, addresses: threatTargets, domains: sourceDomains });
+  for (const f of threatIntel.findings) findings.push(f);
+  details.threat_intel = { backend: threatIntel.intel.backend, persistent: threatIntel.intel.persistent, error: threatIntel.error, addresses: threatIntel.intel.addresses, domains: threatIntel.intel.domains };
+
   // ---- agent-integrity layer ----
   let intentAnalysis = null;
   let contextSignals = [];
@@ -358,20 +373,27 @@ async function analyzeSignature(input, deps) {
     for (const f of contextFindings) findings.push(f);
   }
 
-  const SEV = { ALLOW: 0, WARN: 1, DENY: 2 };
-  let verdict = 'ALLOW';
-  for (const f of findings) if (SEV[f.severity] > SEV[verdict]) verdict = f.severity;
   const { computeRiskScore } = require('./analyzer');
   const { buildRecommendations } = require('./summary');
-  const reasons = Array.from(new Set(findings.map((f) => f.code)));
-  const summary = summarize(req, details, verdict, reasons);
+  const fin = await pipeline.finalize({
+    store: deps.store, env, now: deps.nowMs, reporter: deps.reporter, sendAlert: deps.sendAlert,
+    kind: 'signature', chainId: req.chainId, to: (details.domain && details.domain.verifyingContract) || null, selector: details.classification, context: req.context,
+    findings, computeRiskScore,
+    buildSummary: (verdict, reasons) => summarize(req, details, verdict, reasons),
+    actionText: 'sign ' + (details.classification || req.type).replace(/_/g, ' '),
+  });
+  const { verdict, reasons, summary } = fin;
+  details.threat_intel.report = fin.threat_report;
   return {
     verdict,
     reasons,
     summary,
     details: Object.assign(details, {
       findings,
-      risk_score: computeRiskScore(findings),
+      risk_score: fin.risk_score,
+      session_health: fin.session_health,
+      alert: fin.alert,
+      shared_state: fin.shared_state,
       recommendations: buildRecommendations(findings).concat(SIGNATURE_RECOMMENDATIONS.filter((r) => reasons.includes(r.code))),
       context_analyzed: req.context !== null,
       intent_analysis: intentAnalysis,

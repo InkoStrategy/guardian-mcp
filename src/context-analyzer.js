@@ -418,6 +418,33 @@ function validateContext(context) {
     if (!/^[0-9]+(\.[0-9]+)?$/.test(s) || s.length > 40) throw new Error('"context.expected_amount" must be a decimal number in human token units, e.g. "1500.25"');
     out.expected_amount = s;
   }
+  if (context.alert_webhook !== undefined && context.alert_webhook !== null) {
+    const v = require('./alerts').validateWebhook(context.alert_webhook);
+    if (!v.ok) throw new Error(v.error);
+    out.alert_webhook = v.url;
+  }
+  if (context.alert_on !== undefined && context.alert_on !== null) {
+    const s = String(context.alert_on).toLowerCase();
+    if (!['deny', 'warn'].includes(s)) throw new Error('"context.alert_on" must be "deny" (default) or "warn"');
+    out.alert_on = s;
+  }
+  if (context.share_threat_intel !== undefined && context.share_threat_intel !== null) {
+    if (typeof context.share_threat_intel !== 'boolean') throw new Error('"context.share_threat_intel" must be a boolean');
+    out.share_threat_intel = context.share_threat_intel;
+  }
+  if (context.reference_tx !== undefined && context.reference_tx !== null) {
+    const r = context.reference_tx;
+    if (typeof r !== 'object' || Array.isArray(r)) throw new Error('"context.reference_tx" must be an object { to, data?, value?, chainId? }');
+    if (typeof r.to !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(r.to)) throw new Error('"context.reference_tx.to" must be an EVM address');
+    const ref = { to: r.to };
+    if (r.data !== undefined && r.data !== null) {
+      if (typeof r.data !== 'string' || !/^(0x)?([0-9a-fA-F]{2})*$/.test(r.data) || r.data.length > 2 + 2 * 128 * 1024) throw new Error('"context.reference_tx.data" must be a hex string');
+      ref.data = r.data.startsWith('0x') ? r.data : '0x' + r.data;
+    }
+    if (r.value !== undefined && r.value !== null) ref.value = r.value;
+    if (r.chainId !== undefined && r.chainId !== null) ref.chainId = r.chainId;
+    out.reference_tx = ref;
+  }
   return out;
 }
 

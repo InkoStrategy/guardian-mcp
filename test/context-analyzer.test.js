@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const { Interface, MaxUint256 } = require('ethers');
 const { analyze, computeRiskScore, ValidationError, RULES, RULE_CATALOG } = require('../src/analyzer');
 const ctx = require('../src/context-analyzer');
+const { createMemoryStore } = require('../src/store');
 
 const erc20 = new Interface([
   'function approve(address spender, uint256 amount)',
@@ -38,7 +39,7 @@ const SWAP = '0x7ff36ab5' + '00'.repeat(32);
 
 /** Fresh env + fresh session store per test so tests never share state. */
 function deps(extra) {
-  return Object.assign({ reader, env: {}, sessionStore: ctx.createSessionStore({ ttlMs: 3600000 }) }, extra || {});
+  return Object.assign({ reader, env: {}, store: createMemoryStore(), sessionStore: ctx.createSessionStore({ ttlMs: 3600000 }) }, extra || {});
 }
 
 // 1. Backward compatibility: no context -> old behaviour, context_analyzed=false

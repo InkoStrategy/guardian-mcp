@@ -7,6 +7,10 @@ const registry = require('./registry');
 const intel = require('./intel');
 const nested = require('./nested');
 const summaryBuilder = require('./summary');
+const pipeline = require('./pipeline');
+const threatRegistry = require('./threat-registry');
+const sessionHealth = require('./session-health');
+const diff = require('./diff');
 
 const abi = AbiCoder.defaultAbiCoder();
 
@@ -425,6 +429,47 @@ async function analyze(input, deps) {
     findings.push(finding('insufficient_balance', 'WARN', 'Sender balance ' + intel.formatAmount(erc20State.balance, tokenMeta) + ' is below the transfer amount ' + intel.formatAmount(decoded.amountBig, tokenMeta) + '.', { balance: erc20State.balance, amount: decoded.args.amount }));
   }
 
+  // ---------- Shared threat intelligence + reputation ----------
+  const threatTargets = needsChain.filter((n) => n.role !== 'target').map((n) => ({ role: n.role, address: n.address }));
+  if (decoded.kind !== 'native' && decoded.kind !== 'approve' && decoded.kind !== 'transfer' && decoded.kind !== 'approvalForAll') threatTargets.push({ role: 'target', address: tx.to });
+  const sourceDomains = [];
+  for (const s of (tx.context && tx.context.recent_sources) || []) {
+    const parsed = contextAnalyzer.extractDomain(s);
+    if (parsed && parsed.domain && parsed.kind === 'url') sourceDomains.push(parsed.domain);
+  }
+  const threatIntel = await pipeline.threatLookup({ store: deps.store, env: deps.env, chainId: tx.chainId, addresses: threatTargets, domains: sourceDomains });
+  for (const f of threatIntel.findings) findings.push(f);
+  for (const [addrLower, info] of Object.entries(addressInfo)) {
+    const state = states.get(addrLower);
+    if (!state) continue;
+    info.reputation = threatRegistry.reputation({ state, known: info.known, threat: threatIntel.intel.addresses[addrLower] || null, proxy: info.proxy, chainId: tx.chainId });
+  }
+
+  // ---------- Differential check against a trusted template ----------
+  let diffResult = null;
+  if (tx.context && tx.context.reference_tx) {
+    try {
+      const ref = tx.context.reference_tx;
+      const refData = (ref.data || '0x').toLowerCase();
+      const refDecoded = decodeCalldata(refData);
+      let refNested = null;
+      if (refDecoded.kind === 'known') {
+        refNested = nested.decodeNested(getAddress(ref.to), refData);
+        for (const inner of refNested.inner) inner.kind = decodeCalldata(inner.data).kind, inner.args = decodeCalldata(inner.data).args;
+        for (const r of refNested.recipients) r.thirdParty = !nested.isSelfRecipient(r.address, { to: getAddress(ref.to), from: tx.from });
+      }
+      diffResult = diff.compare(
+        { to: getAddress(ref.to), chainId: ref.chainId === undefined ? tx.chainId : parseChainId(ref.chainId), value: parseValue(ref.value), decoded: refDecoded, nested: refNested },
+        { to: tx.to, chainId: tx.chainId, value: tx.value, decoded, nested: nestedInfo },
+      );
+      const df = diff.toFinding(diffResult);
+      if (df) findings.push(df);
+    } catch (err) {
+      diffResult = { error: err.message };
+      findings.push(finding('template_deviation', 'WARN', 'The reference template could not be compared (' + err.message + '); treat the deviation check as failed.', { layer: 'differential' }));
+    }
+  }
+
   // ---------- Agent-integrity layer (intent / context / runtime) ----------
   const contextAnalyzed = tx.context !== null;
   let intentAnalysis = null;
@@ -446,32 +491,40 @@ async function analyze(input, deps) {
     for (const f of contextFindings) findings.push(f);
   }
 
-  // ---------- Verdict ----------
-  let verdict = 'ALLOW';
-  for (const f of findings) if (SEVERITY[f.severity] > SEVERITY[verdict]) verdict = f.severity;
-  const reasons = Array.from(new Set(findings.map((f) => f.code)));
-  const riskScore = computeRiskScore(findings);
+  // ---------- Verdict, session health, threat report, alert ----------
+  const chain = chainName(tx.chainId);
+  const buildSummary = (verdict) => {
+    try {
+      return summaryBuilder.buildSummary({ verdict, decoded, tx, chainName: chain, tokenMeta, addressInfo, findings, nested: nestedInfo });
+    } catch (err) {
+      enrichment.errors.push('summary: ' + err.message);
+      return 'Verdict ' + verdict + ': ' + Array.from(new Set(findings.map((f) => f.code))).join(', ');
+    }
+  };
+  const actionText = summaryBuilder.actionText ? summaryBuilder.actionText({ decoded, tx, tokenMeta, addressInfo }) : null;
+  const fin = await pipeline.finalize({
+    store: deps.store, env: deps.env, now: deps.now, reporter: deps.reporter, sendAlert: deps.sendAlert,
+    kind: 'transaction', chainId: tx.chainId, to: tx.to, selector: decoded.selector, context: tx.context,
+    findings, computeRiskScore, buildSummary, actionText,
+  });
+  const { verdict, reasons, summary } = fin;
+  const riskScore = fin.risk_score;
   const sessionRiskScore = computeRiskScore(contextFindings);
 
-  const chain = chainName(tx.chainId);
-  const summaryParts = { verdict, decoded, tx, chainName: chain, tokenMeta, addressInfo, findings, nested: nestedInfo };
-  let summary;
   let recommendations;
   let safeAlternative;
   try {
-    summary = summaryBuilder.buildSummary(summaryParts);
     recommendations = summaryBuilder.buildRecommendations(findings);
-    safeAlternative = summaryBuilder.buildSafeAlternative(summaryParts);
+    safeAlternative = summaryBuilder.buildSafeAlternative({ verdict, decoded, tx, tokenMeta, findings });
   } catch (err) {
-    summary = 'Verdict ' + verdict + ': ' + reasons.join(', ');
-    recommendations = summaryBuilder.buildRecommendations(findings);
+    recommendations = [];
     safeAlternative = null;
-    enrichment.errors.push('summary: ' + err.message);
+    enrichment.errors.push('recommendations: ' + err.message);
   }
 
   const counterparties = {};
   for (const [a, info] of Object.entries(addressInfo)) {
-    counterparties[info.address || a] = { known: info.known, isContract: info.isContract, proxy: info.proxy, codeSize: info.codeSize, tiny: info.tiny, fresh: info.fresh };
+    counterparties[info.address || a] = { known: info.known, isContract: info.isContract, proxy: info.proxy, codeSize: info.codeSize, tiny: info.tiny, fresh: info.fresh, reputation: info.reputation || null, threat: threatIntel.intel.addresses[a] || null };
   }
 
   return {
@@ -501,6 +554,11 @@ async function analyze(input, deps) {
       risk_score: riskScore,
       recommendations,
       safe_alternative: safeAlternative,
+      threat_intel: { backend: threatIntel.intel.backend, persistent: threatIntel.intel.persistent, error: threatIntel.error, addresses: threatIntel.intel.addresses, domains: threatIntel.intel.domains, report: fin.threat_report },
+      session_health: fin.session_health,
+      alert: fin.alert,
+      shared_state: fin.shared_state,
+      diff: diffResult,
       context_analyzed: contextAnalyzed,
       intent_analysis: intentAnalysis,
       context_signals: contextSignals,
@@ -530,7 +588,7 @@ const RULE_CATALOG = [
   { code: 'simulation_unavailable', severity: 'WARN', layer: 'simulation', description: 'Simulation was requested ("from" supplied) but the RPC failed.' },
   { code: 'insufficient_balance', severity: 'WARN', layer: 'simulation', description: 'ERC-20 balance of "from" is below the transfer amount.' },
   { code: 'rpc_unavailable', severity: 'WARN', layer: 'transaction', description: 'On-chain checks could not run. Fail-safe: never ALLOW.' },
-].concat(contextAnalyzer.CONTEXT_RULES);
+].concat(contextAnalyzer.CONTEXT_RULES, threatRegistry.THREAT_RULES.filter((r) => r.code !== 'threat_intel_unavailable'), sessionHealth.SESSION_RULES, diff.DIFF_RULES, pipeline.PIPELINE_RULES);
 
 module.exports = {
   analyze,

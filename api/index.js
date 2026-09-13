@@ -5,7 +5,11 @@ const { supportedChainIds, chainName } = require('../src/rpc');
 const { getTrustedDomains, getSessionTtlMs, getLargeAmountRaw } = require('../src/context-analyzer');
 const { analyzeSignature, SIGNATURE_RULES } = require('../src/signature');
 const registry = require('../src/registry');
+const threat = require('../src/threat-registry');
+const sessionHealth = require('../src/session-health');
+const { getStore } = require('../src/store');
 const x402 = require('../src/x402');
+const crypto = require('crypto');
 
 const ALL_RULES = RULE_CATALOG.concat(SIGNATURE_RULES);
 const pkg = require('../package.json');
@@ -52,8 +56,15 @@ function resourceUrl(req) {
   return proto + '://' + host + path;
 }
 
+/** Anonymous reporter identity for the shared registry: salted + truncated hash of the client IP. */
+function reporterOf(req) {
+  const ip = ((req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || (req.socket && req.socket.remoteAddress) || '') + '').split(',')[0].trim();
+  return crypto.createHash('sha256').update((process.env.THREAT_SALT || 'guardian') + '|' + ip).digest('hex').slice(0, 24);
+}
+
 function info(req) {
   const cfg = x402.readConfig();
+  const store = getStore();
   return {
     ok: true,
     service: 'Guardian MCP',
@@ -85,11 +96,12 @@ function info(req) {
       path: '/analyze-signature',
       body: { type: 'eip712 | personal_sign | eth_sign', chainId: 1, from: '0x...', typedData: '{types, primaryType, domain, message} for eip712', message: 'text or 0x-hex for personal_sign', context: '(same as /analyze)' },
     },
-    layers: ['transaction', 'nested-calls', 'counterparty-intel', 'simulation', 'signature', 'intent', 'context', 'runtime'],
+    layers: ['transaction', 'nested-calls', 'counterparty-intel', 'reputation', 'simulation', 'signature', 'shared-threat-registry', 'session-health', 'owner-alerts', 'differential', 'intent', 'context', 'runtime'],
+    sharedState: { backend: store.kind, persistent: store.persistent, note: store.persistent ? 'Shared threat registry and session profiles are persisted across all instances.' : 'No persistent store configured (set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN or KV_REST_API_*); registry and sessions live in the memory of a single warm instance.' },
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}' },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
       ? { protocol: 'x402', x402Version: x402.X402_VERSION, price: cfg.price, asset: cfg.asset, network: cfg.network }
@@ -118,6 +130,50 @@ module.exports = async function handler(req, res) {
       verdictPolicy: 'verdict = highest severity among triggered rules; risk_score = 15 per WARN + 40 per DENY + 20 for intent_mismatch + 50 for injection_pattern, capped at 100',
       rules: ALL_RULES,
     });
+  }
+  const apiPath = path.replace(/^\/api(?=\/)/, '');
+  if (method === 'GET' && apiPath === '/threats/stats') {
+    try {
+      return send(res, 200, Object.assign({ ok: true }, await threat.stats(getStore())));
+    } catch (err) {
+      return send(res, 503, { ok: false, error: 'threat store unavailable: ' + err.message });
+    }
+  }
+  let m = method === 'GET' && apiPath.match(/^\/threats\/domain\/([a-z0-9.-]{1,253})$/i);
+  if (m) {
+    try {
+      const store = getStore();
+      const host = decodeURIComponent(m[1]).toLowerCase();
+      const r = await threat.lookup(store, 0, [], [host]);
+      const rec = r.domains[host];
+      return send(res, 200, { ok: true, domain: host, flagged: Boolean(rec), record: rec, severity: threat.classify(rec, threat.cfg()), backend: store.kind, persistent: store.persistent });
+    } catch (err) {
+      return send(res, 503, { ok: false, error: 'threat store unavailable: ' + err.message });
+    }
+  }
+  m = method === 'GET' && apiPath.match(/^\/threats\/(\d{1,10})\/(0x[0-9a-fA-F]{40})$/);
+  if (m) {
+    try {
+      const store = getStore();
+      const chainId = Number(m[1]);
+      const address = m[2].toLowerCase();
+      const r = await threat.lookup(store, chainId, [address], []);
+      const rec = r.addresses[address];
+      return send(res, 200, { ok: true, chainId, address, flagged: Boolean(rec), severity: threat.classify(rec, threat.cfg()), record: rec, known: registry.lookupContract(chainId, address) || registry.lookupToken(chainId, address) || null, backend: store.kind, persistent: store.persistent });
+    } catch (err) {
+      return send(res, 503, { ok: false, error: 'threat store unavailable: ' + err.message });
+    }
+  }
+  m = method === 'GET' && apiPath.match(/^\/session\/([A-Za-z0-9_.:@+-]{1,128})$/);
+  if (m) {
+    try {
+      const store = getStore();
+      const p = await sessionHealth.profile(store, decodeURIComponent(m[1]));
+      if (!p) return send(res, 404, { ok: false, error: 'session not found (or expired)', backend: store.kind, persistent: store.persistent });
+      return send(res, 200, Object.assign({ ok: true, session_id: decodeURIComponent(m[1]), backend: store.kind, persistent: store.persistent }, p));
+    } catch (err) {
+      return send(res, 503, { ok: false, error: 'session store unavailable: ' + err.message });
+    }
   }
   if (method === 'GET' && (path === '/trusted-domains' || path === '/api/trusted-domains')) {
     const trusted = getTrustedDomains();
@@ -158,7 +214,8 @@ module.exports = async function handler(req, res) {
 
   let result;
   try {
-    result = isSignature ? await analyzeSignature(body) : await analyze(body);
+    const deps = { reporter: reporterOf(req) };
+    result = isSignature ? await analyzeSignature(body, deps) : await analyze(body, deps);
   } catch (err) {
     if (err instanceof ValidationError || (err && err.name === 'ValidationError')) return send(res, 400, { error: err.message });
     console.error('analyze failed', err);
