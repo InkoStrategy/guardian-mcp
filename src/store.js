@@ -244,9 +244,9 @@ function createMemoryStore() {
 
 function createUpstashStore(url, token) {
   const base = url.replace(/\/+$/, '');
-  async function post(path, body) {
+  async function post(path, body, timeoutMs) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), STORE_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), timeoutMs || STORE_TIMEOUT_MS);
     try {
       const res = await fetch(base + path, {
         method: 'POST',
@@ -269,8 +269,9 @@ function createUpstashStore(url, token) {
       if (json.error) throw new Error('store: ' + json.error);
       return json.result;
     },
-    async pipeline(commands) {
-      const json = await post('/pipeline', commands.map((c) => c.map(String)));
+    /** @param {object} [opts] { timeoutMs } for bulk operations such as seeding */
+    async pipeline(commands, opts) {
+      const json = await post('/pipeline', commands.map((c) => c.map(String)), opts && opts.timeoutMs);
       return json.map((r) => {
         if (r.error) throw new Error('store: ' + r.error);
         return r.result;

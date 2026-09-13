@@ -26,7 +26,9 @@ const SOURCES = {
 };
 
 const BATCH = 1000;
+const PIPELINE_BATCHES = 10;
 const FETCH_TIMEOUT_MS = 45000;
+const BULK_TIMEOUT_MS = Number.parseInt(process.env.SEED_STORE_TIMEOUT_MS || '30000', 10);
 const KEY_ADDR = 'seed:addresses';
 const KEY_DOM = 'seed:domains';
 const KEY_META = 'seed:meta';
@@ -73,22 +75,25 @@ async function applySeed(store, lists, opts) {
   const tmpD = KEY_DOM + ':new';
   await store.pipeline([['DEL', tmpA], ['DEL', tmpD]]);
   let commands = 0;
-  for (let i = 0; i < lists.addresses.length; i += BATCH) {
-    await store.command('SADD', tmpA, ...lists.addresses.slice(i, i + BATCH));
-    commands += 1;
+  const bulk = { timeoutMs: BULK_TIMEOUT_MS };
+  const addrBatches = [];
+  for (let i = 0; i < lists.addresses.length; i += BATCH) addrBatches.push(['SADD', tmpA, ...lists.addresses.slice(i, i + BATCH)]);
+  for (let i = 0; i < addrBatches.length; i += PIPELINE_BATCHES) {
+    await store.pipeline(addrBatches.slice(i, i + PIPELINE_BATCHES), bulk);
+    commands += Math.min(PIPELINE_BATCHES, addrBatches.length - i);
   }
   const domainBatches = [];
   for (let i = 0; i < lists.domains.length; i += BATCH) domainBatches.push(['SADD', tmpD, ...lists.domains.slice(i, i + BATCH)]);
-  for (let i = 0; i < domainBatches.length; i += 25) {
-    await store.pipeline(domainBatches.slice(i, i + 25));
-    commands += Math.min(25, domainBatches.length - i);
+  for (let i = 0; i < domainBatches.length; i += PIPELINE_BATCHES) {
+    await store.pipeline(domainBatches.slice(i, i + PIPELINE_BATCHES), bulk);
+    commands += Math.min(PIPELINE_BATCHES, domainBatches.length - i);
   }
   const now = new Date().toISOString();
   const swap = [];
   if (lists.addresses.length) swap.push(['RENAME', tmpA, KEY_ADDR]);
   if (lists.domains.length) swap.push(['RENAME', tmpD, KEY_DOM]);
   swap.push(['HSET', KEY_META, 'source', lists.source, 'updated_at', now, 'addresses', lists.addresses.length, 'domains', lists.domains.length, 'list_sha', lists.sha]);
-  await store.pipeline(swap);
+  await store.pipeline(swap, bulk);
   return { changed: true, addresses: lists.addresses.length, domains: lists.domains.length, updated_at: now, commands: commands + swap.length + 2 };
 }
 
