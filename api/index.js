@@ -13,6 +13,7 @@ const feedback = require('../src/feedback');
 const seed = require('../src/seed');
 const pricing = require('../src/pricing');
 const dashboard = require('../src/dashboard');
+const premium = require('../src/premium');
 const x402 = require('../src/x402');
 const crypto = require('crypto');
 
@@ -128,7 +129,7 @@ function info(req) {
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
     routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
-    pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis'], note: pricing.cfg().mode === 'free' ? 'Nothing is charged.' : 'Premium layers may require x402 payment.' },
+    pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
       ? { protocol: 'x402', x402Version: x402.X402_VERSION, price: cfg.price, asset: cfg.asset, network: cfg.network }
@@ -269,8 +270,52 @@ module.exports = async function handler(req, res) {
   }
 
   const isSignature = path === '/analyze-signature' || path === '/api/analyze-signature';
-  if (!isSignature && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
-    return send(res, 404, { error: 'Not found. POST /analyze or POST /analyze-signature' });
+  const isPremium = path === '/guard' || path === '/api/guard';
+  if (!isSignature && !isPremium && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
+    return send(res, 404, { error: 'Not found. POST /analyze, POST /analyze-signature or POST /guard (premium)' });
+  }
+
+  if (isPremium) {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return send(res, 400, { error: err instanceof ValidationError ? err.message : 'Invalid JSON body: ' + err.message });
+    }
+    let pay;
+    try {
+      pay = await premium.gate(req, res, body, module.exports.premiumOptions);
+    } catch (err) {
+      console.error('premium gate failed', err);
+      return send(res, 503, { ok: false, error: 'Premium payment gate failed: ' + err.message });
+    }
+    if (!pay.ok) return undefined;
+    const kind = body && body.kind === 'signature' ? 'signature' : 'transaction';
+    let result;
+    try {
+      const deps = { reporter: reporterOf(req), premium: true, paid: Boolean(pay.payer) };
+      result = kind === 'signature' ? await analyzeSignature(body, deps) : await analyze(body, deps);
+    } catch (err) {
+      if (err instanceof ValidationError || (err && err.name === 'ValidationError')) return send(res, 400, { error: err.message });
+      console.error('premium analyze failed', err);
+      return send(res, 500, { error: 'Internal error during analysis' });
+    }
+    try {
+      const settled = await pay.settle();
+      if (settled && settled.success === false) {
+        const r = settled.response || { status: 402, headers: settled.headers || {} };
+        for (const [k, v] of Object.entries(r.headers || {})) res.setHeader(k, v);
+        const bodyOut = r.body && typeof r.body === 'object' && Object.keys(r.body).length ? r.body : { error: 'Payment settlement failed: ' + (settled.errorReason || 'unknown') + (settled.errorMessage ? ' (' + settled.errorMessage + ')' : ''), errorReason: settled.errorReason || null };
+        return send(res, r.status || 402, bodyOut);
+      }
+      if (settled && settled.headers) for (const [k, v] of Object.entries(settled.headers)) res.setHeader(k, v);
+      result.details.payment = settled ? { settled: settled.success !== false, transaction: settled.transaction || null, network: settled.network || null, payer: pay.payer } : null;
+    } catch (err) {
+      console.error('premium settle failed', err);
+      return send(res, 402, { error: 'Payment settlement failed: ' + err.message });
+    }
+    result.details.premium = true;
+    return send(res, 200, result);
   }
 
   let payment;
