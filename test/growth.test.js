@@ -58,7 +58,7 @@ test('seed: lists are normalised, registry addresses are never seeded, swap is a
   assert.equal(look.domains.com, null, 'the TLD itself never matches');
 });
 
-test('seed: seeded drainer blocks approvals and calls on first sight, warns on transfers; seeded domain blocks', async () => {
+test('seed: seeded drainer blocks approvals, calls and transfers on first sight; seeded domain blocks', async () => {
   const store = createMemoryStore();
   await seed.applySeed(store, { source: 't', sha: 's', addresses: [DRAINER], domains: ['evil-airdrop.com'] });
   const approve = await analyze({ to: USDC, data: erc20.encodeFunctionData('approve', [DRAINER, 1n]) }, deps(store));
@@ -66,7 +66,7 @@ test('seed: seeded drainer blocks approvals and calls on first sight, warns on t
   assert.ok(approve.reasons.includes('scam_database_address'));
   assert.equal(approve.details.threat_intel.seed.addresses[DRAINER], true);
   const transfer = await analyze({ to: USDC, data: erc20.encodeFunctionData('transfer', [DRAINER, 1n]) }, deps(store));
-  assert.equal(transfer.verdict, 'WARN');
+  assert.equal(transfer.verdict, 'DENY', 'curated list: transfers to a listed drainer are blocked too');
   assert.deepEqual(transfer.reasons, ['scam_database_address']);
   const call = await analyze({ to: DRAINER, data: '0xdeadbeef' + '00'.repeat(32) }, deps(store));
   assert.equal(call.verdict, 'DENY');

@@ -148,7 +148,7 @@ async function lookup(store, addresses, domains) {
 }
 
 const SEED_RULES = [
-  { code: 'scam_database_address', severity: 'DENY', layer: 'shared-intel', description: 'Counterparty address is listed in a public scam database (ScamSniffer). Capped at WARN for the recipient role of a plain transfer.' },
+  { code: 'scam_database_address', severity: 'DENY', layer: 'shared-intel', description: 'Counterparty address is listed in the curated public ScamSniffer scam database. DENY for every role, including plain transfers, because most real drains are victims sending straight to the listed address.' },
   { code: 'scam_database_domain', severity: 'DENY', layer: 'shared-intel', description: 'A source domain (or its parent domain) is listed in a public phishing database (ScamSniffer).' },
 ];
 

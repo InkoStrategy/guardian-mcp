@@ -74,48 +74,47 @@ function decodeSpender(data) {
 // Attack set
 // ---------------------------------------------------------------------------
 
-async function collectAttacks(drainers, want) {
+async function collectAttacks(drainers, want, drainerSet) {
+  const provider = new JsonRpcProvider(RPC, 1, { staticNetwork: true });
   const cases = [];
   const seenTx = new Set();
   let scanned = 0;
+  const kindOf = (data, value) => {
+    if (!data || data === '0x') return value > 0n ? 'native transfer' : null;
+    const sel = data.slice(0, 10).toLowerCase();
+    return { '0xa9059cbb': 'transfer', '0x23b872dd': 'transferFrom', '0x095ea7b3': 'approve', '0xa22cb465': 'setApprovalForAll', '0x3593564c': 'universal router execute', '0x24856bc3': 'universal router execute', '0xac9650d8': 'multicall', '0x5ae401dc': 'multicall', '0x38ed1739': 'v2 swap', '0x7ff36ab5': 'v2 swap', '0x18cbafe5': 'v2 swap', '0x04e45aaf': 'v3 swap', '0x414bf389': 'v3 swap', '0x12aa3caf': '1inch swap', '0xd505accf': 'permit' }[sel] || ('call ' + sel);
+  };
   for (const drainer of drainers) {
     if (cases.length >= want) break;
     scanned += 1;
     let loot;
+    let eth;
     try {
       loot = await getJson(BLOCKSCOUT + '/addresses/' + drainer + '/token-transfers?type=ERC-20&filter=to');
+      eth = await getJson(BLOCKSCOUT + '/addresses/' + drainer + '/transactions?filter=to');
     } catch { continue; }
-    const items = (loot && loot.items) || [];
-    if (!items.length) continue;
-    const victims = new Map();
-    for (const t of items) {
-      const from = t.from && t.from.hash ? t.from.hash.toLowerCase() : null;
-      const token = t.token && t.token.address ? t.token.address.toLowerCase() : null;
-      if (!from || !token || from === drainer) continue;
-      // transferFrom pulled by the drainer: tx sender is the drainer, token sender is the victim
-      const txFrom = t.transaction_hash ? null : null;
-      if (!victims.has(from)) victims.set(from, { token, txHash: t.transaction_hash, symbol: t.token.symbol, value: t.total && t.total.value, decimals: t.token.decimals });
-      if (victims.size >= 6) break;
+    const hashes = [];
+    for (const t of ((loot && loot.items) || []).slice(0, 8)) if (t.transaction_hash) hashes.push({ hash: t.transaction_hash, symbol: t.token && t.token.symbol, value: t.total && t.total.value, decimals: t.token && t.token.decimals });
+    for (const t of ((eth && eth.items) || []).slice(0, 4)) if (t.hash && t.value && t.value !== '0' && (!t.raw_input || t.raw_input === '0x')) hashes.push({ hash: t.hash, symbol: 'ETH', value: t.value, decimals: 18 });
+    let perDrainer = 0;
+    for (const h of hashes) {
+      if (cases.length >= want || perDrainer >= 3 || seenTx.has(h.hash)) continue;
+      let tx;
+      try { tx = await provider.getTransaction(h.hash); } catch { continue; }
+      if (!tx || !tx.to) continue;
+      const victim = tx.from.toLowerCase();
+      if (victim === drainer || drainerSet.has(victim)) continue; // drainer consolidating its own loot
+      const data = tx.data || '0x';
+      const kind = kindOf(data, tx.value);
+      if (!kind) continue;
+      if (kind === 'transferFrom') continue; // pulled by the attacker, not signed by the victim
+      seenTx.add(h.hash);
+      perDrainer += 1;
+      cases.push({ set: 'attack', hash: h.hash, block: tx.blockNumber, from: tx.from, to: tx.to, data, value: tx.value.toString(), drainer, kind, lootSymbol: h.symbol, lootValue: h.value, lootDecimals: h.decimals });
+      process.stderr.write('attack ' + cases.length + '/' + want + ' (' + kind + ' -> ' + drainer.slice(0, 10) + ') scanned ' + scanned + ' drainers\n');
     }
-    for (const [victim, loot1] of victims) {
-      if (cases.length >= want) break;
-      let txs;
-      try {
-        txs = await getJson(BLOCKSCOUT + '/addresses/' + victim + '/transactions?filter=from');
-      } catch { continue; }
-      const list = (txs && txs.items) || [];
-      const approveTx = list.find((tx) => {
-        const to = tx.to && tx.to.hash ? tx.to.hash.toLowerCase() : null;
-        const dec = decodeSpender(tx.raw_input);
-        return to === loot1.token && dec && dec.spender === drainer && tx.status === 'ok';
-      }) || list.find((tx) => { const dec = decodeSpender(tx.raw_input); return dec && dec.spender === drainer && tx.status === 'ok'; });
-      if (!approveTx || seenTx.has(approveTx.hash)) continue;
-      seenTx.add(approveTx.hash);
-      const dec = decodeSpender(approveTx.raw_input);
-      cases.push({ set: 'attack', hash: approveTx.hash, block: approveTx.block_number || approveTx.block, timestamp: approveTx.timestamp, from: victim, to: approveTx.to.hash, data: approveTx.raw_input, drainer, kind: dec.kind, amount: dec.amount, lootTx: loot1.txHash, lootSymbol: loot1.symbol, lootValue: loot1.value, lootDecimals: loot1.decimals });
-      process.stderr.write('attack ' + cases.length + '/' + want + ' (' + dec.kind + ' -> ' + drainer.slice(0, 10) + ') scanned ' + scanned + ' drainers\n');
-    }
-    await sleep(250);
+    if (scanned % 25 === 0) process.stderr.write('scanned ' + scanned + ' drainers, ' + cases.length + ' cases so far\n');
+    await sleep(200);
   }
   return { cases, scanned };
 }
@@ -165,12 +164,12 @@ async function collectControls(want) {
 async function replayRulesOnly(c) {
   const { analyze } = require('../src/analyzer');
   const { createMemoryStore } = require('../src/store');
-  const r = await analyze({ to: c.to, data: c.data, chainId: 1, context: { share_threat_intel: false } }, { store: createMemoryStore(), env: {} });
+  const r = await analyze({ to: c.to, data: c.data, chainId: 1, value: c.value || '0', from: c.from, context: { share_threat_intel: false } }, { store: createMemoryStore(), env: {} });
   return { verdict: r.verdict, reasons: r.reasons };
 }
 
 async function replayDeployed(c) {
-  const res = await fetch(BASE + '/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: c.to, data: c.data, chainId: 1, context: { share_threat_intel: false, session_id: 'benchmark-' + c.set } }) });
+  const res = await fetch(BASE + '/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ to: c.to, data: c.data, chainId: 1, value: c.value || '0', from: c.from, context: { share_threat_intel: false, session_id: 'benchmark-' + c.set } }) });
   const j = await res.json();
   return { verdict: j.verdict, reasons: j.reasons, status: res.status };
 }
@@ -182,7 +181,8 @@ function pct(n, d) { return d ? Math.round((n / d) * 1000) / 10 : 0; }
   process.stderr.write('fetching ScamSniffer addresses…\n');
   const drainers = (await getJson(SCAMSNIFFER)).map((a) => String(a).toLowerCase()).filter((a) => /^0x[0-9a-f]{40}$/.test(a));
   // Newest entries are appended at the end of the list; scan from the end for recent, active drainers.
-  const { cases: attacks, scanned } = await collectAttacks(drainers.slice().reverse(), WANT_ATTACKS);
+  const drainerSet = new Set(drainers);
+  const { cases: attacks, scanned } = await collectAttacks(drainers.slice().reverse(), WANT_ATTACKS, drainerSet);
   const controls = await collectControls(WANT_CONTROLS);
   const all = attacks.concat(controls);
   process.stderr.write('replaying ' + all.length + ' cases…\n');
@@ -222,7 +222,7 @@ function pct(n, d) { return d ? Math.round((n / d) * 1000) / 10 : 0; }
   md.push('| Legit approvals warned | ' + cc.rules_only.warn + ' | ' + cc.deployed.warn + ' |');
   md.push('| Legit approvals allowed | ' + cc.rules_only.allow + ' | ' + cc.deployed.allow + ' |', '');
   md.push('WARN on a legitimate approval is expected when the approval is unlimited (`unlimited_approval`); the agent is asked to confirm or to sign the bounded `safe_alternative` instead. A false DENY is the number that matters for usability.', '');
-  md.push('## Attack cases', '', '| # | Victim tx | Kind | Drainer | Loot | Rules only | As deployed |', '|---|---|---|---|---|---|---|');
+  md.push('## Attack cases', '', '| # | Victim tx | Victim action | Drainer | Loot | Rules only | As deployed |', '|---|---|---|---|---|---|---|');
   attacks.forEach((c, i) => md.push('| ' + (i + 1) + ' | [' + c.hash.slice(0, 12) + '…](https://etherscan.io/tx/' + c.hash + ') | ' + c.kind + ' | [' + c.drainer.slice(0, 10) + '…](https://etherscan.io/address/' + c.drainer + ') | ' + (c.lootSymbol || '?') + ' | ' + c.rulesOnly.verdict + ' (' + c.rulesOnly.reasons.join(', ') + ') | ' + c.deployed.verdict + ' (' + c.deployed.reasons.join(', ') + ') |'));
   md.push('', '## Control cases', '', '| # | Tx | Spender | Amount | Rules only | As deployed |', '|---|---|---|---|---|---|');
   controls.forEach((c, i) => md.push('| ' + (i + 1) + ' | [' + c.hash.slice(0, 12) + '…](https://etherscan.io/tx/' + c.hash + ') | ' + c.spenderName + ' | ' + (c.amount === '115792089237316195423570985008687907853269984665640564039457584007913129639935' ? 'unlimited' : 'bounded') + ' | ' + c.rulesOnly.verdict + ' (' + c.rulesOnly.reasons.join(', ') + ') | ' + c.deployed.verdict + ' (' + c.deployed.reasons.join(', ') + ') |'));

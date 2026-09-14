@@ -46,7 +46,7 @@ test('check-address: recipient roles, spender roles, registry, seed and look-ali
   assert.equal(permit2.details.reputation.tier, 'trusted');
 
   const drainerSend = await checkAddress({ address: DRAINER }, deps);
-  assert.equal(drainerSend.verdict, 'WARN', 'seeded drainer as recipient is capped at WARN');
+  assert.equal(drainerSend.verdict, 'DENY', 'curated list: sending to a listed drainer is blocked');
   assert.ok(drainerSend.reasons.includes('scam_database_address'));
   assert.equal(drainerSend.details.scam_database, true);
   const drainerApprove = await checkAddress({ address: DRAINER, role: 'spender' }, deps);

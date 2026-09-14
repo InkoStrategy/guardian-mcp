@@ -59,8 +59,9 @@ async function threatLookup(p) {
   for (const a of addrs) {
     if (!seeded.addresses[a.address] || seedSeen.has(a.address)) continue;
     seedSeen.add(a.address);
-    const sev = a.role === 'recipient' ? 'WARN' : 'DENY';
-    out.findings.push({ code: 'scam_database_address', severity: sev, message: a.role + ' ' + a.address + ' is listed in a public scam database (ScamSniffer) as a drainer/scam address.' + (sev === 'WARN' ? ' Transfers to it are warned, approvals and calls are blocked.' : ''), layer: 'shared-intel', address: a.address, role: a.role, source: 'scamsniffer' });
+    // Curated public list (not self-reported): DENY for every role, including plain transfers,
+    // because most real drains are victims transferring or swapping straight to the listed address.
+    out.findings.push({ code: 'scam_database_address', severity: 'DENY', message: a.role + ' ' + a.address + ' is listed in the public ScamSniffer scam database as a drainer/scam address.', layer: 'shared-intel', address: a.address, role: a.role, source: 'scamsniffer' });
   }
   for (const d of domains) {
     const hit = seeded.domains[seed.normalizeHost(d)];
