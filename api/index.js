@@ -14,6 +14,7 @@ const seed = require('../src/seed');
 const pricing = require('../src/pricing');
 const dashboard = require('../src/dashboard');
 const premium = require('../src/premium');
+const quick = require('../src/quick-checks');
 const x402 = require('../src/x402');
 const crypto = require('crypto');
 
@@ -128,7 +129,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -280,8 +281,26 @@ module.exports = async function handler(req, res) {
 
   const isSignature = path === '/analyze-signature' || path === '/api/analyze-signature';
   const isPremium = path === '/guard' || path === '/api/guard';
-  if (!isSignature && !isPremium && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
-    return send(res, 404, { error: 'Not found. POST /analyze, POST /analyze-signature or POST /guard (premium)' });
+  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : null;
+  if (!isSignature && !isPremium && !quickKind && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
+    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain or /guard (premium)' });
+  }
+
+  if (quickKind) {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return send(res, 400, { error: err instanceof ValidationError ? err.message : 'Invalid JSON body: ' + err.message });
+    }
+    try {
+      const result = quickKind === 'address' ? await quick.checkAddress(body, { reporter: reporterOf(req) }) : await quick.checkDomain(body, { reporter: reporterOf(req) });
+      return send(res, 200, result);
+    } catch (err) {
+      if (err && err.name === 'ValidationError') return send(res, 400, { error: err.message });
+      console.error('quick check failed', err);
+      return send(res, 500, { error: 'Internal error during check' });
+    }
   }
 
   if (isPremium) {
