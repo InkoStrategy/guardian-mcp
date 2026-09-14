@@ -11,6 +11,7 @@ const pipeline = require('./pipeline');
 const threatRegistry = require('./threat-registry');
 const sessionHealth = require('./session-health');
 const diff = require('./diff');
+const assetFlow = require('./asset-flow');
 
 const abi = AbiCoder.defaultAbiCoder();
 
@@ -374,6 +375,7 @@ async function analyze(input, deps) {
   // ---------- Enrichment: token metadata, counterparty intelligence, simulation ----------
   let tokenMeta = null;
   let simulation = { ran: false, reason: tx.from ? null : 'no "from" supplied' };
+  let flow = { ran: false, supported: null, error: tx.from ? null : 'no "from" supplied', transfers: [], sender_net: [], recipients: [] };
   let erc20State = null;
   if (rpc.ok && reader && intel.canCall(reader)) {
     enrichment.ran = true;
@@ -391,6 +393,10 @@ async function analyze(input, deps) {
       }).catch((e) => enrichment.errors.push('inspect ' + addrLower + ': ' + e.message)));
     }
     if (tx.from) {
+      jobs.push(assetFlow.simulateFlow(reader, { from: tx.from, to: tx.to, data: tx.data, value: tx.value }).then((f) => { flow = f; }).catch((e) => {
+        flow = { ran: false, supported: null, error: e.message, transfers: [], sender_net: [], recipients: [] };
+        enrichment.errors.push('assetFlow: ' + e.message);
+      }));
       jobs.push(intel.simulate(reader, { from: tx.from, to: tx.to, data: tx.data, value: tx.value }).then((s) => { simulation = s; }).catch((e) => {
         simulation = { ran: false, reason: e.message };
         enrichment.errors.push('simulate: ' + e.message);
@@ -429,9 +435,38 @@ async function analyze(input, deps) {
     findings.push(finding('insufficient_balance', 'WARN', 'Sender balance ' + intel.formatAmount(erc20State.balance, tokenMeta) + ' is below the transfer amount ' + intel.formatAmount(decoded.amountBig, tokenMeta) + '.', { balance: erc20State.balance, amount: decoded.args.amount }));
   }
 
+  // ---------- Asset flow: who ends up holding the value ----------
+  const flowRecipients = [];
+  if (flow.ran && !flow.reverted && flow.recipients.length && reader) {
+    const candidates = flow.recipients.filter((r) => r.address.toLowerCase() !== tx.from.toLowerCase()).slice(0, 6);
+    await Promise.all(candidates.map(async (r) => {
+      const lower = r.address.toLowerCase();
+      let state = states.get(lower) || null;
+      if (!state) {
+        try {
+          state = await reader.addressState(r.address);
+        } catch (e) {
+          enrichment.errors.push('flow recipient state ' + lower + ': ' + e.message);
+        }
+      }
+      const known = registry.lookupContract(tx.chainId, r.address) || registry.lookupToken(tx.chainId, r.address);
+      flowRecipients.push({ address: r.address, gains: r.gains, isContract: state ? state.isContract : null, known: known ? { name: known.name || known.symbol, category: known.category || 'token' } : null, lookalikeOf: registry.findRegistryLookalike(tx.chainId, r.address) });
+    }));
+    const senderGivesOnly = flow.sender_net.length > 0 && flow.sender_net.every((n) => BigInt(n.delta) < 0n);
+    const isCall = decoded.kind === 'unknown' || decoded.kind === 'known' || decoded.kind === 'malformed';
+    const eoaSinks = flowRecipients.filter((r) => r.isContract === false && !r.known);
+    if (isCall && senderGivesOnly && eoaSinks.length) {
+      findings.push(finding('funds_flow_no_return', 'WARN', 'Simulation shows the sender giving ' + flow.sender_net.map((n) => intel.formatAmount(-BigInt(n.delta), n.asset === 'ETH' ? { decimals: 18, symbol: registry.nativeSymbol(tx.chainId) } : registry.lookupToken(tx.chainId, n.asset))).join(', ') + ' and receiving nothing back; the value ends at plain wallet(s) ' + eoaSinks.map((r) => r.address).join(', ') + ' behind an unrecognised call.', { recipients: eoaSinks.map((r) => r.address), sender_net: flow.sender_net }));
+    }
+    for (const r of flowRecipients) {
+      if (r.lookalikeOf) findings.push(finding('funds_flow_to_flagged', 'DENY', 'Simulation shows value ending at ' + r.address + ', which imitates ' + r.lookalikeOf.name + ' (' + r.lookalikeOf.address + ').', { address: r.address, imitates: r.lookalikeOf.address }));
+    }
+  }
+
   // ---------- Shared threat intelligence + reputation ----------
   const threatTargets = needsChain.filter((n) => n.role !== 'target').map((n) => ({ role: n.role, address: n.address }));
   if (decoded.kind !== 'native' && decoded.kind !== 'approve' && decoded.kind !== 'transfer' && decoded.kind !== 'approvalForAll') threatTargets.push({ role: 'target', address: tx.to });
+  for (const r of flowRecipients) if (!r.known) threatTargets.push({ role: 'flow_recipient', address: r.address });
   const sourceDomains = [];
   for (const s of (tx.context && tx.context.recent_sources) || []) {
     const parsed = contextAnalyzer.extractDomain(s);
@@ -439,6 +474,13 @@ async function analyze(input, deps) {
   }
   const threatIntel = await pipeline.threatLookup({ store: deps.store, env: deps.env, chainId: tx.chainId, addresses: threatTargets, domains: sourceDomains });
   for (const f of threatIntel.findings) findings.push(f);
+  for (const r of flowRecipients) {
+    const lower = r.address.toLowerCase();
+    const hit = threatIntel.findings.find((f) => f.address === lower && ['scam_database_address', 'known_drainer', 'flagged_address'].includes(f.code));
+    if (hit && !findings.some((f) => f.code === 'funds_flow_to_flagged' && f.address === r.address)) {
+      findings.push(finding('funds_flow_to_flagged', hit.severity === 'WARN' ? 'WARN' : 'DENY', 'Simulation shows value ending at ' + r.address + ' (' + hit.code + '), even though the transaction does not name that address directly.', { address: r.address, via: hit.code, gains: r.gains }));
+    }
+  }
   for (const [addrLower, info] of Object.entries(addressInfo)) {
     const state = states.get(addrLower);
     if (!state) continue;
@@ -495,7 +537,12 @@ async function analyze(input, deps) {
   const chain = chainName(tx.chainId);
   const buildSummary = (verdict) => {
     try {
-      return summaryBuilder.buildSummary({ verdict, decoded, tx, chainName: chain, tokenMeta, addressInfo, findings, nested: nestedInfo });
+      let text = summaryBuilder.buildSummary({ verdict, decoded, tx, chainName: chain, tokenMeta, addressInfo, findings, nested: nestedInfo });
+      if (flow.ran && !flow.reverted && flow.sender_net.length) {
+        const parts = flow.sender_net.map((n) => { const d = BigInt(n.delta); const meta = n.asset === 'ETH' ? { decimals: 18, symbol: registry.nativeSymbol(tx.chainId) } : registry.lookupToken(tx.chainId, n.asset); return (d < 0n ? '-' : '+') + intel.formatAmount(d < 0n ? -d : d, meta); });
+        text += ' Simulated value flow for sender: ' + parts.join(', ') + '.';
+      }
+      return text;
     } catch (err) {
       enrichment.errors.push('summary: ' + err.message);
       return 'Verdict ' + verdict + ': ' + Array.from(new Set(findings.map((f) => f.code))).join(', ');
@@ -546,6 +593,7 @@ async function analyze(input, deps) {
       counterparties,
       nested_calls: nestedInfo ? { inner: nestedInfo.inner.map((i) => ({ via: i.via, selector: i.selector, function: i.function, kind: i.kind, args: i.args })), recipients: nestedInfo.recipients, permits: nestedInfo.permits, routerPlan: nestedInfo.routerPlan, truncated: nestedInfo.truncated } : null,
       simulation,
+      asset_flow: Object.assign({}, flow, { final_recipients: flowRecipients }),
       erc20State,
       findings,
       addressChecks,
@@ -589,7 +637,7 @@ const RULE_CATALOG = [
   { code: 'simulation_unavailable', severity: 'WARN', layer: 'simulation', description: 'Simulation was requested ("from" supplied) but the RPC failed.' },
   { code: 'insufficient_balance', severity: 'WARN', layer: 'simulation', description: 'ERC-20 balance of "from" is below the transfer amount.' },
   { code: 'rpc_unavailable', severity: 'WARN', layer: 'transaction', description: 'On-chain checks could not run. Fail-safe: never ALLOW.' },
-].concat(contextAnalyzer.CONTEXT_RULES, threatRegistry.THREAT_RULES.filter((r) => r.code !== 'threat_intel_unavailable'), sessionHealth.SESSION_RULES, diff.DIFF_RULES, pipeline.PIPELINE_RULES);
+].concat(assetFlow.FLOW_RULES, contextAnalyzer.CONTEXT_RULES, threatRegistry.THREAT_RULES.filter((r) => r.code !== 'threat_intel_unavailable'), sessionHealth.SESSION_RULES, diff.DIFF_RULES, pipeline.PIPELINE_RULES);
 
 module.exports = {
   analyze,

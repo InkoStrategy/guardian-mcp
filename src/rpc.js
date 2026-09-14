@@ -86,6 +86,12 @@ function isRevert(err) {
   return Boolean(err) && (err.code === 'CALL_EXCEPTION' || (err.error && err.error.code === 3) || (typeof err.message === 'string' && /execution reverted|revert/i.test(err.message) && err.code !== 'TIMEOUT'));
 }
 
+/** A node that does not implement a method answered; do not fail over to the next endpoint. */
+function isMethodNotFound(err) {
+  const code = err && (err.code === 'UNSUPPORTED_OPERATION' ? -32601 : (err.error && err.error.code) || (err.info && err.info.error && err.info.error.code));
+  return code === -32601 || (typeof (err && err.message) === 'string' && /does not exist|not available|Method not found|not allowed|not supported/i.test(err.message));
+}
+
 /**
  * Chain reader with per-call timeout, endpoint fallback and a global budget.
  * All failures surface as RpcError so the analyzer can degrade to WARN.
@@ -118,8 +124,8 @@ function createChainReader(chainId) {
         lastEndpoint = urls[i];
         return result;
       } catch (err) {
-        if (isRevert(err)) {
-          // The node answered; the call itself reverted. Do not fail over.
+        if (isRevert(err) || isMethodNotFound(err)) {
+          // The node answered (revert or unsupported method). Do not fail over.
           activeIndex = i;
           lastEndpoint = urls[i];
           throw err;
@@ -140,6 +146,8 @@ function createChainReader(chainId) {
     call: (tx) => attempt((p) => p.call(tx), `call(${tx.to})`),
     getStorage: (address, slot) => attempt((p) => p.getStorage(address, slot), `getStorage(${address})`),
     estimateGas: (tx) => attempt((p) => p.estimateGas(tx), `estimateGas(${tx.to})`),
+    /** Raw JSON-RPC (eth_simulateV1 and friends). Method-not-found is returned as an error object, not thrown. */
+    send: (method, params) => attempt((p) => p.send(method, params), method),
     get endpoint() {
       return lastEndpoint;
     },
@@ -150,6 +158,7 @@ module.exports = {
   DEFAULT_CHAINS,
   RpcError,
   isRevert,
+  isMethodNotFound,
   createChainReader,
   supportedChainIds,
   chainName,
