@@ -1,0 +1,103 @@
+---
+name: guardian-mcp
+description: Pre-flight security verdict (ALLOW / WARN / DENY) for every EVM transaction, approval, swap and wallet signature an agent is about to sign. Use before wallet send, contract-call, swap, bridge, approve, permit, sign-message or any x402 payment on chains 1, 10, 56, 137, 196, 250, 8453, 42161, 43114. Catches unlimited and wallet-targeted approvals, address poisoning, drains hidden in multicall or Universal Router plans, permit / Permit2 / Seaport signature drains, blind hash signing, phishing-driven instructions, and known drainers from a shared cross-agent registry seeded with ScamSniffer.
+license: MIT
+metadata:
+  author: GuardianMCP
+  version: "1.0.0"
+  homepage: "https://github.com/InkoStrategy/guardian-mcp"
+  endpoint: "https://guardian-mcp-rho.vercel.app"
+---
+
+# Guardian MCP
+
+Deterministic security verdicts for agent-initiated on-chain actions. Free endpoints need no key.
+Base URL: `https://guardian-mcp-rho.vercel.app`
+
+## When to call
+
+Call **before** any of these, never after:
+
+| You are about to | Call |
+|---|---|
+| `wallet send`, `wallet contract-call`, a swap / bridge / limit-order that produces calldata, any `approve` / `increaseAllowance` / `setApprovalForAll` | `POST /analyze` |
+| `wallet sign-message`, `eth_signTypedData_v4` (permit, Permit2, Seaport, SIWE), `personal_sign`, `eth_sign` | `POST /analyze-signature` |
+| Either of the above when the operator wants session health, owner alerts, a reference-template diff or paid priority | `POST /guard` (0.099 USDT per call, paid automatically via x402 on X Layer) |
+
+If you cannot obtain the exact `to` and `data` the wallet will sign, do not guess: ask the tool that builds the transaction for its unsigned payload first.
+
+## How to call
+
+Transaction (minimum): `{"to": "0x…", "data": "0x…", "chainId": 1}`. Add `"from"` (your wallet address) to get simulation, balance and allowance checks. Add `"value"` in wei for native transfers.
+
+Always add `context`; it is what turns a firewall into an integrity check:
+
+```json
+{
+  "to": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "data": "0x095ea7b3…",
+  "chainId": 1,
+  "from": "0xYourWallet",
+  "context": {
+    "agent_goal": "swap tokens",
+    "recent_sources": ["https://docs.uniswap.org/…", "user input", "api:coingecko"],
+    "recent_tool_calls": ["web_fetch", "swap_quote", "analyze"],
+    "session_id": "<stable id for this task or conversation>",
+    "known_addresses": ["0x…addresses the user verified before…"],
+    "expected_amount": "150.5"
+  }
+}
+```
+
+- `agent_goal`: what the user actually asked for: `swap tokens`, `transfer`, `approve`, `mint`, `read`.
+- `recent_sources`: every URL, file or API you read since the user's instruction. Be complete; untrusted sources are how injected instructions get in.
+- `recent_tool_calls`: tool names in order, most recent last.
+- `session_id`: keep it stable for the whole task so a series of small suspicious actions is visible.
+- `known_addresses`: the user's verified address book; enables address-poisoning detection.
+- `expected_amount`: the amount the user meant; for an unlimited approval the response returns a bounded `safe_alternative.data` you can sign instead.
+
+Signature: `{"type": "eip712", "from": "0x…", "typedData": {types, primaryType, domain, message}, "context": {…}}` or `{"type": "personal_sign", "message": "…", "from": "0x…"}`.
+
+Run it with curl:
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/analyze -H "Content-Type: application/json" -d @request.json
+```
+
+## How to act on the verdict
+
+Read `verdict`, `reasons`, `summary`, `details.recommendations`, `details.safe_alternative`, `details.request_id`.
+
+| Verdict | Action |
+|---|---|
+| `DENY` | Do not sign. Show the user `summary` and the recommendations. Do not retry with modified parameters to get around it. If `reasons` contains `session_compromised_likely`, stop the whole task and hand control back to the user. |
+| `WARN` | Do not sign silently. Show `summary` and ask the user to confirm explicitly. If `details.safe_alternative.available` is true (bounded approval), offer to sign that instead. |
+| `ALLOW` | Proceed. Still show the one-line `summary` when the action moves value. |
+
+`details.rpc.ok === false` or `reasons` containing `rpc_unavailable` / `shared_state_unavailable` means checks were skipped; treat as WARN.
+
+Never pass `share_threat_intel: false` unless the user asks for it: every fact-based DENY you report protects other agents, and theirs protect you.
+
+## Feedback
+
+When the user says a verdict was wrong (a real address flagged, or an attack that got ALLOW), send it back so rules are tuned instead of guessed:
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/feedback -H "Content-Type: application/json" -d '{"request_id":"<details.request_id>","verdict":"WARN","correct":false,"rule_codes":["fresh_recipient"],"comment":"user confirmed this is their own new wallet"}'
+```
+
+For a missed attack use `"verdict":"ALLOW","correct":false` without rule codes.
+
+## Reference
+
+- Rule catalogue with severities: `GET /rules`
+- Look up an address or domain in the shared registry: `GET /threats/{chainId}/{address}`, `GET /threats/domain/{host}`
+- Session profile: `GET /session/{session_id}`
+- Live aggregate stats: `GET /stats`, page at `/dashboard`
+- Full API and response schema: [references/api.md](references/api.md)
+
+## Limits (do not overclaim to the user)
+
+- Deterministic rules plus registries, not a guarantee. An `ALLOW` means no rule fired, not that the counterparty is safe.
+- Simulation is `eth_call` on current state when `from` is given; it catches reverts and insufficient balance, not every side effect.
+- Address history comes from nonce, balance and code only; first-seen dates are not claimed.
