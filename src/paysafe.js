@@ -46,7 +46,7 @@ const VALIDITY_SLACK_SECONDS = 600;
 /** Canonical x402 settlement assets (address → meta). Sources: @okxweb3/x402-evm DEFAULT_STABLECOINS, x402 defaults. */
 const SETTLEMENT_ASSETS = {
   196: {
-    '0x779ded0c9e1022225f8e0630b35a9b54be713736': { symbol: 'USDT0', decimals: 6, eip712Name: 'USD₮0', eip712Version: '1' },
+    '0x779ded0c9e1022225f8e0630b35a9b54be713736': { symbol: 'USDT0', decimals: 6, eip712Name: 'USD₮0', eip712Version: '1', eip712DomainSeparator: '0xd591d9baf744328d9400b923cb02c9474d367d591ca1ab24d8c4068be527599d' },
     '0x1e4a5963abfd975d8c9021ce480b42188849d41d': { symbol: 'USDT', decimals: 6 },
     '0x74b7f16337b8972027f6196a17a631ac6de26d22': { symbol: 'USDC', decimals: 6 },
   },
@@ -88,6 +88,9 @@ const PAYMENT_RULES = [
   { code: 'payment_domain_mismatch', severity: 'DENY', layer: 'payment', description: 'The URL that returned the 402 is on a different domain than the listed endpoint.' },
   { code: 'resource_host_mismatch', severity: 'WARN', layer: 'payment', description: 'The resource.url in the challenge points to a different domain than the URL the agent called.' },
   { code: 'insecure_payment_endpoint', severity: 'WARN', layer: 'payment', description: 'The paid endpoint uses plain http, so the challenge can be altered in transit.' },
+  { code: 'endpoint_url_injection', severity: 'DENY', layer: 'payment', description: 'The endpoint or resource URL carries shell syntax (command separators, pipes, brace expansion, command substitution). It targets buyer agents that pass the URL to a shell, such as curl in a tool call.' },
+  { code: 'endpoint_phishing_pattern', severity: 'DENY', layer: 'payment', description: 'The paid host matches a phishing pattern (brand impersonation, typosquatting, punycode, bare IP, suspicious TLD, deep subdomains) and no marketplace listing vouches for it.' },
+  { code: 'endpoint_domain_suspicious', severity: 'WARN', layer: 'payment', description: 'The paid host matches a phishing pattern, but it is the endpoint named in the marketplace listing. Marketplace sellers often use brand words or cheap TLDs, so this is a warning, not a block.' },
   { code: 'accepted_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed payload\'s accepted requirement differs from the challenge (recipient, amount, asset, network or scheme).' },
   { code: 'signed_recipient_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed authorisation pays a different address than the challenge payTo.' },
   { code: 'signed_amount_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed authorisation allows more than the challenge amount.' },
@@ -124,6 +127,10 @@ const RECOMMENDATIONS = {
   unknown_settlement_asset: 'Prefer entries that settle in a canonical stablecoin (USD₮0 on X Layer, USDC on Base).',
   multiple_payees: 'Select the accepts entry whose payTo matches the provider in the listing.',
   insecure_payment_endpoint: 'Call the https version of the endpoint.',
+  endpoint_url_injection: 'Do not call or pay this endpoint, and never pass the URL to a shell. Report the listing to the marketplace.',
+  endpoint_phishing_pattern: 'Do not pay. Find the service on the marketplace and pay only the endpoint its listing names.',
+  endpoint_domain_suspicious: 'The host looks unusual but matches the listing. Keep the spending cap low and check the listing reputation before paying larger amounts.',
+  eip712_domain_mismatch: 'Sign with the token contract domain (name and version) instead of the one in extra, or ask the seller to fix extra. A signature over the wrong domain fails at settlement, so the paid call is rejected.',
   resource_host_mismatch: 'Verify that resource.url belongs to the provider before paying.',
   long_payment_timeout: 'Sign with the shortest validity your client allows.',
   testnet_payment: 'Real OKX.AI services settle on mainnet; do not use testnet funds as proof of payment.',
@@ -274,6 +281,26 @@ function canonicalLookalike(chainId, asset) {
   return null;
 }
 
+/** Shell syntax inside a URL. Template placeholders such as /ping/{symbol} and matrix params such as ;v=1 stay allowed. */
+const URL_SHELL_PATTERNS = [
+  { re: /[|`]/, what: 'pipe or backtick' },
+  { re: /\$[({]/, what: 'command or variable substitution' },
+  { re: /\{[^{}\/]*,[^{}\/]*\}/, what: 'brace expansion' },
+  { re: /;(?![A-Za-z0-9_.-]*=)/, what: 'command separator' },
+  { re: /&&/, what: 'command chaining' },
+  { re: /[<>]/, what: 'redirection' },
+  { re: /[\s\u0000-\u001f\u007f]/, what: 'whitespace or control character' },
+];
+function urlShellSyntax(url) {
+  // Raw string only: percent-encoded characters (%7C, %20, %3B) are inert in a shell and common in query values.
+  if (typeof url !== 'string' || !url) return null;
+  for (const p of URL_SHELL_PATTERNS) {
+    const m = url.match(p.re);
+    if (m) return { what: p.what, at: url.slice(Math.max(0, m.index - 12), m.index + 28) };
+  }
+  return null;
+}
+
 function hostOf(url) {
   if (typeof url !== 'string' || !url) return null;
   const d = contextAnalyzer.extractDomain(url.includes('://') ? url : 'https://' + url);
@@ -403,7 +430,7 @@ async function evaluateEntry(entry, input, deps, shared) {
       findings.push(finding('unknown_settlement_asset', 'Asset ' + (meta.symbol || entry.asset) + ' is a known token but not a stablecoin normally used for x402 settlement.'));
     }
     if (meta && meta.eip712Name && entry.extra && entry.extra.name && (entry.extra.name !== meta.eip712Name || (entry.extra.version && String(entry.extra.version) !== meta.eip712Version))) {
-      findings.push(finding('eip712_domain_mismatch', 'extra says ' + entry.extra.name + ' v' + entry.extra.version + ' but ' + meta.symbol + ' signs as ' + meta.eip712Name + ' v' + meta.eip712Version + '.'));
+      findings.push(finding('eip712_domain_mismatch', 'extra declares the EIP-712 domain name "' + entry.extra.name + '" version "' + (entry.extra.version === undefined ? '(none)' : entry.extra.version) + '", but the ' + meta.symbol + ' contract on ' + chainName(entry.chainId) + ' uses name "' + meta.eip712Name + '" version "' + meta.eip712Version + '"' + (meta.eip712DomainSeparator ? ' (its DOMAIN_SEPARATOR ' + meta.eip712DomainSeparator.slice(0, 10) + '… matches only that pair)' : '') + '. A TransferWithAuthorization signed with the declared domain will not verify on-chain.', { declared: { name: entry.extra.name, version: entry.extra.version === undefined ? null : String(entry.extra.version) }, canonical: { name: meta.eip712Name, version: meta.eip712Version, domainSeparator: meta.eip712DomainSeparator || null } }));
     }
     const expectedToken = checksumOrNull(expected.feeToken || expected.asset);
     if (expectedToken && !eqAddr(expectedToken, entry.asset)) findings.push(finding('asset_mismatch_listing', 'Challenge asset ' + short(entry.asset) + ' differs from the listed token ' + short(expectedToken) + '.'));
@@ -527,6 +554,13 @@ async function checkPayment(input, deps) {
   if (requestHost && resourceHost && contextAnalyzer.registrableDomain(requestHost) !== contextAnalyzer.registrableDomain(resourceHost)) {
     global.push(finding('resource_host_mismatch', 'resource.url is on ' + resourceHost + ' but the agent called ' + requestHost + '.'));
   }
+  const urlSeen = new Set();
+  for (const [label, u] of [['requestUrl', input.requestUrl], ['listed endpoint', expected.endpoint], ['resource.url', challenge.resourceUrl]]) {
+    if (typeof u !== 'string' || urlSeen.has(u)) continue;
+    urlSeen.add(u);
+    const hit = urlShellSyntax(u);
+    if (hit) global.push(finding('endpoint_url_injection', 'The ' + label + ' contains ' + hit.what + ' near "' + hit.at.replace(/[\u0000-\u001f\u007f]/g, ' ') + '". Agents that pass this URL to a shell would run attacker commands.', { subject: 'endpoint', url: u.slice(0, 300) }));
+  }
   const calledUrl = input.requestUrl || expected.endpoint || null;
   if (typeof calledUrl === 'string' && /^http:\/\//i.test(calledUrl)) global.push(finding('insecure_payment_endpoint', calledUrl.slice(0, 120) + ' uses plain http.'));
   let domainCheck = null;
@@ -534,7 +568,17 @@ async function checkPayment(input, deps) {
     try {
       const d = await quick.checkDomain({ domain: payHost }, { store, env: deps.env, now: deps.now, skipStats: true });
       domainCheck = { host: payHost, verdict: d.verdict, reasons: d.reasons, summary: d.summary };
-      for (const f of d.details.findings) global.push(Object.assign({}, f, { subject: 'endpoint' }));
+      const vouched = Boolean(listedHost && contextAnalyzer.registrableDomain(listedHost) === contextAnalyzer.registrableDomain(payHost));
+      for (const f of d.details.findings) {
+        if (f.code === 'injection_pattern') {
+          const why = payHost + ' matches a phishing pattern (' + f.pattern + '): ' + (d.details.pattern ? d.details.pattern.detail : f.message);
+          global.push(vouched
+            ? finding('endpoint_domain_suspicious', why + '. It is the endpoint named in the listing.', { subject: 'endpoint', pattern: f.pattern })
+            : finding('endpoint_phishing_pattern', why + '. No listing was supplied that names this host.', { subject: 'endpoint', pattern: f.pattern }));
+        } else {
+          global.push(Object.assign({}, f, { subject: 'endpoint' }));
+        }
+      }
     } catch (err) {
       domainCheck = { host: payHost, error: err.message };
     }

