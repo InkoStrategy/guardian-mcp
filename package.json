@@ -12,7 +12,8 @@
     "dev": "vercel dev",
     "deploy": "vercel --prod",
     "safe-pay": "node scripts/safe-pay.js",
-    "trust-scan": "node scripts/okxai-trust-scan.js"
+    "trust-scan": "node scripts/okxai-trust-scan.js",
+    "verify-settlement": "node scripts/verify-settlement.js"
   },
   "dependencies": {
     "@okxweb3/x402-core": "^0.1.0",

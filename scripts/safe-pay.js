@@ -13,6 +13,7 @@
  * 4. Quote     onchainos payment quote, then verify the quote pays the same payee, amount and token
  *              that Guardian checked (the seller cannot swap the challenge between check and pay)
  * 5. Pay       only with --pay; passes --yes to the wallet only when you pass --yes yourself.
+ * 6. Settled   after payment, read the receipt on-chain and confirm the Transfer matches the checked payee, amount and token.
  *              Without --pay it prints the pay command without --yes, so the wallet still asks the owner.
  *
  * Options: --agent <your agent id for service-detail>  --method auto|GET|POST|MCP  --tool <mcp tool>
@@ -201,8 +202,24 @@ async function main() {
     if (flag('yes')) payArgs.push('--yes');
     const p = onchainos(payArgs);
     report.steps.pay = { exitCode: p.code, result: p.json || p.text.slice(0, 2000) };
-    out('5. Pay       onchainos exit ' + p.code + (flag('yes') ? '' : ' (no --yes given, so the wallet asks for confirmation)'));
-    out('             ' + (p.json ? JSON.stringify(p.json).slice(0, 600) : p.text.slice(0, 600)));
+    const pd = p.json && p.json.data;
+    const receipt = pd && pd.decodedReceipt;
+    if (receipt && receipt.transaction) {
+      out('5. Pay       ' + (receipt.status || 'submitted') + ' via onchainos payment pay, tx ' + receipt.transaction);
+      if (pd.result !== undefined) out('             service result: ' + JSON.stringify(pd.result).slice(0, 220));
+      const { verifySettlement } = require('../src/settlement');
+      try {
+        const vs = await verifySettlement({ txHash: receipt.transaction, chainId: chosen.chainId || 196, payTo: chosen.payTo, amount: chosen.amount.atomic, asset: chosen.asset.address, payer: receipt.payer });
+        report.steps.settlement = vs;
+        out('6. Settled   ' + (vs.ok ? 'on-chain as checked: ' : 'NOT as checked: ') + (vs.ok ? chosen.amount.human + ' ' + (chosen.asset.symbol || '') + ' to ' + chosen.payTo + ' in block ' + vs.blockNumber : vs.problems.join('; ')));
+        if (!vs.ok) process.exitCode = 3;
+      } catch (err) {
+        out('6. Settled   could not verify on-chain yet: ' + err.message);
+      }
+    } else {
+      out('5. Pay       onchainos exit ' + p.code + (flag('yes') ? '' : ' (no --yes given, so the wallet asks for confirmation)'));
+      out('             ' + (p.json ? JSON.stringify(p.json).slice(0, 600) : p.text.slice(0, 600)));
+    }
     if (p.code !== 0 && p.code !== 2) process.exitCode = 1;
   }
   if (JSON_OUT) console.log(JSON.stringify(report, null, 2));

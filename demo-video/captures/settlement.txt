@@ -1,0 +1,4 @@
+1. Receipt   success in block 70825096 at 2026-09-16T21:28:52.000Z, submitted by facilitator 0xde95…0591
+             Transfer 5000 of 0x779d…3736 from 0xe1c6…f67b to 0xc462…9d60
+2. Settled   as checked: payee 0xc462…9d60, amount 5000, token 0x779d…3736
+exit 0

@@ -1,0 +1,11 @@
+1. Listing   URL Change Check API (sid 39856, A2MCP)
+             via onchainos agent service-detail --sid 39856
+             price 0.005 USDT, seller PagePulse #11185
+2. Challenge captured via POST (HTTP 402), nothing signed
+3. Verdict   ALLOW (risk 0)
+             Payment of 0.005 USDT0 (5000) on xlayer to 0xc462…9d60 for pagepulse.167-179-80-192.sslip.io (accepts[0], exact). No risk rules triggered.
+             payee is not the seller agent wallet 0x57492c28829e9b98b3b719c91e4e40ef20f5d6ed (common, informational)
+4. Quote     via onchainos payment quote --method POST <checked endpoint>
+             matches the checked payee, amount and token. paymentId pay_8a0163beaf22bedf8db49481, wallet balance sufficient
+5. Pay       onchainos exit 0
+             {"ok":true,"data":{"decodedReceipt":{"amount":"","chainId":"eip155:196","payer":"0xe1c6f89df50fb68282d52e34d6001d65005ff67b","status":"success","transaction":"0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d"},"error":null,"ok":true,"paymentId":"pay_8a0163beaf22bedf8db49481","result":{"changed":null,"current_hash":"1170d6c532af1fbc1b04bb6c0fab977073b756986a4c423267caf932f5831e97","final_url":"https://guardian-mcp-rho.vercel.app/pay-safe","previous_hash":null,"retrieved_at":"2026-09-16T21:28:51.035Z","status":200,"url":"https://guardian-mcp-rho.vercel.app/pay-safe"},"scheme":"
