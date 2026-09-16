@@ -1,0 +1,10 @@
+1. Listing   Polymarket LP Scout (sid 33342, A2MCP)
+             price 0.3 USDT, seller PolyDesk #5427
+2. Challenge captured via GET (HTTP 402), nothing signed
+3. Verdict   WARN eip712_domain_mismatch (risk 15)
+             Payment of 0.3 USDT0 (300000) on xlayer to 0x8f1B…07bE for polydesk-i96m.onrender.com (accepts[0], exact). WARN: eip712_domain_mismatch.
+             - WARN eip712_domain_mismatch: extra declares the EIP-712 domain name "USDT" version "1", but the USDT0 contract on xlayer uses name "USD₮0" version "1" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain.
+             > Sign with the token contract domain (name and version) instead of the one in extra, or ask the seller to fix extra. A signature over the wrong domain fails at settlement, so the paid call is rejected.
+             payee is not the seller agent wallet 0x988263a851afe17f8a827eda81269f9fb7553cbc (common, informational)
+   Stopped on WARN. Review the findings, then rerun with --accept-warn to continue.
+exit 2

@@ -1,0 +1,212 @@
+{
+ "scenes": [
+  {
+   "id": "S1",
+   "sentences": [
+    {
+     "display": "GuardianMCP Pay-Safe.",
+     "speech": "Guardian M C P Pay Safe."
+    },
+    {
+     "display": "LNO Alpha, OKX Dev Day 2026.",
+     "speech": "L N O Alpha, O K X Dev Day twenty twenty six."
+    }
+   ]
+  },
+  {
+   "id": "S2",
+   "sentences": [
+    {
+     "display": "A buyer agent calls a paid OKX.AI service and gets an x402 challenge.",
+     "speech": "A buyer agent calls a paid O K X dot A I service and gets an x four oh two challenge."
+    },
+    {
+     "display": "It signs and pays through Onchain OS.",
+     "speech": "It signs and pays through On chain O S."
+    },
+    {
+     "display": "Nothing checks the seller's challenge against the listing.",
+     "speech": "Nothing checks the seller's challenge against the listing."
+    },
+    {
+     "display": "Pass the endpoint of this live listing to a shell, and attacker commands run.",
+     "speech": "Pass the endpoint of this live listing to a shell, and attacker commands run."
+    }
+   ]
+  },
+  {
+   "id": "S3",
+   "sentences": [
+    {
+     "display": "Guardian requests the challenge without paying or signing.",
+     "speech": "Guardian requests the challenge without paying or signing."
+    },
+    {
+     "display": "Price, token, payee and endpoint must match the listing; the EIP-712 domain must match the token.",
+     "speech": "Price, token, payee and endpoint must match the listing, the E I P seven twelve domain must match the token."
+    },
+    {
+     "display": "Honest seller, no rule fires: ALLOW.",
+     "speech": "Honest seller, no rule fires, allow."
+    }
+   ]
+  },
+  {
+   "id": "S4",
+   "sentences": [
+    {
+     "display": "Price bait-and-switch: listed at 0.001, the challenge asks for 1.0.",
+     "speech": "Price bait and switch. Listed at zero point zero zero one, the challenge asks for one point zero."
+    },
+    {
+     "display": "1000 times the listing. DENY: amount above listing.",
+     "speech": "A thousand times the listing. Deny, amount above listing."
+    }
+   ]
+  },
+  {
+   "id": "S5",
+   "sentences": [
+    {
+     "display": "Poisoned payee: it starts and ends like the listed wallet.",
+     "speech": "Poisoned payee. It starts and ends like the listed wallet."
+    },
+    {
+     "display": "Only the middle differs, so a quick glance passes it.",
+     "speech": "Only the middle differs, so a quick glance passes it."
+    },
+    {
+     "display": "DENY: payTo poisoning.",
+     "speech": "Deny, pay to poisoning."
+    }
+   ]
+  },
+  {
+   "id": "S6",
+   "sentences": [
+    {
+     "display": "Wrong EIP-712 domain: the challenge declares USDT.",
+     "speech": "Wrong E I P seven twelve domain, the challenge declares U S D T."
+    },
+    {
+     "display": "X Layer's USD₮0 contract accepts only name USD₮0, version 1.",
+     "speech": "X Layer's U S D T zero contract accepts only name U S D T zero, version one."
+    },
+    {
+     "display": "WARN: settlement fails.",
+     "speech": "Warn, settlement fails."
+    }
+   ]
+  },
+  {
+   "id": "S7",
+   "sentences": [
+    {
+     "display": "Shell payload: the listed URL carries a pipe and a curl command.",
+     "speech": "Shell payload. The listed U R L carries a pipe and a curl command."
+    },
+    {
+     "display": "DENY: endpoint URL injection. The endpoint is never contacted.",
+     "speech": "Deny, endpoint U R L injection. The endpoint is never contacted."
+    }
+   ]
+  },
+  {
+   "id": "S8",
+   "sentences": [
+    {
+     "display": "We scanned 62 paid OKX.AI services without paying.",
+     "speech": "We scanned sixty two paid O K X dot A I services without paying."
+    },
+    {
+     "display": "25 returned a challenge: 13 ALLOW, 11 WARN, 1 DENY.",
+     "speech": "Twenty five returned a challenge, thirteen allow, eleven warn, one deny."
+    },
+    {
+     "display": "Our first pass denied 3 honest sellers; now the only DENY is the attack.",
+     "speech": "Our first pass denied three honest sellers, now the only deny is the attack."
+    },
+    {
+     "display": "Its URL and challenge carry shell payloads.",
+     "speech": "Its U R L and challenge carry shell payloads."
+    },
+    {
+     "display": "Four others declare the wrong EIP-712 domain; signatures built from it fail on-chain.",
+     "speech": "Four others declare the wrong E I P seven twelve domain, signatures built from it fail on chain."
+    }
+   ]
+  },
+  {
+   "id": "S9",
+   "sentences": [
+    {
+     "display": "Now the full buyer flow on Onchain OS.",
+     "speech": "Now the full buyer flow on On chain O S."
+    },
+    {
+     "display": "Run one, the attack listing from the scan, stops before contact: exit 3.",
+     "speech": "Run one, the attack listing from the scan, stops before contact, exit three."
+    },
+    {
+     "display": "Run two, a real marketplace seller with the wrong domain, stops on WARN: exit 2.",
+     "speech": "Run two, a real marketplace seller with the wrong domain, stops on warn, exit two."
+    },
+    {
+     "display": "Run three, our own Radar endpoint, passes with ALLOW.",
+     "speech": "Run three, our own Radar endpoint, passes with allow."
+    },
+    {
+     "display": "Quote guard: the Onchain OS quote matches the checked payee, amount and token.",
+     "speech": "Quote guard, the On chain O S quote matches the checked payee, amount and token."
+    },
+    {
+     "display": "The script prints the exact pay command for the wallet owner to confirm: exit 0.",
+     "speech": "The script prints the exact pay command for the wallet owner to confirm, exit zero."
+    }
+   ]
+  },
+  {
+   "id": "S10",
+   "sentences": [
+    {
+     "display": "Listings come from onchainos agent service-detail.",
+     "speech": "Listings come from On chain O S agent service detail."
+    },
+    {
+     "display": "Guardian /check-payment or /probe-payment verifies the challenge, unpaid and unsigned.",
+     "speech": "Guardian check payment or probe payment verifies the challenge, unpaid and unsigned."
+    },
+    {
+     "display": "The quote guard lets only a matching quote reach the pay command on X Layer.",
+     "speech": "The quote guard lets only a matching quote reach the pay command on X Layer."
+    }
+   ]
+  },
+  {
+   "id": "S11",
+   "sentences": [
+    {
+     "display": "All Pay-Safe work was committed in the build period, from 16 September.",
+     "speech": "All Pay Safe work was committed in the build period, from September sixteenth."
+    },
+    {
+     "display": "36 payment rules, 39 new tests.",
+     "speech": "Thirty six payment rules, thirty nine new tests."
+    }
+   ]
+  },
+  {
+   "id": "S12",
+   "sentences": [
+    {
+     "display": "One call before every agent payment on OKX.AI.",
+     "speech": "One call before every agent payment on O K X dot A I."
+    },
+    {
+     "display": "Try the live demo of Pay-Safe.",
+     "speech": "Try the live demo of Pay Safe."
+    }
+   ]
+  }
+ ]
+}

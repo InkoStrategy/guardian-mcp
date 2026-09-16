@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Pay-Safe compositor</title>
+<style>html,body{margin:0;background:#000}canvas{display:block}</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+'use strict';
+const W = 1920, H = 1080, S = 1.5; // css px -> canvas px
+const C = { bg: '#0b0d10', card: '#13171c', line: '#232a33', txt: '#e6e9ee', muted: '#8d96a3', ok: '#3ecf8e', warn: '#f5b849', deny: '#f0574f', acc: '#6aa9ff' };
+const cv = document.getElementById('c');
+const g = cv.getContext('2d');
+
+const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const lerp = (a, b, x) => a + (b - a) * x;
+
+function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+
+// ---------- assets ----------
+const bitmaps = new Map();
+async function loadImage(name) {
+  if (bitmaps.has(name)) return bitmaps.get(name);
+  const p = fetch('/frames/' + name).then((r) => { if (!r.ok) throw new Error('missing frame ' + name); return r.blob(); }).then((b) => createImageBitmap(b));
+  bitmaps.set(name, p);
+  return p;
+}
+const ready = new Map();
+function img(name) { return ready.get(name) || null; }
+async function preload(names) { for (const n of names) { if (!ready.has(n)) ready.set(n, await loadImage(n)); } }
+function release(names) { for (const n of names) { const b = ready.get(n); if (b && b.close) b.close(); ready.delete(n); bitmaps.delete(n); } }
+
+// ---------- timeline ----------
+function buildTimeline(plan, buffers) {
+  const LEAD = 0.45, GAP = 0.3, TAIL = 0.6;
+  const MIN = { slide: 5, page: 8.2, scan: 16, terminal: 26 };
+  let t = 0;
+  const scenes = [];
+  for (const sc of plan.scenes) {
+    const vis = plan.visuals[sc.id];
+    const intro = vis.intro || 0;
+    let cursor = LEAD + intro * 0.35;
+    const sentences = sc.sentences.map((s, i) => {
+      const buf = buffers[sc.id + '-' + i];
+      const out = { display: s.display, buffer: buf, start: t + cursor, end: t + cursor + buf.duration };
+      cursor += buf.duration + GAP;
+      return out;
+    });
+    const speech = cursor - GAP + TAIL;
+    const duration = Math.max(MIN[vis.type] + intro, speech);
+    scenes.push({ id: sc.id, vis, start: t, duration, sentences });
+    t += duration;
+  }
+  return { scenes, total: t };
+}
+
+// ---------- scene renderers ----------
+let pageState = { scroll: 0, cursor: null, image: 'page-base.jpg' };
+
+function drawCrop(name, scrollCss, alpha) {
+  const b = img(name);
+  if (!b) return;
+  g.globalAlpha = alpha === undefined ? 1 : alpha;
+  const sy = Math.max(0, Math.min(b.height - H, scrollCss * S));
+  g.drawImage(b, 0, sy, W, H, 0, 0, W, H);
+  g.globalAlpha = 1;
+}
+
+function drawCursor(x, y, press) {
+  g.save();
+  g.translate(x, y);
+  if (press > 0 && press < 1) {
+    g.beginPath(); g.arc(0, 0, 18 + press * 46, 0, Math.PI * 2);
+    g.strokeStyle = 'rgba(106,169,255,' + (0.85 * (1 - press)) + ')'; g.lineWidth = 5; g.stroke();
+  }
+  g.scale(1.55, 1.55);
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 22); g.lineTo(6, 17); g.lineTo(10, 26); g.lineTo(14, 24); g.lineTo(10, 15); g.lineTo(17, 15); g.closePath();
+  g.fillStyle = '#ffffff'; g.fill(); g.strokeStyle = '#111'; g.lineWidth = 1.4; g.stroke();
+  g.restore();
+}
+
+function scenarioPlan(sc, plan) {
+  const st = plan.meta.states[sc.vis.key];
+  const btn = plan.meta.buttons.find((b) => b.title === sc.vis.button);
+  return {
+    st,
+    btnCenter: { x: btn.x + btn.w / 2, y: btn.y + btn.h * 0.42 },
+    yBtn: 170,
+    yRes: Math.max(0, st.resultBox.y - 110),
+  };
+}
+
+function drawPage(sc, lt, plan) {
+  const p = sc._p || (sc._p = scenarioPlan(sc, plan));
+  const off = sc.vis.intro || 0;
+  const enter = sc._enter;
+  const t1 = lt - off;
+  let scroll;
+  if (t1 < 0) scroll = enter.scroll;
+  else if (t1 < 0.9) scroll = lerp(enter.scroll, p.yBtn, ease(t1 / 0.9));
+  else if (t1 < 3.0) scroll = p.yBtn;
+  else scroll = lerp(p.yBtn, p.yRes, ease((t1 - 3.0) / 1.2));
+
+  const key = sc.vis.key;
+  const hover = 'page-' + key + '-hover.jpg', loading = 'page-' + key + '-loading.jpg', result = 'page-' + key + '-result.jpg';
+  if (t1 < 1.15) drawCrop(enter.image, scroll);
+  else if (t1 < 1.6) drawCrop(hover, scroll);
+  else if (t1 < 2.6) drawCrop(loading, scroll);
+  else { drawCrop(loading, scroll); drawCrop(result, scroll, clamp01((t1 - 2.6) / 0.25)); }
+
+  const from = enter.cursor || { x: 1180, y: p.yBtn + 700 };
+  const mv = ease(clamp01((t1 - 0.2) / 1.0));
+  const cx = lerp(from.x, p.btnCenter.x, mv), cy = lerp(from.y, p.btnCenter.y, mv);
+  const press = t1 >= 1.6 && t1 < 2.0 ? (t1 - 1.6) / 0.4 : 0;
+  drawCursor(cx * S, (cy - scroll) * S, press);
+  sc._exit = { scroll: p.yRes, cursor: p.btnCenter, image: result };
+}
+
+function drawScan(sc, lt, plan) {
+  const st = plan.meta.scan;
+  const D = sc.duration;
+  const enter = sc._enter;
+  const yLead = Math.max(0, st.scanLead.y - 70);
+  const yF = Math.max(0, st.scanFindings.y - 40);
+  const cues = plan.scanCues && sc.sentences.length > 4 ? plan.scanCues : null;
+  const at = (i) => sc.sentences[Math.min(i, sc.sentences.length - 1)].start - sc.start;
+  const tKpi = cues ? at(cues.kpi) - 0.2 : 0.14 * D;
+  const tToFindings = cues ? at(cues.kpi + 1) + 0.6 : 0.42 * D;
+  const tDeny = cues ? at(cues.deny) - 0.3 : 0.56 * D;
+  const tWarn = cues ? at(cues.warn) - 0.1 : 0.66 * D;
+  let scroll;
+  if (lt < 1.6) scroll = lerp(enter.scroll, yLead, ease(lt / 1.6));
+  else if (lt < tToFindings) scroll = yLead;
+  else if (lt < tToFindings + 1.4) scroll = lerp(yLead, yF, ease((lt - tToFindings) / 1.4));
+  else if (lt < tWarn) scroll = yF;
+  else scroll = lerp(yF, yF + 560, ease((lt - tWarn) / Math.max(1.5, D - tWarn - 0.8)));
+  drawCrop('page-scan.jpg', scroll);
+  const box = (x, y, w, h, color, a) => {
+    if (a <= 0) return;
+    g.save(); g.globalAlpha = a; rr((x - 8) * S, (y - 8 - scroll) * S, (w + 16) * S, (h + 16) * S, 16); g.strokeStyle = color; g.lineWidth = 5; g.shadowColor = color; g.shadowBlur = 24; g.stroke(); g.restore();
+  };
+  const kA = clamp01((lt - tKpi) / 0.4) * (1 - clamp01((lt - tToFindings) / 0.4));
+  box(st.scanKpi.x, st.scanKpi.y, st.scanKpi.w, st.scanKpi.h, C.acc, kA);
+  const dA = clamp01((lt - tDeny) / 0.4) * (1 - clamp01((lt - tWarn) / 0.4));
+  box(st.scanFindings.x, st.scanFindings.y, st.scanFindings.w, st.denyRowsHeight, C.deny, dA);
+  sc._exit = { scroll, cursor: null, image: 'page-scan.jpg' };
+}
+
+function wrapChars(text, max) {
+  const out = [];
+  let rest = text;
+  while (rest.length > max) {
+    let cut = rest.lastIndexOf(' ', max);
+    if (cut < max * 0.6) cut = max;
+    out.push(rest.slice(0, cut));
+    rest = '    ' + rest.slice(cut).replace(/^\s+/, '');
+  }
+  out.push(rest);
+  return out;
+}
+
+const TOKEN = /(DENY|WARN|ALLOW|exit 3|exit 2|exit 0|MISMATCH|matches the checked payee, amount and token)/g;
+function colorOf(tok) {
+  if (tok === 'DENY' || tok === 'exit 3' || tok === 'MISMATCH') return C.deny;
+  if (tok === 'WARN' || tok === 'exit 2') return C.warn;
+  return C.ok;
+}
+
+function drawTerminal(sc, lt, plan) {
+  g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
+  const x = 100, y = 58, w = 1720, h = 812;
+  rr(x, y, w, h, 18); g.fillStyle = '#0d1117'; g.fill(); g.strokeStyle = C.line; g.lineWidth = 2; g.stroke();
+  g.save(); rr(x, y, w, 52, 18); g.clip(); g.fillStyle = '#161b22'; g.fillRect(x, y, w, 52); g.restore();
+  ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { g.beginPath(); g.arc(x + 30 + i * 26, y + 26, 8, 0, Math.PI * 2); g.fillStyle = c; g.fill(); });
+  g.fillStyle = C.muted; g.font = '500 22px system-ui, Segoe UI, sans-serif'; g.textAlign = 'center';
+  g.fillText('Onchain OS buyer · node scripts/safe-pay.js', x + w / 2, y + 34); g.textAlign = 'left';
+
+  const blocks = plan.terminal;
+  let starts;
+  if (Array.isArray(plan.terminalCues) && plan.terminalCues.length === blocks.length && sc.sentences.length) {
+    starts = plan.terminalCues.map((si, i) => (i === 0 ? 0 : Math.max(0, sc.sentences[Math.min(si, sc.sentences.length - 1)].start - sc.start - 0.3)));
+  } else {
+    const weights = blocks.map((b) => b.weight);
+    const sum = weights.reduce((a, b) => a + b, 0);
+    let acc = 0;
+    starts = weights.map((w) => { const st = acc; acc += sc.duration * w / sum; return st; });
+  }
+  let bi = 0;
+  for (let i = 0; i < blocks.length; i++) if (lt >= starts[i]) bi = i;
+  const bStart = starts[bi];
+  const b = blocks[bi];
+  const t = lt - bStart;
+  g.font = '24px Consolas, "Cascadia Mono", ui-monospace, monospace';
+  const cw = g.measureText('M').width;
+  const maxChars = Math.floor((w - 70) / cw);
+  const lineH = 35;
+  const lines = [];
+  const cps = Math.max(70, b.cmd.length / 1.1);
+  const typed = Math.min(b.cmd.length, Math.max(0, Math.floor((t - 0.2) * cps)));
+  const cmdLines = wrapChars('$ ' + b.cmd.slice(0, typed), maxChars);
+  cmdLines.forEach((l, i) => lines.push({ text: l, prompt: i === 0 }));
+  const typedDone = 0.2 + b.cmd.length / cps;
+  if (typed >= b.cmd.length) {
+    const outT = t - typedDone - 0.45;
+    const wrapped = [];
+    b.lines.forEach((l) => wrapChars(l, maxChars).forEach((x) => wrapped.push(x)));
+    const shown = outT < 0 ? 0 : Math.min(wrapped.length, Math.floor(outT / 0.075) + 1);
+    for (let i = 0; i < shown; i++) lines.push({ text: wrapped[i] });
+    if (shown < wrapped.length || Math.floor(lt * 2) % 2 === 0) lines.push({ text: shown >= wrapped.length ? '$ ' : '', cursor: shown >= wrapped.length });
+  } else if (Math.floor(lt * 3) % 2 === 0) {
+    lines[lines.length - 1].caret = true;
+  }
+  const maxLines = Math.floor((h - 90) / lineH);
+  const visible = lines.slice(Math.max(0, lines.length - maxLines));
+  visible.forEach((ln, i) => {
+    const ly = y + 100 + i * lineH;
+    let lx = x + 36;
+    let text = ln.text;
+    if (text.startsWith('$ ')) { g.fillStyle = C.acc; g.fillText('$', lx, ly); lx += cw * 2; text = text.slice(2); g.fillStyle = C.txt; }
+    let last = 0;
+    text.replace(TOKEN, (m, _t, idx) => {
+      g.fillStyle = ln.prompt ? '#c9d1d9' : '#c9d1d9'; g.fillText(text.slice(last, idx), lx + last * cw, ly);
+      g.fillStyle = colorOf(m); g.font = 'bold 24px Consolas, "Cascadia Mono", ui-monospace, monospace'; g.fillText(m, lx + idx * cw, ly);
+      g.font = '24px Consolas, "Cascadia Mono", ui-monospace, monospace';
+      last = idx + m.length; return m;
+    });
+    g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last), lx + last * cw, ly);
+    if (ln.caret || ln.cursor) { g.fillStyle = C.txt; g.fillRect(lx + text.length * cw + 2, ly - 22, cw * 0.6, 28); }
+  });
+  // block label
+  g.font = '600 20px system-ui, Segoe UI, sans-serif';
+  g.fillStyle = C.muted;
+  g.fillText((bi + 1) + ' / ' + blocks.length + ' · ' + b.label, x + 36, y + h - 24);
+}
+
+function drawSlide(sc, lt) {
+  const b = img(sc.vis.img);
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  if (!b) return;
+  const k = 1 + 0.02 * clamp01(lt / sc.duration);
+  g.save(); g.translate(W / 2, H / 2); g.scale(k, k); g.drawImage(b, -W / 2, -H / 2, W, H); g.restore();
+}
+
+function wrapText(text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let cur = '';
+  for (const wd of words) {
+    const test = cur ? cur + ' ' + wd : wd;
+    if (g.measureText(test).width > maxWidth && cur) { lines.push(cur); cur = wd; } else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function drawSubtitle(scenes, t) {
+  let active = null;
+  for (const sc of scenes) for (let i = 0; i < sc.sentences.length; i++) {
+    const s = sc.sentences[i];
+    const next = sc.sentences[i + 1];
+    const until = next ? next.start - 0.02 : s.end + 0.25;
+    if (t >= s.start - 0.08 && t < until) active = s;
+  }
+  if (!active) return;
+  g.font = '600 40px system-ui, Segoe UI, sans-serif';
+  const lines = wrapText(active.display, 1560);
+  const lh = 54;
+  const boxH = lines.length * lh + 30;
+  const widest = Math.max(...lines.map((l) => g.measureText(l).width));
+  const bx = W / 2 - widest / 2 - 30, by = H - 44 - boxH;
+  rr(bx, by, widest + 60, boxH, 14); g.fillStyle = 'rgba(6,8,12,0.82)'; g.fill();
+  g.fillStyle = '#ffffff'; g.textAlign = 'center';
+  lines.forEach((l, i) => g.fillText(l, W / 2, by + 15 + lh * (i + 1) - 14));
+  g.textAlign = 'left';
+}
+
+function fadeFor(sc, lt, prev, next) {
+  const cont = (a, b) => a && b && (a.vis.type === 'page' || a.vis.type === 'scan') && (b.vis.type === 'page' || b.vis.type === 'scan');
+  let a = 1;
+  if (!cont(prev, sc)) a = Math.min(a, clamp01(lt / 0.35));
+  if (!cont(sc, next)) a = Math.min(a, clamp01((sc.duration - lt) / 0.35));
+  return a;
+}
+
+function imagesFor(sc, plan) {
+  const v = sc.vis;
+  if (v.type === 'slide') return [v.img];
+  if (v.type === 'page') return ['page-' + v.key + '-hover.jpg', 'page-' + v.key + '-loading.jpg', 'page-' + v.key + '-result.jpg'];
+  if (v.type === 'scan') return ['page-scan.jpg'];
+  return [];
+}
+
+// ---------- timeline export (for subtitles and review) ----------
+window.getTimeline = async function () {
+  const plan = await (await fetch('/plan.json')).json();
+  const ac = new OfflineAudioContext(1, 48000, 48000);
+  const buffers = {};
+  for (const sc of plan.scenes) for (let i = 0; i < sc.sentences.length; i++) {
+    buffers[sc.id + '-' + i] = await ac.decodeAudioData(await (await fetch('/audio/' + sc.id + '-' + i + '.wav')).arrayBuffer());
+  }
+  const tl = buildTimeline(plan, buffers);
+  return { total: tl.total, scenes: tl.scenes.map((s) => ({ id: s.id, type: s.vis.type, start: s.start, duration: s.duration, sentences: s.sentences.map((x) => ({ start: x.start, end: x.end, display: x.display })) })) };
+};
+
+// ---------- main ----------
+window.renderVideo = async function (opts) {
+  const plan = await (await fetch('/plan.json')).json();
+  const ac = new AudioContext({ sampleRate: 48000 });
+  const buffers = {};
+  for (const sc of plan.scenes) {
+    for (let i = 0; i < sc.sentences.length; i++) {
+      const ab = await (await fetch('/audio/' + sc.id + '-' + i + '.wav')).arrayBuffer();
+      buffers[sc.id + '-' + i] = await ac.decodeAudioData(ab);
+    }
+  }
+  const tl = buildTimeline(plan, buffers);
+  const from = opts && opts.from ? tl.scenes.findIndex((s) => s.id === opts.from) : 0;
+  const toIdx = opts && opts.to ? tl.scenes.findIndex((s) => s.id === opts.to) : tl.scenes.length - 1;
+  const scenes = tl.scenes.slice(from, toIdx + 1);
+  const t0 = scenes[0].start;
+  const total = scenes[scenes.length - 1].start + scenes[scenes.length - 1].duration - t0;
+
+  // carry page state through earlier scenes so partial renders start consistently
+  let carry = { scroll: 0, cursor: null, image: 'page-base.jpg' };
+  for (const sc of tl.scenes) {
+    sc._enter = carry;
+    if (sc.vis.type === 'page') { const p = scenarioPlan(sc, plan); carry = { scroll: p.yRes, cursor: p.btnCenter, image: 'page-' + sc.vis.key + '-result.jpg' }; }
+    if (sc.vis.type === 'scan') carry = { scroll: 0, cursor: null, image: 'page-scan.jpg' };
+  }
+
+  await preload(['page-base.jpg']);
+  await preload(imagesFor(scenes[0], plan));
+  if (scenes[0]._enter.image) await preload([scenes[0]._enter.image]);
+
+  const dest = ac.createMediaStreamDestination();
+  const vtrack = cv.captureStream(30).getVideoTracks()[0];
+  const stream = new MediaStream([vtrack, ...dest.stream.getAudioTracks()]);
+  const mime = (opts && opts.mime) || 'video/webm;codecs=vp9,opus';
+  const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: (opts && opts.bitrate) || 9000000, audioBitsPerSecond: 160000 });
+  const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  const stopped = new Promise((r) => { rec.onstop = r; });
+
+  g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+  rec.start(1000);
+  const PRE = 0.4;
+  const base = ac.currentTime + PRE;
+  for (const sc of scenes) for (const s of sc.sentences) {
+    const src = ac.createBufferSource();
+    src.buffer = s.buffer;
+    src.connect(dest);
+    src.start(base + (s.start - t0));
+  }
+
+  let frames = 0, slowFrames = 0, lastWall = performance.now();
+  const loaded = new Set();
+  await new Promise((resolve) => {
+    function frame() {
+      const now = performance.now();
+      if (now - lastWall > 60) slowFrames++;
+      lastWall = now;
+      const t = ac.currentTime - base + t0;
+      if (ac.currentTime - base > total + 0.35) return resolve();
+      g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+      const idx = tl.scenes.findIndex((s) => t >= s.start && t < s.start + s.duration);
+      if (idx >= 0) {
+        const sc = tl.scenes[idx];
+        const lt = t - sc.start;
+        const need = imagesFor(sc, plan).concat(sc._enter && sc._enter.image && (sc.vis.type === 'page') ? [sc._enter.image] : []);
+        if (!loaded.has(sc.id)) {
+          loaded.add(sc.id);
+          const nxt = tl.scenes[idx + 1];
+          const keep = new Set(need.concat(nxt ? imagesFor(nxt, plan) : []));
+          for (const n of [...ready.keys()]) if (!keep.has(n)) release([n]);
+          if (nxt) preload(imagesFor(nxt, plan).concat(nxt.vis.type === 'page' && nxt._enter.image ? [nxt._enter.image] : []));
+        }
+        if (sc.vis.type === 'slide') drawSlide(sc, lt);
+        else if (sc.vis.type === 'page') drawPage(sc, lt, plan);
+        else if (sc.vis.type === 'scan') drawScan(sc, lt, plan);
+        else if (sc.vis.type === 'terminal') drawTerminal(sc, lt, plan);
+        const a = fadeFor(sc, lt, tl.scenes[idx - 1], tl.scenes[idx + 1]);
+        if (a < 1) { g.fillStyle = 'rgba(0,0,0,' + (1 - a) + ')'; g.fillRect(0, 0, W, H); }
+        drawSubtitle([sc], t);
+      }
+      frames++;
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  });
+  rec.stop();
+  await stopped;
+  const blob = new Blob(chunks, { type: 'video/webm' });
+  const name = (opts && opts.out) || 'render.webm';
+  await fetch('/save/' + name, { method: 'POST', body: blob });
+  return { name, bytes: blob.size, seconds: total + PRE + 0.35, frames, slowFrames, mime, scenes: tl.scenes.map((s) => ({ id: s.id, start: +s.start.toFixed(2), duration: +s.duration.toFixed(2), sentences: s.sentences.length })) };
+};
+</script>
+</body></html>

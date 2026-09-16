@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Pay-Safe slides</title>
+<style>
+:root{--bg:#0b0d10;--card:#13171c;--line:#232a33;--txt:#e6e9ee;--muted:#8d96a3;--ok:#3ecf8e;--warn:#f5b849;--deny:#f0574f;--acc:#6aa9ff}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.slide{width:1280px;height:720px;padding:64px 88px;display:none;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.slide.on{display:flex}
+.kicker{color:var(--acc);font-size:18px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+h1{font-size:72px;margin:14px 0 10px;letter-spacing:-.02em}
+h2{font-size:44px;margin:0 0 26px;letter-spacing:-.01em;line-height:1.15}
+.lead{font-size:28px;color:var(--muted);margin:0;max-width:980px;line-height:1.4}
+.meta{position:absolute;left:88px;bottom:56px;color:var(--muted);font-size:20px}
+.row{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:21px;line-height:1.3;flex:1}
+.box small{display:block;color:var(--muted);font-size:15px;margin-top:6px}
+.arrow{color:var(--muted);font-size:30px;flex:0 0 auto}
+.gap{color:var(--deny);font-size:30px;font-weight:700;margin:30px 0 22px}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.evidence{background:#150d0e;border:1px solid #5a2326;border-radius:12px;padding:18px 20px;font-size:22px;color:#ffb4ae;overflow-wrap:anywhere}
+.evidence .l{font-family:system-ui;font-size:16px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
+.pipe{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 40px;margin-top:6px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;min-height:112px}
+.step .n{color:var(--acc);font-weight:700;font-size:16px}
+.step .t{font-size:22px;margin-top:4px}
+.step .d{color:var(--muted);font-size:16px;margin-top:6px}
+.step.g{border-color:#2b5d8f;background:#0f1a26}
+.chips{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);border-radius:999px;padding:6px 14px;color:var(--muted);font-size:18px}
+ul.commits{list-style:none;padding:0;margin:0;font-size:22px}
+ul.commits li{display:flex;gap:18px;padding:9px 0;border-bottom:1px solid var(--line)}
+ul.commits .h{font-family:ui-monospace,Consolas,monospace;color:var(--acc);flex:0 0 110px}
+ul.commits .dt{color:var(--muted);flex:0 0 130px}
+.stats{display:flex;gap:18px;margin-top:26px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 22px}
+.stat .v{font-size:40px;font-weight:700}.stat .k{color:var(--muted);font-size:16px;text-transform:uppercase;letter-spacing:.06em}
+.links{font-size:28px;line-height:1.9;margin-top:24px}
+.links span{color:var(--muted);display:inline-block;width:200px;font-size:20px}
+</style></head><body>
+
+<section class="slide" id="S1">
+  <div class="kicker">OKX Dev Day 2026 · Build a Company</div>
+  <h1>GuardianMCP Pay-Safe</h1>
+  <p class="lead">Check an x402 payment <b style="color:var(--txt)">before</b> your agent pays it.</p>
+  <div class="meta">Team LNO Alpha · remote · OKX.AI agent #13730</div>
+</section>
+
+<section class="slide" id="S2">
+  <div class="kicker">The gap</div>
+  <h2>Agents pay whatever the 402 says</h2>
+  <div class="row">
+    <div class="box">Buyer agent<small>picks a listing on OKX.AI</small></div><div class="arrow">→</div>
+    <div class="box">Paid service<small>endpoint from the listing</small></div><div class="arrow">→</div>
+    <div class="box">HTTP 402 challenge<small>price, token, payee: written by the seller</small></div><div class="arrow">→</div>
+    <div class="box">Onchain OS<small>signs and pays on X Layer</small></div>
+  </div>
+  <div class="gap">Nothing checks the challenge against the listing.</div>
+  <div class="evidence"><div class="l">Live OKX.AI listing today · sid 39876 · endpoint URL</div><span class="code">…/api/market-insight;id|{base64,-w0}|{curl,-fsS,-m,8,-X,POST,…}</span></div>
+</section>
+
+<section class="slide" id="S10">
+  <div class="kicker">OKX AI integration</div>
+  <h2>One extra call in the Onchain OS buyer flow</h2>
+  <div class="pipe">
+    <div class="step"><div class="n">1</div><div class="t code">agent service-detail</div><div class="d">listing: endpoint, price, token</div></div>
+    <div class="step"><div class="n">2</div><div class="t">Unpaid request</div><div class="d">GET · POST · MCP tools/call, nothing signed</div></div>
+    <div class="step g"><div class="n">3</div><div class="t">Guardian Pay-Safe</div><div class="d code">/check-payment · /probe-payment</div></div>
+    <div class="step"><div class="n">4</div><div class="t code">payment quote</div><div class="d">Onchain OS persists a paymentId</div></div>
+    <div class="step g"><div class="n">5</div><div class="t">Quote guard</div><div class="d">same payee, amount, token, network as checked</div></div>
+    <div class="step"><div class="n">6</div><div class="t code">payment pay</div><div class="d">the wallet owner confirms</div></div>
+  </div>
+  <div class="chips"><span class="chip">X Layer · eip155:196</span><span class="chip">USD₮0</span><span class="chip">x402 v1 + v2</span><span class="chip">MCP servers</span><span class="chip">agent skill for Onchain OS</span></div>
+</section>
+
+<section class="slide" id="S11">
+  <div class="kicker">Built during the Dev Day build period</div>
+  <h2>All Pay-Safe work is new</h2>
+  <ul class="commits">
+    <li><span class="h">1151209</span><span class="dt">16 Sep 2026</span><span>POST /check-payment: listing vs 402 challenge, signed payment checks</span></li>
+    <li><span class="h">fefe1d2</span><span class="dt">16 Sep 2026</span><span>Shell-injection endpoints, EIP-712 domain evidence</span></li>
+    <li><span class="h">9a7be92</span><span class="dt">16 Sep 2026</span><span>Payloads hidden in challenge fields</span></li>
+    <li><span class="h">05b1fa1</span><span class="dt">16 Sep 2026</span><span>OKX.AI marketplace trust scan with MCP probing</span></li>
+    <li><span class="h">47bc206</span><span class="dt">16 Sep 2026</span><span>safe-pay: Onchain OS flow with quote guard</span></li>
+    <li><span class="h">7c13562</span><span class="dt">16 Sep 2026</span><span>POST /probe-payment, demo sellers, /pay-safe page</span></li>
+  </ul>
+  <div class="stats"><div class="stat"><div class="v">36</div><div class="k">payment rules</div></div><div class="stat"><div class="v">39</div><div class="k">new tests</div></div><div class="stat"><div class="v">62</div><div class="k">marketplace services scanned</div></div></div>
+</section>
+
+<section class="slide" id="S12">
+  <div class="kicker">GuardianMCP Pay-Safe</div>
+  <h2 style="font-size:54px">One call before every agent payment on OKX.AI.</h2>
+  <div class="links">
+    <div><span>Try it</span>guardian-mcp-rho.vercel.app/pay-safe</div>
+    <div><span>Source</span>github.com/InkoStrategy/guardian-mcp</div>
+    <div><span>OKX.AI</span>GuardianMCP · agent #13730</div>
+  </div>
+  <div class="meta">Team LNO Alpha · OKX Dev Day 2026</div>
+</section>
+
+<script>
+function show(id){document.querySelectorAll('.slide').forEach(function(s){s.classList.toggle('on',s.id===id);});}
+</script>
+</body></html>

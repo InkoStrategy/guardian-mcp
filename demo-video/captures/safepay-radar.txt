@@ -1,0 +1,9 @@
+1. Listing   https://lno-radar-api.vercel.app/paid/snapshot?instId=BTC-USDT-SWAP
+             price 0.002 0x779ded0c9e1022225f8e0630b35a9b54be713736
+2. Challenge captured via GET (HTTP 402), nothing signed
+3. Verdict   ALLOW (risk 0)
+             Payment of 0.002 USDT0 (2000) on xlayer to 0xE1c6…f67b for lno-radar-api.vercel.app (accepts[0], exact). No risk rules triggered.
+4. Quote     matches the checked payee, amount and token. paymentId pay_d51ca081cb796e14bc7ee28a, wallet balance insufficient (short 0.002)
+5. Pay       not requested. To pay exactly what was checked:
+             onchainos payment pay --payment-id pay_d51ca081cb796e14bc7ee28a --selected-index 0 --yes
+exit 0

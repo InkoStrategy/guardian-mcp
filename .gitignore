@@ -8,3 +8,5 @@ npm-debug.log*
 
 .vercel
 scan.log
+demo-video/build/
+demo-video/out/
