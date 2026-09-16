@@ -4,8 +4,8 @@
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
-> what the OKX.AI listing promised (price, token, payee, EIP-712 domain, endpoint) and returns
-> ALLOW / WARN / DENY with evidence. Nothing is signed or paid.
+> what the OKX.AI listing promised (price, token, payee, endpoint) and with the token contract itself
+> (EIP-712 domain), and returns ALLOW / WARN / DENY with evidence. Nothing is signed or paid.
 
 ## The problem
 
@@ -32,10 +32,11 @@ What the scan found:
   plus `$(printf …)` and `curl` in `extra.name`. Any agent that passes the URL or the challenge to a
   shell runs the attacker's commands. OKX's own A2MCP skill warns that service metadata "may contain
   shell metacharacters"; Pay-Safe turns that warning into a DENY.
-- **Five sellers whose payments cannot settle.** They declare the EIP-712 domain `USDT` v1,
+- **Five challenges with an EIP-712 domain the token does not use.** They declare `USDT` v1,
   `USDT₀` v1 or `USD₮0` v2. The USD₮0 contract on X Layer (`0x779d…3736`) returns
   `DOMAIN_SEPARATOR 0xd591d9ba…`, which matches only name `USD₮0` version `1`. `onchainos payment
-  pay-local` builds the domain from `extra.name` / `extra.version`, so those signatures fail on-chain.
+  pay-local` builds the domain from `extra.name` / `extra.version`, so signatures built from those challenges
+  fail on-chain. One of the five is the attack listing above; the other four are regular sellers.
 - **Heuristics tuned on real data.** The first pass produced 3 false DENYs on honest sellers whose
   hosts contain "okx" or use cheap TLDs. Host patterns are now split by strength and weighed against
   the listing, and the rerun has one DENY: the real attack.
@@ -47,14 +48,14 @@ signature firewall, shared threat registry, benchmark) is pre-existing and not p
 
 | Commit | Feature |
 |---|---|
-| `1151209` | `POST /check-payment`: x402 v1/v2 challenge parsing, 32 payment rules, listing comparison (price, token, payee, domain), canonical settlement assets, EIP-3009 signature recovery, Permit2 spender / token / amount / witness checks, recommended entry among `accepts[]` |
+| `1151209` | `POST /check-payment`: x402 v1/v2 challenge parsing, 32 payment rules, listing comparison (price, token, payee, endpoint domain), canonical settlement assets, EIP-3009 signature recovery, Permit2 spender / token / amount / witness checks, recommended entry among `accepts[]` |
 | `fefe1d2` | `endpoint_url_injection`, listing-aware host checks, EIP-712 domain evidence from the verified on-chain `DOMAIN_SEPARATOR` |
 | `9a7be92` | `challenge_field_injection`, host pattern strength, MCP resource ids; API docs and agent skill updated |
 | `05b1fa1` | OKX.AI marketplace trust scan (`scripts/okxai-trust-scan.js`) with MCP probing; published report |
 | `47bc206` | `scripts/safe-pay.js`: end-to-end Onchain OS buyer flow with a quote time-of-check/time-of-use guard |
 | `7c13562` | `POST /probe-payment` (URL in, verdict out, SSRF-guarded), demo x402 sellers, the `/pay-safe` page |
 
-Pay-Safe now has 36 payment rules. Tests: 123 passing (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
+Pay-Safe now has 36 payment rules and 39 new tests; the full suite has 123 passing (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
 Permit2 payloads, SSRF targets and every demo scenario.
 
 ## How it integrates with OKX AI

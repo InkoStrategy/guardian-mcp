@@ -40,7 +40,7 @@ const SCENARIOS = {
   },
   'wrong-domain': {
     title: 'Wrong EIP-712 domain',
-    story: 'Declares the token name "USDT". The USD₮0 contract signs as "USD₮0" version 1, so the payment fails at settlement. Seen on live OKX.AI listings.',
+    story: 'Declares the token name "USDT". The USD₮0 contract signs as "USD₮0" version 1, so a signature built from this challenge fails at settlement. Seen on live OKX.AI listings.',
     expect: 'WARN',
     entry: { extra: { name: 'USDT', version: '1' } },
   },
