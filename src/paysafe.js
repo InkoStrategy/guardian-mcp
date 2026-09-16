@@ -89,8 +89,9 @@ const PAYMENT_RULES = [
   { code: 'resource_host_mismatch', severity: 'WARN', layer: 'payment', description: 'The resource.url in the challenge points to a different domain than the URL the agent called.' },
   { code: 'insecure_payment_endpoint', severity: 'WARN', layer: 'payment', description: 'The paid endpoint uses plain http, so the challenge can be altered in transit.' },
   { code: 'endpoint_url_injection', severity: 'DENY', layer: 'payment', description: 'The endpoint or resource URL carries shell syntax (command separators, pipes, brace expansion, command substitution). It targets buyer agents that pass the URL to a shell, such as curl in a tool call.' },
-  { code: 'endpoint_phishing_pattern', severity: 'DENY', layer: 'payment', description: 'The paid host matches a phishing pattern (brand impersonation, typosquatting, punycode, bare IP, suspicious TLD, deep subdomains) and no marketplace listing vouches for it.' },
-  { code: 'endpoint_domain_suspicious', severity: 'WARN', layer: 'payment', description: 'The paid host matches a phishing pattern, but it is the endpoint named in the marketplace listing. Marketplace sellers often use brand words or cheap TLDs, so this is a warning, not a block.' },
+  { code: 'challenge_field_injection', severity: 'DENY', layer: 'payment', description: 'A free-text field of the 402 challenge (extra.name, extra.version, resource.description, error) carries a shell payload such as $(...), a quote break followed by a command, or a chained curl/base64. Honest sellers never need this.' },
+  { code: 'endpoint_phishing_pattern', severity: 'DENY', layer: 'payment', description: 'The paid host imitates someone (brand impersonation, typosquatting, punycode, bare IP) and no marketplace listing vouches for it.' },
+  { code: 'endpoint_domain_suspicious', severity: 'WARN', layer: 'payment', description: 'The paid host imitates a brand but is the endpoint named in the marketplace listing, or it only has a weak pattern (abused TLD, phishing keyword, deep subdomains) and no listing names it. Weak patterns on a listed endpoint are ignored.' },
   { code: 'accepted_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed payload\'s accepted requirement differs from the challenge (recipient, amount, asset, network or scheme).' },
   { code: 'signed_recipient_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed authorisation pays a different address than the challenge payTo.' },
   { code: 'signed_amount_mismatch', severity: 'DENY', layer: 'payment', description: 'The signed authorisation allows more than the challenge amount.' },
@@ -127,6 +128,7 @@ const RECOMMENDATIONS = {
   unknown_settlement_asset: 'Prefer entries that settle in a canonical stablecoin (USD₮0 on X Layer, USDC on Base).',
   multiple_payees: 'Select the accepts entry whose payTo matches the provider in the listing.',
   insecure_payment_endpoint: 'Call the https version of the endpoint.',
+  challenge_field_injection: 'Do not pay. Treat every string in this challenge as hostile, never pass it to a shell or template, and report the listing.',
   endpoint_url_injection: 'Do not call or pay this endpoint, and never pass the URL to a shell. Report the listing to the marketplace.',
   endpoint_phishing_pattern: 'Do not pay. Find the service on the marketplace and pay only the endpoint its listing names.',
   endpoint_domain_suspicious: 'The host looks unusual but matches the listing. Keep the spending cap low and check the listing reputation before paying larger amounts.',
@@ -240,7 +242,16 @@ function normalizeChallenge(input) {
   const v = Number(pr.x402Version) || 1;
   const entries = accepts.map((a, i) => normalizeEntry(a, i, v));
   const resourceUrl = (pr.resource && typeof pr.resource === 'object' && typeof pr.resource.url === 'string' ? pr.resource.url : null) || entries.map((e) => e.resourceUrl).find(Boolean) || null;
-  return { x402Version: v, resourceUrl, description: pr.resource && pr.resource.description ? String(pr.resource.description).slice(0, 200) : null, entries };
+  // Seller-controlled free text that agents tend to log, template or pass to tools.
+  const texts = [];
+  const addText = (field, value) => { if (typeof value === 'string' && value) texts.push({ field, value: value.slice(0, 4096) }); };
+  if (pr.resource && typeof pr.resource === 'object') addText('resource.description', pr.resource.description);
+  addText('error', pr.error);
+  entries.forEach((e, i) => {
+    for (const [k, val] of Object.entries(e.extra)) addText('accepts[' + i + '].extra.' + k, val);
+    addText('accepts[' + i + '].description', accepts[i].description);
+  });
+  return { x402Version: v, resourceUrl, description: pr.resource && pr.resource.description ? String(pr.resource.description).slice(0, 200) : null, entries, texts };
 }
 
 // ---------- amounts ----------
@@ -299,6 +310,34 @@ function urlShellSyntax(url) {
     if (m) return { what: p.what, at: url.slice(Math.max(0, m.index - 12), m.index + 28) };
   }
   return null;
+}
+
+/** Shell payloads inside free-text challenge fields (names, descriptions). Plain punctuation stays allowed. */
+const TEXT_SHELL_PATTERNS = [
+  { re: /\$\(|\$\{|`/, what: 'command substitution or backtick' },
+  { re: /['"]\s*;/, what: 'quote break followed by a command separator' },
+  { re: /[;&|]\s*(?:curl|wget|bash|sh|zsh|nc|ncat|python3?|node|perl|rm|base64|eval|exec|printf)\b/i, what: 'chained shell command' },
+  { re: /\{(?:curl|wget|bash|sh|base64|nc|python3?|printf),/i, what: 'brace-expanded shell command' },
+];
+function textShellSyntax(text) {
+  for (const p of TEXT_SHELL_PATTERNS) {
+    const m = text.match(p.re);
+    if (m) return { what: p.what, at: text.slice(Math.max(0, m.index - 12), m.index + 28) };
+  }
+  return null;
+}
+
+/** Quote seller-controlled text safely inside a message: short, single line, no control characters. */
+function quoteUntrusted(text, max) {
+  const s = String(text).replace(/[\u0000-\u001f\u007f]/g, ' ');
+  return JSON.stringify(s.length > (max || 32) ? s.slice(0, max || 32) + '…' : s);
+}
+
+/** Host of an absolute http(s) URL only; mcp://… and relative resource ids have no comparable host. */
+const STRONG_HOST_PATTERNS = new Set(['brand_impersonation', 'typosquatting', 'punycode', 'ip_address_host']);
+
+function httpHostOf(url) {
+  return typeof url === 'string' && /^https?:\/\//i.test(url.trim()) ? hostOf(url.trim()) : null;
 }
 
 function hostOf(url) {
@@ -430,7 +469,7 @@ async function evaluateEntry(entry, input, deps, shared) {
       findings.push(finding('unknown_settlement_asset', 'Asset ' + (meta.symbol || entry.asset) + ' is a known token but not a stablecoin normally used for x402 settlement.'));
     }
     if (meta && meta.eip712Name && entry.extra && entry.extra.name && (entry.extra.name !== meta.eip712Name || (entry.extra.version && String(entry.extra.version) !== meta.eip712Version))) {
-      findings.push(finding('eip712_domain_mismatch', 'extra declares the EIP-712 domain name "' + entry.extra.name + '" version "' + (entry.extra.version === undefined ? '(none)' : entry.extra.version) + '", but the ' + meta.symbol + ' contract on ' + chainName(entry.chainId) + ' uses name "' + meta.eip712Name + '" version "' + meta.eip712Version + '"' + (meta.eip712DomainSeparator ? ' (its DOMAIN_SEPARATOR ' + meta.eip712DomainSeparator.slice(0, 10) + '… matches only that pair)' : '') + '. A TransferWithAuthorization signed with the declared domain will not verify on-chain.', { declared: { name: entry.extra.name, version: entry.extra.version === undefined ? null : String(entry.extra.version) }, canonical: { name: meta.eip712Name, version: meta.eip712Version, domainSeparator: meta.eip712DomainSeparator || null } }));
+      findings.push(finding('eip712_domain_mismatch', 'extra declares the EIP-712 domain name ' + quoteUntrusted(entry.extra.name) + ' version ' + (entry.extra.version === undefined ? '(none)' : quoteUntrusted(entry.extra.version, 12)) + ', but the ' + meta.symbol + ' contract on ' + chainName(entry.chainId) + ' uses name ' + JSON.stringify(meta.eip712Name) + ' version ' + JSON.stringify(meta.eip712Version) + (meta.eip712DomainSeparator ? ' (its DOMAIN_SEPARATOR ' + meta.eip712DomainSeparator.slice(0, 10) + '… matches only that pair)' : '') + '. A TransferWithAuthorization signed with the declared domain will not verify on-chain.', { declared: { name: String(entry.extra.name).slice(0, 64), version: entry.extra.version === undefined ? null : String(entry.extra.version).slice(0, 16) }, canonical: { name: meta.eip712Name, version: meta.eip712Version, domainSeparator: meta.eip712DomainSeparator || null } }));
     }
     const expectedToken = checksumOrNull(expected.feeToken || expected.asset);
     if (expectedToken && !eqAddr(expectedToken, entry.asset)) findings.push(finding('asset_mismatch_listing', 'Challenge asset ' + short(entry.asset) + ' differs from the listed token ' + short(expectedToken) + '.'));
@@ -545,7 +584,7 @@ async function checkPayment(input, deps) {
   // challenge-wide findings (domain, payees)
   const global = [];
   const requestHost = hostOf(input.requestUrl);
-  const resourceHost = hostOf(challenge.resourceUrl);
+  const resourceHost = httpHostOf(challenge.resourceUrl);
   const listedHost = hostOf(expected.endpoint);
   const payHost = requestHost || resourceHost;
   if (listedHost && payHost && contextAnalyzer.registrableDomain(listedHost) !== contextAnalyzer.registrableDomain(payHost)) {
@@ -559,7 +598,11 @@ async function checkPayment(input, deps) {
     if (typeof u !== 'string' || urlSeen.has(u)) continue;
     urlSeen.add(u);
     const hit = urlShellSyntax(u);
-    if (hit) global.push(finding('endpoint_url_injection', 'The ' + label + ' contains ' + hit.what + ' near "' + hit.at.replace(/[\u0000-\u001f\u007f]/g, ' ') + '". Agents that pass this URL to a shell would run attacker commands.', { subject: 'endpoint', url: u.slice(0, 300) }));
+    if (hit) global.push(finding('endpoint_url_injection', 'The ' + label + ' contains ' + hit.what + ' near ' + quoteUntrusted(hit.at, 48) + '. Agents that pass this URL to a shell would run attacker commands.', { subject: 'endpoint', url: u.slice(0, 300) }));
+  }
+  const fieldHits = challenge.texts.map((t) => ({ field: t.field, hit: textShellSyntax(t.value) })).filter((x) => x.hit);
+  if (fieldHits.length) {
+    global.push(finding('challenge_field_injection', 'The challenge carries a shell payload in ' + fieldHits.map((x) => x.field).join(', ') + ' (' + fieldHits[0].hit.what + ' near ' + quoteUntrusted(fieldHits[0].hit.at, 48) + '). Never log, template or pass these fields to a tool or shell.', { subject: 'challenge', fields: fieldHits.map((x) => x.field) }));
   }
   const calledUrl = input.requestUrl || expected.endpoint || null;
   if (typeof calledUrl === 'string' && /^http:\/\//i.test(calledUrl)) global.push(finding('insecure_payment_endpoint', calledUrl.slice(0, 120) + ' uses plain http.'));
@@ -571,10 +614,13 @@ async function checkPayment(input, deps) {
       const vouched = Boolean(listedHost && contextAnalyzer.registrableDomain(listedHost) === contextAnalyzer.registrableDomain(payHost));
       for (const f of d.details.findings) {
         if (f.code === 'injection_pattern') {
+          // Strong patterns imitate someone; weak ones (cheap TLD, keyword, deep subdomains) are common on real seller hosts.
+          const strong = STRONG_HOST_PATTERNS.has(f.pattern);
           const why = payHost + ' matches a phishing pattern (' + f.pattern + '): ' + (d.details.pattern ? d.details.pattern.detail : f.message);
-          global.push(vouched
-            ? finding('endpoint_domain_suspicious', why + '. It is the endpoint named in the listing.', { subject: 'endpoint', pattern: f.pattern })
-            : finding('endpoint_phishing_pattern', why + '. No listing was supplied that names this host.', { subject: 'endpoint', pattern: f.pattern }));
+          if (vouched && strong) global.push(finding('endpoint_domain_suspicious', why + '. It is the endpoint named in the listing.', { subject: 'endpoint', pattern: f.pattern }));
+          else if (!vouched && strong) global.push(finding('endpoint_phishing_pattern', why + '. No listing was supplied that names this host.', { subject: 'endpoint', pattern: f.pattern }));
+          else if (!vouched) global.push(finding('endpoint_domain_suspicious', why + '. No listing was supplied that names this host.', { subject: 'endpoint', pattern: f.pattern }));
+          else domainCheck.note = 'Weak host pattern (' + f.pattern + ') ignored because the listing names this endpoint.';
         } else {
           global.push(Object.assign({}, f, { subject: 'endpoint' }));
         }

