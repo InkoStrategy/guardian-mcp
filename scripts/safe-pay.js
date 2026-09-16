@@ -197,6 +197,7 @@ async function main() {
     out('             ' + report.next);
     out('             The wallet shows the payment for confirmation; add --yes only to approve it.');
   } else {
+    for (const kv of multi('param')) payArgs.push('--param', kv);
     if (flag('yes')) payArgs.push('--yes');
     const p = onchainos(payArgs);
     report.steps.pay = { exitCode: p.code, result: p.json || p.text.slice(0, 2000) };
