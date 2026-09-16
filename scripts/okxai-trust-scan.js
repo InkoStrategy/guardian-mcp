@@ -15,6 +15,7 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const { fetchChallenge, challengeOf } = require('../src/x402-probe');
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
 const LIMIT = Number(arg('limit', 80));
@@ -52,71 +53,6 @@ function listings() {
   return [...seen.values()].slice(0, LIMIT);
 }
 
-async function fetchChallenge(url) {
-  const attempt = async (method) => {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12000);
-    try {
-      const res = await fetch(url, { method, headers: { accept: 'application/json', 'content-type': 'application/json', 'user-agent': 'guardian-mcp-trust-scan/1.0 (no payment; x402 challenge probe)' }, body: method === 'POST' ? '{}' : undefined, signal: ctrl.signal, redirect: 'manual' });
-      const header = res.headers.get('payment-required');
-      let body = null;
-      try { body = await res.json(); } catch { body = null; }
-      return { status: res.status, header, body, method };
-    } finally { clearTimeout(t); }
-  };
-  let r;
-  try { r = await attempt('GET'); } catch (e) { return { error: e.name === 'AbortError' ? 'timeout' : e.message }; }
-  if (hasChallenge(r)) return r;
-  try { const p = await attempt('POST'); if (hasChallenge(p)) return p; } catch { /* keep GET result */ }
-  // MCP servers (streamable HTTP) ask for payment on tools/call, usually as a 402 or a JSON-RPC error carrying x402 data.
-  try { const m = await mcpProbe(url); if (m && hasChallenge(m)) return m; } catch { /* not MCP */ }
-  return r;
-}
-
-function x402In(body) {
-  if (!body || typeof body !== 'object') return null;
-  if (Array.isArray(body.accepts)) return body;
-  const e = body.error && body.error.data;
-  if (e && Array.isArray(e.accepts)) return e;
-  const res = body.result && body.result.structuredContent;
-  if (res && Array.isArray(res.accepts)) return res;
-  return null;
-}
-
-function hasChallenge(r) {
-  return Boolean(r && (r.header || x402In(r.body)));
-}
-
-async function mcpProbe(url) {
-  const rpc = async (method, params, sessionId) => {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12000);
-    try {
-      const headers = { accept: 'application/json, text/event-stream', 'content-type': 'application/json', 'user-agent': 'guardian-mcp-trust-scan/1.0 (no payment; x402 challenge probe)' };
-      if (sessionId) headers['mcp-session-id'] = sessionId;
-      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', id: method === 'initialize' ? 1 : 2, method, params }), signal: ctrl.signal, redirect: 'manual' });
-      const text = await res.text();
-      let body = null;
-      try { body = JSON.parse(text); } catch {
-        const line = text.split(/\r?\n/).find((l) => l.startsWith('data:'));
-        if (line) try { body = JSON.parse(line.slice(5)); } catch { body = null; }
-      }
-      return { status: res.status, header: res.headers.get('payment-required'), body, method: 'MCP ' + method, sessionId: res.headers.get('mcp-session-id') || sessionId };
-    } finally { clearTimeout(t); }
-  };
-  const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'guardian-mcp-trust-scan', version: '1.0' } });
-  if (hasChallenge(init)) return init;
-  if (!init.body || !init.body.result) return null;
-  const list = await rpc('tools/list', {}, init.sessionId);
-  if (hasChallenge(list)) return list;
-  const tools = list.body && list.body.result && Array.isArray(list.body.result.tools) ? list.body.result.tools : [];
-  for (const tool of tools.slice(0, 3)) {
-    const call = await rpc('tools/call', { name: tool.name, arguments: {} }, init.sessionId);
-    if (hasChallenge(call)) return call;
-  }
-  return null;
-}
-
 async function check(body) {
   if (LOCAL) return require('../src/paysafe').checkPayment(body, {});
   const res = await fetch(GUARDIAN + '/check-payment', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
@@ -137,7 +73,7 @@ async function main() {
       const ch = await fetchChallenge(s.endpoint);
       if (ch.error) { row.probe = 'unreachable'; row.detail = ch.error; results.push(row); continue; }
       row.http = { method: ch.method, status: ch.status };
-      const challenge = ch.header || x402In(ch.body);
+      const challenge = challengeOf(ch);
       if (!challenge) { row.probe = ch.status === 402 ? '402_without_x402_challenge' : 'no_payment_challenge'; results.push(row); continue; }
       row.probe = 'challenge';
       try {

@@ -687,5 +687,5 @@ module.exports = {
   X402_EXACT_PERMIT2_PROXY,
   X402_UPTO_PERMIT2_PROXY,
   PERMIT2,
-  _internals: { normalizeChallenge, decodeSigned, parseNetwork, toAtomic, formatAtomic, assetMeta },
+  _internals: { normalizeChallenge, decodeSigned, parseNetwork, toAtomic, formatAtomic, assetMeta, urlShellSyntax, textShellSyntax },
 };

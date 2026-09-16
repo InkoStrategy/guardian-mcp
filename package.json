@@ -10,7 +10,9 @@
   "scripts": {
     "test": "node --test",
     "dev": "vercel dev",
-    "deploy": "vercel --prod"
+    "deploy": "vercel --prod",
+    "safe-pay": "node scripts/safe-pay.js",
+    "trust-scan": "node scripts/okxai-trust-scan.js"
   },
   "dependencies": {
     "@okxweb3/x402-core": "^0.1.0",

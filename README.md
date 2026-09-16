@@ -152,6 +152,16 @@
 curl -s -X POST https://guardian-mcp-rho.vercel.app/check-payment -H "Content-Type: application/json" -d '{"paymentRequired":"<PAYMENT-REQUIRED header>","requestUrl":"https://seller.example/paid","expected":{"feeAmount":0.002,"feeToken":"0x779ded0c9e1022225f8e0630b35a9b54be713736","endpoint":"https://seller.example/paid","payTo":"0x…"}}'
 ```
 
+Проверка перед оплатой через Onchain OS: `node scripts/safe-pay.js --sid <sid услуги>` (или `--url`, `--fee`, `--token`).
+Скрипт берёт объявление через `onchainos agent service-detail`, делает один неоплаченный запрос (GET, POST или MCP
+`tools/call`), получает вердикт `/check-payment`, затем вызывает `onchainos payment quote` и сверяет, что котировка
+платит тому же получателю ту же сумму в том же токене, что проверил Guardian. Продавец не может подменить вызов
+между проверкой и оплатой. Оплата только с `--pay`, а `--yes` кошельку передаётся, только если его указал владелец.
+Коды выхода: 0 можно платить, 2 WARN, 3 DENY или подмена котировки.
+
+```bash
+node scripts/safe-pay.js --sid 33342 --param scoutMode=best --max 0.5
+```
 Скан маркетплейса OKX.AI: `node scripts/okxai-trust-scan.js` собирает платные A2MCP‑сервисы через `onchainos`,
 делает один неоплаченный запрос к каждому, прогоняет вызов 402 через Pay-Safe и пишет
 [docs/trust-scan.md](docs/trust-scan.md).
