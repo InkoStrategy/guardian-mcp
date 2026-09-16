@@ -84,7 +84,7 @@ buyer agent ──► onchainos agent service-detail --sid N        listing: end
 
 - **OKX.AI marketplace:** listings come from `onchainos agent service-detail` / `service-match`.
 - **Onchain OS payments:** `payment quote` and `payment pay` on X Layer (`eip155:196`) in USD₮0.
-  The wrapper never adds `--yes`; moving funds stays with the wallet owner.
+  The wrapper never adds `--yes` on its own; moving funds stays with the wallet owner, who passes it explicitly.
 - **Agent skill:** `skills/guardian-mcp/SKILL.md` tells Onchain OS agents to call `/check-payment`
   before paying any 402 challenge.
 - **Listed service:** GuardianMCP is registered on OKX.AI as agent #13730.
