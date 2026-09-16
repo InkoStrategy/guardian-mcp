@@ -16,9 +16,10 @@ const dashboard = require('../src/dashboard');
 const premium = require('../src/premium');
 const quick = require('../src/quick-checks');
 const x402 = require('../src/x402');
+const paysafe = require('../src/paysafe');
 const crypto = require('crypto');
 
-const RULE_CODES = new Set(RULE_CATALOG.map((r) => r.code).concat(SIGNATURE_RULES.map((r) => r.code)));
+const RULE_CODES = new Set(RULE_CATALOG.map((r) => r.code).concat(SIGNATURE_RULES.map((r) => r.code), paysafe.PAYMENT_RULES.map((r) => r.code)));
 
 function timingSafeEqual(a, b) {
   const x = Buffer.from(String(a || ''));
@@ -39,7 +40,7 @@ function isCron(req) {
   return timingSafeEqual((req.headers.authorization || '').replace(/^Bearer\s+/i, ''), secret);
 }
 
-const ALL_RULES = RULE_CATALOG.concat(SIGNATURE_RULES);
+const ALL_RULES = RULE_CATALOG.concat(SIGNATURE_RULES, paysafe.PAYMENT_RULES);
 const pkg = require('../package.json');
 
 const MAX_BODY_BYTES = 64 * 1024;
@@ -129,7 +130,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -281,9 +282,9 @@ module.exports = async function handler(req, res) {
 
   const isSignature = path === '/analyze-signature' || path === '/api/analyze-signature';
   const isPremium = path === '/guard' || path === '/api/guard';
-  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : null;
+  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : apiPath === '/check-payment' ? 'payment' : null;
   if (!isSignature && !isPremium && !quickKind && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
-    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain or /guard (premium)' });
+    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain, /check-payment or /guard (premium)' });
   }
 
   if (quickKind) {
@@ -294,7 +295,8 @@ module.exports = async function handler(req, res) {
       return send(res, 400, { error: err instanceof ValidationError ? err.message : 'Invalid JSON body: ' + err.message });
     }
     try {
-      const result = quickKind === 'address' ? await quick.checkAddress(body, { reporter: reporterOf(req) }) : await quick.checkDomain(body, { reporter: reporterOf(req) });
+      const deps = Object.assign({ reporter: reporterOf(req) }, module.exports.quickOptions || {});
+      const result = quickKind === 'address' ? await quick.checkAddress(body, deps) : quickKind === 'domain' ? await quick.checkDomain(body, deps) : await paysafe.checkPayment(body, deps);
       return send(res, 200, result);
     } catch (err) {
       if (err && err.name === 'ValidationError') return send(res, 400, { error: err.message });

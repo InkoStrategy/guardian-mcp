@@ -86,7 +86,7 @@ async function checkAddress(input, deps) {
   const label = known ? known.name + (known.category ? ' (' + known.category + ')' : known.symbol ? ' (' + known.symbol + ' token)' : '') : state ? (state.isContract ? 'an unrecognised contract' : 'a wallet address') : 'an address';
   const summary = address + ' on ' + chainName(chainId) + ' is ' + label + (rec ? ', reported ' + rec.reports + ' time(s) in the shared threat registry' : '') + (ti.intel.seed && ti.intel.seed.addresses[address.toLowerCase()] ? ', listed in the ScamSniffer scam database' : '') + '. ' + (verdict === 'ALLOW' ? 'No risk rules triggered for role ' + role + '.' : verdict + ': ' + reasons.join(', ') + '.');
   try {
-    await stats.record(store, { now: deps.now, verdict, kind: 'check-address', codes: reasons, sessionId: null });
+    if (!deps.skipStats) await stats.record(store, { now: deps.now, verdict, kind: 'check-address', codes: reasons, sessionId: null });
   } catch { /* counters are best-effort */ }
   return { verdict, reasons, summary, details: { chainId, chain: chainName(chainId), address, role, known: known || null, lookalikeOf: lookalike || null, state: state ? { isContract: state.isContract, txCount: state.txCount, balance: state.balance, codeSize: state.codeSize } : null, proxy: info ? info.proxy : null, reputation, threat: rec, scam_database: Boolean(ti.intel.seed && ti.intel.seed.addresses[address.toLowerCase()]), findings, rpc, analyzedAt: new Date().toISOString() } };
 }
@@ -115,7 +115,7 @@ async function checkDomain(input, deps) {
   const reasons = Array.from(new Set(findings.map((f) => f.code)));
   const summary = host + ' is ' + (isTrusted ? 'on the trusted list' : seedHit ? 'listed in the ScamSniffer phishing database' : pattern ? 'suspicious (' + pattern.pattern + ')' : 'not on any list') + '. ' + (verdict === 'ALLOW' ? 'No risk rules triggered.' : verdict + ': ' + reasons.join(', ') + '.');
   try {
-    await stats.record(store, { now: deps.now, verdict, kind: 'check-domain', codes: reasons, sessionId: null });
+    if (!deps.skipStats) await stats.record(store, { now: deps.now, verdict, kind: 'check-domain', codes: reasons, sessionId: null });
   } catch { /* best-effort */ }
   return { verdict, reasons, summary, details: { host, registrable: contextAnalyzer.registrableDomain(host), trusted: isTrusted, pattern, scam_database: seedHit || null, threat: ti.intel.domains[host] || null, findings, analyzedAt: new Date().toISOString() } };
 }
