@@ -38,6 +38,7 @@ ul.f{list-style:none;padding:0;margin:12px 0 0}ul.f li{border-top:1px solid var(
 .sev{font-weight:600;margin-right:6px}
 details{margin-top:10px}summary{cursor:pointer;color:var(--muted);font-size:13px}
 pre{background:#0f1318;border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto;max-height:420px;font-size:12px}
+@media (min-width:760px){#scanKpi{grid-template-columns:repeat(5,1fr)}}
 .kpi .v{font-size:28px;font-weight:600}.kpi .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 .foot{color:var(--muted);font-size:13px;margin-top:40px}
