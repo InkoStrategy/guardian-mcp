@@ -17,6 +17,9 @@ const premium = require('../src/premium');
 const quick = require('../src/quick-checks');
 const x402 = require('../src/x402');
 const paysafe = require('../src/paysafe');
+const probePayment = require('../src/probe-payment');
+const demoSellers = require('../src/demo-sellers');
+const paysafePage = require('../src/paysafe-page');
 const crypto = require('crypto');
 
 const RULE_CODES = new Set(RULE_CATALOG.map((r) => r.code).concat(SIGNATURE_RULES.map((r) => r.code), paysafe.PAYMENT_RULES.map((r) => r.code)));
@@ -130,7 +133,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -162,6 +165,21 @@ module.exports = async function handler(req, res) {
     });
   }
   const apiPath = path.replace(/^\/api(?=\/)/, '');
+  if (method === 'GET' && apiPath === '/pay-safe') {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.setHeader('cache-control', 'public, max-age=300');
+    return res.end(paysafePage.html());
+  }
+  if (method === 'GET' && apiPath === '/trust-scan') {
+    try {
+      res.setHeader('cache-control', 'public, max-age=600');
+      return send(res, 200, require('../docs/trust-scan.json'));
+    } catch {
+      return send(res, 404, { error: 'no trust scan published yet' });
+    }
+  }
+  if ((method === 'GET' || method === 'POST') && apiPath.startsWith('/demo/x402') && demoSellers.handle(req, res, apiPath)) return undefined;
   if (method === 'GET' && apiPath === '/dashboard') {
     res.statusCode = 200;
     res.setHeader('content-type', 'text/html; charset=utf-8');
@@ -282,9 +300,9 @@ module.exports = async function handler(req, res) {
 
   const isSignature = path === '/analyze-signature' || path === '/api/analyze-signature';
   const isPremium = path === '/guard' || path === '/api/guard';
-  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : apiPath === '/check-payment' ? 'payment' : null;
+  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : apiPath === '/check-payment' ? 'payment' : apiPath === '/probe-payment' ? 'probe' : null;
   if (!isSignature && !isPremium && !quickKind && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
-    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain, /check-payment or /guard (premium)' });
+    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain, /check-payment, /probe-payment or /guard (premium)' });
   }
 
   if (quickKind) {
@@ -296,10 +314,10 @@ module.exports = async function handler(req, res) {
     }
     try {
       const deps = Object.assign({ reporter: reporterOf(req) }, module.exports.quickOptions || {});
-      const result = quickKind === 'address' ? await quick.checkAddress(body, deps) : quickKind === 'domain' ? await quick.checkDomain(body, deps) : await paysafe.checkPayment(body, deps);
+      const result = quickKind === 'address' ? await quick.checkAddress(body, deps) : quickKind === 'domain' ? await quick.checkDomain(body, deps) : quickKind === 'probe' ? await probePayment.probePayment(body, Object.assign({}, deps, module.exports.probeOptions || {})) : await paysafe.checkPayment(body, deps);
       return send(res, 200, result);
     } catch (err) {
-      if (err && err.name === 'ValidationError') return send(res, 400, { error: err.message });
+      if (err && err.name === 'ValidationError') return send(res, err.status && err.status !== 400 ? err.status : 400, { error: err.message });
       console.error('quick check failed', err);
       return send(res, 500, { error: 'Internal error during check' });
     }

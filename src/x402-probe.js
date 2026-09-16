@@ -48,12 +48,33 @@ function decodedChallengeOf(r) {
   return x402In(r.body);
 }
 
-async function request(url, { method, headers, body, timeoutMs, fetchImpl }) {
+const MAX_RESPONSE_BYTES = 256 * 1024;
+
+/** Read at most maxBytes of the body; a 402 challenge is small, anything larger is truncated. */
+async function readCapped(res, maxBytes) {
+  if (!res.body || typeof res.body.getReader !== 'function') return (await res.text()).slice(0, maxBytes);
+  const reader = res.body.getReader();
+  const chunks = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    size += value.length;
+    if (size >= maxBytes) {
+      try { await reader.cancel(); } catch { /* ignore */ }
+      break;
+    }
+  }
+  return Buffer.concat(chunks.map((c) => Buffer.from(c))).subarray(0, maxBytes).toString('utf8');
+}
+
+async function request(url, { method, headers, body, timeoutMs, fetchImpl, maxBytes }) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await (fetchImpl || fetch)(url, { method, headers, body, signal: ctrl.signal, redirect: 'manual' });
-    const text = await res.text();
+    const text = await readCapped(res, maxBytes || MAX_RESPONSE_BYTES);
     let parsed = null;
     try {
       parsed = JSON.parse(text);
@@ -74,7 +95,7 @@ async function mcpProbe(url, opts) {
   const rpc = async (method, params, sessionId, id) => {
     const headers = { accept: 'application/json, text/event-stream', 'content-type': 'application/json', 'user-agent': USER_AGENT };
     if (sessionId) headers['mcp-session-id'] = sessionId;
-    const r = await request(url, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', id, method, params }), timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl });
+    const r = await request(url, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', id, method, params }), timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl, maxBytes: o.maxBytes });
     return { status: r.status, header: r.header, body: r.body, method: 'MCP ' + method + (params && params.name ? ' ' + params.name : ''), sessionId: r.headers.get('mcp-session-id') || sessionId };
   };
   const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'guardian-mcp-pay-safe', version: '1.0' } }, null, 1);
@@ -113,7 +134,7 @@ async function fetchChallenge(url, opts) {
       target = u.toString();
     }
     if (method === 'POST') body = JSON.stringify(o.params || {});
-    const r = await request(target, { method, headers: base, body, timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl });
+    const r = await request(target, { method, headers: base, body, timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl, maxBytes: o.maxBytes });
     return { status: r.status, header: r.header, body: r.body, method };
   };
   const want = String(o.method || 'auto').toUpperCase();

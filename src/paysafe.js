@@ -679,8 +679,28 @@ async function checkPayment(input, deps) {
   };
 }
 
+/**
+ * Verdict for an endpoint that must not be contacted because its URL is itself an attack.
+ * Same response shape as checkPayment, without challenge details. Returns null when the URL is clean.
+ */
+function urlOnlyVerdict(url, label) {
+  const hit = urlShellSyntax(url);
+  if (!hit) return null;
+  const f = finding('endpoint_url_injection', 'The ' + (label || 'endpoint URL') + ' contains ' + hit.what + ' near ' + quoteUntrusted(hit.at, 48) + '. Agents that pass this URL to a shell would run attacker commands. The endpoint was not contacted.', { subject: 'endpoint', url: String(url).slice(0, 300) });
+  return {
+    verdict: 'DENY',
+    reasons: ['endpoint_url_injection'],
+    risk_score: riskScore([f]),
+    summary: 'Endpoint not contacted. DENY: endpoint_url_injection.',
+    recommendations: [{ code: 'endpoint_url_injection', action: RECOMMENDATIONS.endpoint_url_injection }],
+    recommended_index: null,
+    details: { findings: [f], global_findings: [f], selected: null, entries: [], analyzedAt: new Date().toISOString() },
+  };
+}
+
 module.exports = {
   checkPayment,
+  urlOnlyVerdict,
   PAYMENT_RULES,
   PaymentValidationError,
   SETTLEMENT_ASSETS,
