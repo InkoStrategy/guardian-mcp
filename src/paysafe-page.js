@@ -33,7 +33,7 @@ input,select{width:100%;background:#0f1318;color:var(--txt);border:1px solid var
 .badge{font-weight:700;font-size:20px;padding:4px 14px;border-radius:8px;border:1px solid currentColor}
 .ALLOW{color:var(--ok)}.WARN{color:var(--warn)}.DENY{color:var(--deny)}.NONE{color:var(--muted)}
 .sum{margin:10px 0 0}.muted{color:var(--muted)}
-ul.f{list-style:none;padding:0;margin:12px 0 0}ul.f li{border-top:1px solid var(--line);padding:9px 0;font-size:14px;overflow-wrap:anywhere}
+ul.f{list-style:none;padding:0;margin:12px 0 0}#scanFindings{padding:4px 18px}ul.f li{border-top:1px solid var(--line);padding:9px 0;font-size:14px;overflow-wrap:anywhere}
 .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
 .sev{font-weight:600;margin-right:6px}
 details{margin-top:10px}summary{cursor:pointer;color:var(--muted);font-size:13px}
@@ -89,7 +89,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
     if(d.probe) card.appendChild(el('p','muted', d.probe.contacted ? 'Challenge from '+d.probe.method+' (HTTP '+d.probe.status+'), nothing signed.' : 'Endpoint not contacted: '+(d.probe.reason||'')));
     var list=el('ul','f');
     (d.findings||[]).forEach(function(f){ var li=el('li'); li.appendChild(el('span','sev '+f.severity,f.severity)); li.appendChild(el('span','code',f.code)); li.appendChild(el('div','',f.message)); list.appendChild(li); });
-    (r.recommendations||[]).forEach(function(x){ var li=el('li'); li.appendChild(el('span','sev','Do')); li.appendChild(el('span','',x.action)); list.appendChild(li); });
+    (r.recommendations||[]).forEach(function(x){ var li=el('li'); li.appendChild(el('span','sev','Action')); li.appendChild(el('span','',x.action)); list.appendChild(li); });
     if(list.childNodes.length) card.appendChild(list);
     var det=el('details'); det.appendChild(el('summary','','Raw response')); det.appendChild(el('pre','',JSON.stringify(r,null,2))); card.appendChild(det);
     result.appendChild(card);

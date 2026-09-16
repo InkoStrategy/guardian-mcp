@@ -140,4 +140,4 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 3. Real marketplace: the trust scan section, 62 services, the malicious listing, 5 unsettleable sellers.
 4. Onchain OS: `node scripts/safe-pay.js --sid 39876` stops before contact, `--sid 33342` stops on
    WARN, the Radar endpoint passes and prints the exact `payment pay` command after the quote guard.
-5. Close: one call before every agent payment on OKX.AI.
+5. Close: one call before every x402 payment on OKX.AI.

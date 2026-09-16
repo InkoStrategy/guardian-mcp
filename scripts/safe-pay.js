@@ -95,6 +95,7 @@ async function main() {
   const L = await listing();
   report.listing = L;
   out('1. Listing   ' + (L.serviceName ? L.serviceName + ' (sid ' + L.sid + ', ' + L.serviceType + ')' : L.endpoint));
+  if (L.source === 'okx.ai') out('             via onchainos agent service-detail --sid ' + Number(L.sid));
   if (L.feeAmount !== undefined) out('             price ' + L.feeAmount + ' ' + (L.feeTokenSymbol || L.feeToken || '') + (L.asp ? ', seller ' + L.asp.aspName + ' #' + L.asp.aspAgentId : ''));
 
   const expected = { endpoint: L.endpoint };
@@ -169,24 +170,25 @@ async function main() {
   if (opt('tool') || mcpTool) qargs.push('--tool', opt('tool') || mcpTool);
   else if (via === 'POST' || String(opt('method', '')).toUpperCase() === 'POST') qargs.push('--method', 'POST');
   for (const kv of multi('param')) qargs.push('--param', kv);
+  out('4. Quote     via onchainos payment quote' + (qargs.includes('--tool') ? ' --tool ' + qargs[qargs.indexOf('--tool') + 1] : qargs.includes('--method') ? ' --method POST' : '') + ' <checked endpoint>');
   const q = onchainos(qargs);
   const cmp = compareQuote(q.json, { index: chosen.index, payTo: chosen.payTo, amount: chosen.amount, asset: chosen.asset, network: chosen.network });
   report.steps.quote = cmp;
   if (!cmp.ok && cmp.kind === 'unavailable') {
-    out('4. Quote     unavailable, nothing to pay: ' + cmp.problems.join('; '));
+    out('             unavailable, nothing to pay: ' + cmp.problems.join('; '));
     process.exitCode = 1;
     if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
     return;
   }
   if (!cmp.ok) {
-    out('4. Quote     MISMATCH, do not pay: ' + cmp.problems.join('; '));
+    out('             MISMATCH, do not pay: ' + cmp.problems.join('; '));
     report.verdict = 'DENY';
     report.reasons = (report.reasons || []).concat('quote_mismatch');
     process.exitCode = 3;
     if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
     return;
   }
-  out('4. Quote     matches the checked payee, amount and token. paymentId ' + cmp.paymentId + ', wallet balance ' + cmp.balanceStatus + (cmp.balanceStatus !== 'sufficient' && cmp.shortfall ? ' (short ' + cmp.shortfall + ')' : ''));
+  out('             matches the checked payee, amount and token. paymentId ' + cmp.paymentId + ', wallet balance ' + cmp.balanceStatus + (cmp.balanceStatus !== 'sufficient' && cmp.shortfall ? ' (short ' + cmp.shortfall + ')' : ''));
 
   const payArgs = ['payment', 'pay', '--payment-id', cmp.paymentId, '--selected-index', String(chosen.index)];
   if (!flag('pay')) {
