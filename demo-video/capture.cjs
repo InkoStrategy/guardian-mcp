@@ -52,6 +52,23 @@ const SCENARIOS = [
   meta.buttons = await page.evaluate(() => [...document.querySelectorAll('button.sc')].map((b) => { const r = b.getBoundingClientRect(); return { title: b.querySelector('.t').textContent, x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }; }));
   meta.form = await boxOf('#custom');
   meta.feeLabel = await boxOf('label[for=fee]');
+  meta.leadPhrases = await page.evaluate((phrases) => {
+    const lead = document.querySelector('.wrap > p.lead');
+    const walker = document.createTreeWalker(lead, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+    return phrases.map((phrase) => {
+      for (const node of nodes) {
+        const i = node.textContent.indexOf(phrase);
+        if (i < 0) continue;
+        const range = document.createRange();
+        range.setStart(node, i);
+        range.setEnd(node, i + phrase.length);
+        return { phrase, rects: [...range.getClientRects()].map((r) => ({ x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height })) };
+      }
+      return { phrase, rects: [] };
+    });
+  }, ['price, token, endpoint', 'with the payee you expect', 'with the token contract itself (EIP-712 domain)']);
 
   for (const s of SCENARIOS) {
     const btn = page.locator('button.sc', { hasText: s.title }).first();
@@ -67,7 +84,8 @@ const SCENARIOS = [
     await page.mouse.move(1260, 10);
     await page.waitForTimeout(900);
     const result = await shot('page-' + s.key + '-result');
-    meta.states[s.key] = { hover, loading, result, resultBox: await boxOf('#result'), scanLead: await boxOf('#scanLead'), scanKpi: await boxOf('#scanKpi'), scanFindings: await boxOf('#scanFindings'), badge: await page.textContent('#result .badge') };
+    const rows = await page.evaluate(() => [...document.querySelectorAll('#result li')].map((li) => { const r = li.getBoundingClientRect(); const c = li.querySelector('.code'); return { code: c ? c.textContent : null, x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }; }));
+    meta.states[s.key] = { rows, hover, loading, result, resultBox: await boxOf('#result'), scanLead: await boxOf('#scanLead'), scanKpi: await boxOf('#scanKpi'), scanFindings: await boxOf('#scanFindings'), badge: await page.textContent('#result .badge') };
     console.log(s.key, meta.states[s.key].badge, JSON.stringify(meta.states[s.key].resultBox));
   }
   meta.states.scanShot = await shot('page-scan', true);

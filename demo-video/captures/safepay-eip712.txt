@@ -1,4 +1,5 @@
 1. Listing   Polymarket LP Scout (sid 33342, A2MCP)
+             via onchainos agent service-detail --sid 33342
              price 0.3 USDT, seller PolyDesk #5427
 2. Challenge captured via GET (HTTP 402), nothing signed
 3. Verdict   WARN eip712_domain_mismatch (risk 15)

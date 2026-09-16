@@ -36,7 +36,10 @@ ul.commits .dt{color:var(--muted);flex:0 0 130px}
 .stat .v{font-size:40px;font-weight:700}.stat .k{color:var(--muted);font-size:16px;text-transform:uppercase;letter-spacing:.06em}
 .links{font-size:28px;line-height:1.9;margin-top:24px}
 .links span{color:var(--muted);display:inline-block;width:200px;font-size:20px}
-.note{color:var(--muted);font-size:18px;margin:18px 0 0}
+.note{color:#aeb6c2;font-size:19px;margin:12px 0 0;line-height:1.4}
+#S11{justify-content:flex-start;padding-top:44px}
+#S11 ul.commits li{padding:6px 0}
+#S11 .stats{margin-top:16px}
 .quad{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .qc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
 .qc .k{color:var(--acc);font-size:15px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
@@ -90,23 +93,23 @@ ul.commits .dt{color:var(--muted);flex:0 0 130px}
     <li><span class="h">7c13562</span><span class="dt">16 Sep 2026</span><span>POST /probe-payment, demo sellers, /pay-safe page</span></li>
   </ul>
   <div class="stats"><div class="stat"><div class="v">36</div><div class="k">new payment rules</div></div><div class="stat"><div class="v">39</div><div class="k">new tests</div></div><div class="stat"><div class="v">62</div><div class="k">marketplace services scanned</div></div></div>
-  <p class="note">Builds on earlier GuardianMCP address checks (13–14 Sep 2026: lookalike addresses, fresh wallets, threat registry). They are not part of this submission.</p>
+  <p class="note">Reuses earlier GuardianMCP checks (13–14 Sep 2026, not part of this submission): lookalike and fresh addresses, phishing-domain patterns, threat registry with ScamSniffer data.</p>
 </section>
 
 <section class="slide" id="S13">
   <div class="kicker">Who it is for</div>
   <h2>A trust layer for agent commerce on OKX.AI</h2>
   <div class="quad">
-    <div class="qc"><div class="k">Buyer agents</div><div class="t">One call before every payment</div><div class="d">Onchain OS agent skill · POST /check-payment · POST /probe-payment</div></div>
+    <div class="qc"><div class="k">Buyer agents</div><div class="t">One call before every x402 payment</div><div class="d">Onchain OS agent skill · POST /check-payment · POST /probe-payment</div></div>
     <div class="qc"><div class="k">Sellers</div><div class="t">Check that your own 402 settles</div><div class="d">4 live sellers declare an EIP-712 domain USD₮0 rejects</div></div>
-    <div class="qc"><div class="k">Business</div><div class="t">Free checks, paid premium</div><div class="d">GuardianMCP /guard already takes x402 payments on X Layer</div></div>
+    <div class="qc"><div class="k">Business</div><div class="t">Free checks · premium 0.099 USD₮0</div><div class="d">GuardianMCP /guard verdicts, priced per call over x402 on X Layer</div></div>
     <div class="qc"><div class="k">OKX.AI</div><div class="t">Public trust scan of paid services</div><div class="d">62 services scanned · report at /trust-scan</div></div>
   </div>
 </section>
 
 <section class="slide" id="S12">
   <div class="kicker">GuardianMCP Pay-Safe</div>
-  <h2 style="font-size:54px">One call before every agent payment on OKX.AI.</h2>
+  <h2 style="font-size:54px">One call before every x402 payment on OKX.AI.</h2>
   <div class="links">
     <div><span>Try it</span>guardian-mcp-rho.vercel.app/pay-safe</div>
     <div><span>Source</span>github.com/InkoStrategy/guardian-mcp</div>

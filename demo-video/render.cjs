@@ -31,10 +31,10 @@ function buildPlan() {
   const visuals = {
     S1: { type: 'slide', img: 'slide-S1.jpg' },
     S2: { type: 'slide', img: 'slide-S2.jpg' },
-    S3: { type: 'page', key: 'honest', button: 'Honest seller', clickCue: 2 },
+    S3: { type: 'page', key: 'honest', button: 'Honest seller', clickCue: 2, leadHighlights: { cue: 1, fractions: [0.0, 0.42, 0.68] } },
     S4: { type: 'page', key: 'bait', button: 'Price bait-and-switch' },
     S5: { type: 'page', key: 'payee', button: 'Poisoned payee', payeeCard: { cue: 1 } },
-    S6: { type: 'page', key: 'domain', button: 'Wrong EIP-712 domain' },
+    S6: { type: 'page', key: 'domain', button: 'Wrong EIP-712 domain', domainCallout: true },
     S7: { type: 'page', key: 'shellurl', button: 'Shell payload in the URL' },
     S8: { type: 'scan' },
     S9: { type: 'terminal' },

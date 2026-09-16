@@ -1,4 +1,5 @@
 1. Listing   Market Signal API (sid 39876, A2MCP)
+             via onchainos agent service-detail --sid 39876
              price 0.00001 USDT, seller Atlas Data API #11194
 2. Challenge not requested: the listed endpoint URL carries shell syntax (pipe or backtick)
 3. Verdict   DENY endpoint_url_injection: do not call or pay this service, and never pass its URL to a shell.

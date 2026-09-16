@@ -1,11 +1,13 @@
 1. Listing   URL Change Check API (sid 39856, A2MCP)
+             via onchainos agent service-detail --sid 39856
              price 0.005 USDT, seller PagePulse #11185
 2. Challenge captured via POST (HTTP 402), nothing signed
 3. Verdict   ALLOW (risk 0)
              Payment of 0.005 USDT0 (5000) on xlayer to 0xc462…9d60 for pagepulse.167-179-80-192.sslip.io (accepts[0], exact). No risk rules triggered.
              payee is not the seller agent wallet 0x57492c28829e9b98b3b719c91e4e40ef20f5d6ed (common, informational)
-4. Quote     matches the checked payee, amount and token. paymentId pay_7526fdb1ee9ef607814b254b, wallet balance insufficient (short 0.005)
+4. Quote     via onchainos payment quote --method POST <checked endpoint>
+             matches the checked payee, amount and token. paymentId pay_06e2623b896029bdd79b3259, wallet balance insufficient (short 0.005)
 5. Pay       not requested. To pay exactly what was checked, run:
-             onchainos payment pay --payment-id pay_7526fdb1ee9ef607814b254b --selected-index 0
+             onchainos payment pay --payment-id pay_06e2623b896029bdd79b3259 --selected-index 0
              The wallet shows the payment for confirmation; add --yes only to approve it.
 exit 0
