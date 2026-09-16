@@ -31,24 +31,46 @@ function buildPlan() {
   const visuals = {
     S1: { type: 'slide', img: 'slide-S1.jpg' },
     S2: { type: 'slide', img: 'slide-S2.jpg' },
-    S3: { type: 'page', key: 'honest', button: 'Honest seller', intro: 2.4 },
+    S3: { type: 'page', key: 'honest', button: 'Honest seller', clickCue: 2 },
     S4: { type: 'page', key: 'bait', button: 'Price bait-and-switch' },
-    S5: { type: 'page', key: 'payee', button: 'Poisoned payee' },
+    S5: { type: 'page', key: 'payee', button: 'Poisoned payee', payeeCard: { cue: 1 } },
     S6: { type: 'page', key: 'domain', button: 'Wrong EIP-712 domain' },
     S7: { type: 'page', key: 'shellurl', button: 'Shell payload in the URL' },
     S8: { type: 'scan' },
     S9: { type: 'terminal' },
     S10: { type: 'slide', img: 'slide-S10.jpg' },
     S11: { type: 'slide', img: 'slide-S11.jpg' },
+    S13: { type: 'slide', img: 'slide-S13.jpg' },
     S12: { type: 'slide', img: 'slide-S12.jpg' },
   };
   const terminal = [
     { label: 'attack listing: endpoint never contacted', cmd: 'node scripts/safe-pay.js --sid 39876 --agent 13761', lines: readCapture('safepay-attack.txt'), weight: 0.27 },
-    { label: 'wrong EIP-712 domain: stopped on WARN', cmd: 'node scripts/safe-pay.js --sid 33342 --agent 13761 --param scoutMode=best', lines: readCapture('safepay-eip712.txt'), weight: 0.36 },
-    { label: 'our Radar endpoint: quote matches, pay command printed', cmd: 'node scripts/safe-pay.js --url "https://lno-radar-api.vercel.app/paid/snapshot?instId=BTC-USDT-SWAP" --fee 0.002 --token 0x779ded0c9e1022225f8e0630b35a9b54be713736 --pay-to 0xe1c6f89df50fb68282d52e34d6001d65005ff67b --max 0.01', lines: readCapture('safepay-radar.txt'), weight: 0.37 },
+    { label: 'marketplace seller, wrong EIP-712 domain: stopped on WARN', cmd: 'node scripts/safe-pay.js --sid 33342 --agent 13761 --param scoutMode=best', lines: readCapture('safepay-eip712.txt'), weight: 0.36 },
+    { label: 'marketplace listing: ALLOW, quote matches, pay command printed', cmd: 'node scripts/safe-pay.js --sid 39856 --agent 13761 --max 0.01', lines: readCapture('safepay-listing.txt'), weight: 0.37 },
   ];
   for (const sc of narration.scenes) if (!visuals[sc.id]) throw new Error('no visual for ' + sc.id);
-  const plan = { scenes: narration.scenes, visuals, meta, terminal, terminalCues: [0, 1, 2].map((i) => [1, 2, 3][i]), scanCues: { kpi: 1, deny: 3, warn: 4 } };
+  // payee inset card: the demo listing wallet vs the poisoned payTo, checksummed like the page shows them
+  const { getAddress } = require('C:/Users/mynam/guardian-mcp/node_modules/ethers');
+  const demo = require('C:/Users/mynam/guardian-mcp/src/demo-sellers.js');
+  const payee = { expected: getAddress(demo.DEMO_PAY_TO), payTo: getAddress(demo.SCENARIOS['payee-swap'].entry.payTo) };
+  // scan cards from the published report
+  const scan = JSON.parse(fs.readFileSync('C:/Users/mynam/guardian-mcp/docs/trust-scan.json', 'utf8'));
+  const eip712 = [];
+  const advisory = {};
+  for (const r of scan.results) {
+    if (r.verdict !== 'WARN') continue;
+    for (const f of r.findings || []) {
+      if (f.code === 'eip712_domain_mismatch') {
+        const m = f.message.match(/name "([^"]*)" version "([^"]*)"/);
+        eip712.push({ service: r.service, sid: r.sid, name: m ? m[1] : '?', version: m ? m[2] : '?' });
+      } else if (f.severity === 'WARN') {
+        advisory[f.code] = advisory[f.code] || new Set();
+        advisory[f.code].add(r.sid);
+      }
+    }
+  }
+  const scanCards = { eip712, advisory: Object.fromEntries(Object.entries(advisory).map(([k, v]) => [k, v.size])), totals: scan.totals };
+  const plan = { scenes: narration.scenes, visuals, meta, terminal, payee, scanCards, terminalCues: [1, 2, 3], scanCues: { kpi: 1, deny: 3, warn: 4, advisory: 5 } };
   fs.writeFileSync(path.join(BUILD, 'plan.json'), JSON.stringify(plan, null, 1));
   return plan;
 }

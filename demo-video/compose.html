@@ -5,13 +5,18 @@
 <script>
 'use strict';
 const W = 1920, H = 1080, S = 1.5; // css px -> canvas px
+const TOP = 52;          // address bar height (canvas px) above page captures
+const SUB_TOP = 925;     // subtitles live below this line
 const C = { bg: '#0b0d10', card: '#13171c', line: '#232a33', txt: '#e6e9ee', muted: '#8d96a3', ok: '#3ecf8e', warn: '#f5b849', deny: '#f0574f', acc: '#6aa9ff' };
+const MONO = 'Consolas, "Cascadia Mono", ui-monospace, monospace';
+const SANS = 'system-ui, "Segoe UI", sans-serif';
 const cv = document.getElementById('c');
 const g = cv.getContext('2d');
 
 const ease = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const lerp = (a, b, x) => a + (b - a) * x;
+const fadeWindow = (t, a, b, f) => clamp01((t - a) / f) * (1 - clamp01((t - b) / f));
 
 function rr(x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 
@@ -25,43 +30,77 @@ async function loadImage(name) {
 }
 const ready = new Map();
 function img(name) { return ready.get(name) || null; }
-async function preload(names) { for (const n of names) { if (!ready.has(n)) ready.set(n, await loadImage(n)); } }
+async function preload(names) { for (const n of names) { if (n && !ready.has(n)) ready.set(n, await loadImage(n)); } }
 function release(names) { for (const n of names) { const b = ready.get(n); if (b && b.close) b.close(); ready.delete(n); bitmaps.delete(n); } }
 
 // ---------- timeline ----------
+function speechEnd(buf) {
+  // WAVs from SAPI end with ~0.7 s of silence; pace sentences on the audible part
+  const d = buf.getChannelData(0);
+  let last = d.length - 1;
+  while (last > 0 && Math.abs(d[last]) < 0.015) last--;
+  return Math.min(buf.duration, last / buf.sampleRate + 0.12);
+}
+
 function buildTimeline(plan, buffers) {
-  const LEAD = 0.45, GAP = 0.3, TAIL = 0.6;
-  const MIN = { slide: 5, page: 8.2, scan: 16, terminal: 26 };
+  const LEAD = 0.45, GAP = 0.38, TAIL = 0.55;
+  const MIN = { slide: 5, page: 8.4, scan: 16, terminal: 24 };
   let t = 0;
   const scenes = [];
   for (const sc of plan.scenes) {
     const vis = plan.visuals[sc.id];
-    const intro = vis.intro || 0;
-    let cursor = LEAD + intro * 0.35;
+    let cursor = LEAD;
     const sentences = sc.sentences.map((s, i) => {
       const buf = buffers[sc.id + '-' + i];
-      const out = { display: s.display, buffer: buf, start: t + cursor, end: t + cursor + buf.duration };
-      cursor += buf.duration + GAP;
+      const len = speechEnd(buf);
+      const out = { display: s.display, buffer: buf, start: t + cursor, end: t + cursor + len };
+      cursor += len + GAP;
       return out;
     });
     const speech = cursor - GAP + TAIL;
-    const duration = Math.max(MIN[vis.type] + intro, speech);
+    let duration = Math.max(MIN[vis.type], speech);
+    if (vis.type === 'page' && vis.clickCue !== undefined) {
+      const cueRel = sentences[vis.clickCue].start - t;
+      duration = Math.max(duration, cueRel + 4.6);
+    }
     scenes.push({ id: sc.id, vis, start: t, duration, sentences });
     t += duration;
   }
   return { scenes, total: t };
 }
 
-// ---------- scene renderers ----------
-let pageState = { scroll: 0, cursor: null, image: 'page-base.jpg' };
+// ---------- shared drawing ----------
+function drawAddressBar() {
+  g.fillStyle = '#161b22'; g.fillRect(0, 0, W, TOP);
+  g.fillStyle = C.line; g.fillRect(0, TOP - 1, W, 1);
+  rr(300, 9, 1320, TOP - 18, (TOP - 18) / 2); g.fillStyle = '#0d1117'; g.fill();
+  g.strokeStyle = C.muted; g.lineWidth = 2.2;
+  g.beginPath(); g.arc(333, 22, 5.5, Math.PI, 0); g.stroke();
+  rr(325, 22, 16, 12, 2); g.fillStyle = C.muted; g.fill();
+  g.font = '500 21px ' + SANS; g.fillStyle = '#c9d1d9'; g.textBaseline = 'middle';
+  g.fillText('guardian-mcp-rho.vercel.app', 356, TOP / 2 + 1);
+  const w = g.measureText('guardian-mcp-rho.vercel.app').width;
+  g.fillStyle = C.muted; g.fillText('/pay-safe', 356 + w, TOP / 2 + 1);
+  g.textBaseline = 'alphabetic';
+}
 
 function drawCrop(name, scrollCss, alpha) {
   const b = img(name);
   if (!b) return;
   g.globalAlpha = alpha === undefined ? 1 : alpha;
-  const sy = Math.max(0, Math.min(b.height - H, scrollCss * S));
-  g.drawImage(b, 0, sy, W, H, 0, 0, W, H);
+  const hh = H - TOP;
+  const sy = Math.max(0, Math.min(b.height - hh, scrollCss * S));
+  g.drawImage(b, 0, sy, W, hh, 0, TOP, W, hh);
   g.globalAlpha = 1;
+}
+const cy = (yCss, scroll) => TOP + (yCss - scroll) * S;
+
+function maskScan(plan, imageName, scroll, alpha) {
+  const top = plan.meta.imageScanTop[imageName];
+  if (top === undefined || alpha <= 0) return;
+  const y = Math.max(TOP, cy(top - 18, scroll));
+  if (y >= H) return;
+  g.globalAlpha = alpha; g.fillStyle = C.bg; g.fillRect(0, y, W, H - y); g.globalAlpha = 1;
 }
 
 function drawCursor(x, y, press) {
@@ -77,20 +116,34 @@ function drawCursor(x, y, press) {
   g.restore();
 }
 
+function card(x, y, w, h, border, alpha) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.shadowColor = 'rgba(0,0,0,0.6)'; g.shadowBlur = 40;
+  rr(x, y, w, h, 18); g.fillStyle = '#10151b'; g.fill();
+  g.shadowBlur = 0; g.lineWidth = 3; g.strokeStyle = border; g.stroke();
+  g.restore();
+}
+
+// ---------- page scenes (demo sellers) ----------
 function scenarioPlan(sc, plan) {
   const st = plan.meta.states[sc.vis.key];
   const btn = plan.meta.buttons.find((b) => b.title === sc.vis.button);
-  return {
-    st,
-    btnCenter: { x: btn.x + btn.w / 2, y: btn.y + btn.h * 0.42 },
-    yBtn: 170,
-    yRes: Math.max(0, st.resultBox.y - 110),
-  };
+  const visibleCss = (SUB_TOP - 12 - TOP) / S;
+  const resultBottom = st.resultBox.y + st.resultBox.h;
+  const labelTop = plan.meta.feeLabel ? plan.meta.feeLabel.y - 16 : st.resultBox.y - 120;
+  return { st, btnCenter: { x: btn.x + btn.w / 2, y: btn.y + btn.h * 0.42 }, yBtn: 170, yRes: Math.max(0, Math.max(resultBottom - visibleCss, labelTop)) };
+}
+
+function pageOffset(sc) {
+  const v = sc.vis;
+  if (v.clickCue === undefined) return 0;
+  return Math.max(0, sc.sentences[v.clickCue].start - sc.start - 2.8);
 }
 
 function drawPage(sc, lt, plan) {
   const p = sc._p || (sc._p = scenarioPlan(sc, plan));
-  const off = sc.vis.intro || 0;
+  const off = pageOffset(sc);
   const enter = sc._enter;
   const t1 = lt - off;
   let scroll;
@@ -101,141 +154,217 @@ function drawPage(sc, lt, plan) {
 
   const key = sc.vis.key;
   const hover = 'page-' + key + '-hover.jpg', loading = 'page-' + key + '-loading.jpg', result = 'page-' + key + '-result.jpg';
-  if (t1 < 1.15) drawCrop(enter.image, scroll);
-  else if (t1 < 1.6) drawCrop(hover, scroll);
-  else if (t1 < 2.6) drawCrop(loading, scroll);
-  else { drawCrop(loading, scroll); drawCrop(result, scroll, clamp01((t1 - 2.6) / 0.25)); }
+  g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
+  let shown;
+  if (t1 < 1.15) { drawCrop(enter.image, scroll); shown = enter.image; }
+  else if (t1 < 1.6) { drawCrop(hover, scroll); shown = hover; }
+  else if (t1 < 2.6) { drawCrop(loading, scroll); shown = loading; }
+  else {
+    const a = clamp01((t1 - 2.6) / 0.25);
+    drawCrop(loading, scroll); drawCrop(result, scroll, a);
+    shown = a < 1 ? (plan.meta.imageScanTop[loading] < plan.meta.imageScanTop[result] ? loading : result) : result;
+  }
+  maskScan(plan, shown, scroll, 1);
 
-  const from = enter.cursor || { x: 1180, y: p.yBtn + 700 };
+  const from = enter.cursor || { x: 1180, y: p.yBtn + 560 };
   const mv = ease(clamp01((t1 - 0.2) / 1.0));
-  const cx = lerp(from.x, p.btnCenter.x, mv), cy = lerp(from.y, p.btnCenter.y, mv);
+  const cx = lerp(from.x, p.btnCenter.x, mv), cyy = lerp(from.y, p.btnCenter.y, mv);
   const press = t1 >= 1.6 && t1 < 2.0 ? (t1 - 1.6) / 0.4 : 0;
-  drawCursor(cx * S, (cy - scroll) * S, press);
-  sc._exit = { scroll: p.yRes, cursor: p.btnCenter, image: result };
+  if (cy(cyy, scroll) > TOP) drawCursor(cx * S, cy(cyy, scroll), press);
+
+  if (sc.vis.payeeCard) drawPayeeCard(sc, lt, plan);
+  drawAddressBar();
 }
 
+function drawPayeeCard(sc, lt, plan) {
+  const cue = sc.sentences[Math.min(sc.vis.payeeCard.cue, sc.sentences.length - 1)].start - sc.start - 0.25;
+  const a = clamp01((lt - cue) / 0.35) * clamp01((sc.duration - lt) / 0.3);
+  if (a <= 0) return;
+  const expected = plan.payee.expected, payTo = plan.payee.payTo;
+  const x = 250, y = 470, w = 1420, h = 300;
+  card(x, y, w, h, C.deny, a);
+  g.save(); g.globalAlpha = a;
+  g.font = '600 26px ' + SANS; g.fillStyle = C.muted;
+  g.fillText('Same start, same end, different middle', x + 40, y + 56);
+  g.font = '44px ' + MONO;
+  const cw = g.measureText('M').width;
+  const rows = [['expected', expected, C.txt], ['payTo', payTo, C.deny]];
+  rows.forEach((row, i) => {
+    const label = row[0], addr = row[1], midColor = row[2];
+    const ly = y + 140 + i * 90;
+    g.font = '600 24px ' + SANS; g.fillStyle = C.muted; g.fillText(label, x + 40, ly - 4);
+    g.font = '44px ' + MONO;
+    const ax = x + 220;
+    for (let k = 0; k < addr.length; k++) {
+      const edge = k < 6 || k >= addr.length - 4;
+      g.fillStyle = edge ? C.ok : midColor;
+      g.fillText(addr[k], ax + k * cw, ly);
+    }
+  });
+  g.restore();
+}
+
+// ---------- scan scene ----------
 function drawScan(sc, lt, plan) {
   const st = plan.meta.scan;
   const D = sc.duration;
   const enter = sc._enter;
-  const yLead = Math.max(0, st.scanLead.y - 70);
-  const yF = Math.max(0, st.scanFindings.y - 40);
-  const cues = plan.scanCues && sc.sentences.length > 4 ? plan.scanCues : null;
+  const cues = plan.scanCues;
   const at = (i) => sc.sentences[Math.min(i, sc.sentences.length - 1)].start - sc.start;
-  const tKpi = cues ? at(cues.kpi) - 0.2 : 0.14 * D;
-  const tToFindings = cues ? at(cues.kpi + 1) + 0.6 : 0.42 * D;
-  const tDeny = cues ? at(cues.deny) - 0.3 : 0.56 * D;
-  const tWarn = cues ? at(cues.warn) - 0.1 : 0.66 * D;
+  const tKpi = at(cues.kpi) - 0.2;
+  const tDeny = at(cues.deny) - 0.35;
+  const tWarn = at(cues.warn) - 0.3;
+  const tAdv = at(cues.advisory) - 0.3;
+  const yLead = Math.max(0, st.scanLead.y - 80);
+  const yF = Math.max(0, st.scanFindings.y - 60);
   let scroll;
   if (lt < 1.6) scroll = lerp(enter.scroll, yLead, ease(lt / 1.6));
-  else if (lt < tToFindings) scroll = yLead;
-  else if (lt < tToFindings + 1.4) scroll = lerp(yLead, yF, ease((lt - tToFindings) / 1.4));
-  else if (lt < tWarn) scroll = yF;
-  else scroll = lerp(yF, yF + 560, ease((lt - tWarn) / Math.max(1.5, D - tWarn - 0.8)));
+  else if (lt < tDeny - 1.2) scroll = yLead;
+  else if (lt < tDeny) scroll = lerp(yLead, yF, ease((lt - (tDeny - 1.2)) / 1.2));
+  else scroll = yF;
+  g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
   drawCrop('page-scan.jpg', scroll);
-  const box = (x, y, w, h, color, a) => {
+  maskScan(plan, 'page-scan.jpg', scroll, 1 - clamp01(lt / 0.6));
+
+  const box = (bx, by, bw, bh, color, a) => {
     if (a <= 0) return;
-    g.save(); g.globalAlpha = a; rr((x - 8) * S, (y - 8 - scroll) * S, (w + 16) * S, (h + 16) * S, 16); g.strokeStyle = color; g.lineWidth = 5; g.shadowColor = color; g.shadowBlur = 24; g.stroke(); g.restore();
+    g.save(); g.globalAlpha = a; rr((bx - 8) * S, cy(by - 8, scroll), (bw + 16) * S, (bh + 16) * S, 16); g.strokeStyle = color; g.lineWidth = 5; g.shadowColor = color; g.shadowBlur = 24; g.stroke(); g.restore();
   };
-  const kA = clamp01((lt - tKpi) / 0.4) * (1 - clamp01((lt - tToFindings) / 0.4));
-  box(st.scanKpi.x, st.scanKpi.y, st.scanKpi.w, st.scanKpi.h, C.acc, kA);
-  const dA = clamp01((lt - tDeny) / 0.4) * (1 - clamp01((lt - tWarn) / 0.4));
-  box(st.scanFindings.x, st.scanFindings.y, st.scanFindings.w, st.denyRowsHeight, C.deny, dA);
-  sc._exit = { scroll, cursor: null, image: 'page-scan.jpg' };
+  box(st.scanKpi.x, st.scanKpi.y, st.scanKpi.w, st.scanKpi.h, C.acc, fadeWindow(lt, tKpi, tDeny - 1.2, 0.4));
+  box(st.scanFindings.x, st.scanFindings.y, st.scanFindings.w, st.denyRowsHeight, C.deny, fadeWindow(lt, tDeny, tWarn, 0.4));
+
+  const dim = clamp01((lt - tWarn) / 0.4);
+  if (dim > 0) { g.globalAlpha = 0.72 * dim; g.fillStyle = C.bg; g.fillRect(0, TOP, W, H - TOP); g.globalAlpha = 1; }
+  drawEip712Card(plan, fadeWindow(lt, tWarn, tAdv - 0.45, 0.4));
+  drawAdvisoryCard(plan, clamp01((lt - tAdv + 0.05) / 0.4) * clamp01((D - lt) / 0.4));
+  drawAddressBar();
 }
 
-function wrapChars(text, max) {
+function drawEip712Card(plan, a) {
+  if (a <= 0) return;
+  const rows = plan.scanCards.eip712;
+  const x = 230, y = 110, w = 1460, h = 170 + rows.length * 88 + 70;
+  card(x, y, w, h, C.warn, a);
+  g.save(); g.globalAlpha = a;
+  g.font = '600 24px ' + SANS; g.fillStyle = C.warn; g.fillText('WARN  eip712_domain_mismatch  ·  live OKX.AI sellers', x + 44, y + 58);
+  g.font = '600 38px ' + SANS; g.fillStyle = C.txt; g.fillText('The EIP-712 domain each challenge declares', x + 44, y + 118);
+  rows.forEach((r, i) => {
+    const ly = y + 200 + i * 88;
+    g.font = '32px ' + SANS; g.fillStyle = C.txt; g.fillText(r.service, x + 44, ly);
+    g.font = '24px ' + SANS; g.fillStyle = C.muted; g.fillText('sid ' + r.sid, x + 44, ly + 34);
+    g.font = '36px ' + MONO; g.fillStyle = C.deny; g.fillText('"' + r.name + '" v' + r.version, x + 960, ly + 6);
+  });
+  const fy = y + 200 + rows.length * 88 + 8;
+  g.font = '600 28px ' + SANS; g.fillStyle = C.ok;
+  g.fillText('USD₮0 on X Layer signs only as "USD₮0" v1', x + 44, fy);
+  g.restore();
+}
+
+function drawAdvisoryCard(plan, a) {
+  if (a <= 0) return;
+  const adv = plan.scanCards.advisory;
+  const x = 330, y = 250, w = 1260, h = 440;
+  card(x, y, w, h, C.muted, a);
+  g.save(); g.globalAlpha = a;
+  const total = Object.keys(adv).reduce((s, k) => s + adv[k], 0);
+  g.font = '600 38px ' + SANS; g.fillStyle = C.txt; g.fillText('The other ' + total + ' WARNs are advisory', x + 44, y + 80);
+  const rows = [
+    [adv.fresh_recipient || 0, 'fresh_recipient', 'payee wallet with no history yet'],
+    [adv.endpoint_domain_suspicious || 0, 'endpoint_domain_suspicious', 'hostname that looks like OKX'],
+  ];
+  rows.forEach((row, i) => {
+    const ly = y + 190 + i * 130;
+    g.font = '700 72px ' + SANS; g.fillStyle = C.warn; g.fillText(String(row[0]), x + 50, ly + 20);
+    g.font = '30px ' + MONO; g.fillStyle = C.txt; g.fillText(row[1], x + 170, ly - 10);
+    g.font = '28px ' + SANS; g.fillStyle = C.muted; g.fillText(row[2], x + 170, ly + 32);
+  });
+  g.restore();
+}
+
+// ---------- terminal scene ----------
+function wrapChars(text, max, indent) {
+  const pad = ' '.repeat(indent || 4);
   const out = [];
   let rest = text;
   while (rest.length > max) {
     let cut = rest.lastIndexOf(' ', max);
     if (cut < max * 0.6) cut = max;
     out.push(rest.slice(0, cut));
-    rest = '    ' + rest.slice(cut).replace(/^\s+/, '');
+    rest = pad + rest.slice(cut).replace(/^\s+/, '');
   }
   out.push(rest);
   return out;
 }
 
-const TOKEN = /(DENY|WARN|ALLOW|exit 3|exit 2|exit 0|MISMATCH|matches the checked payee, amount and token)/g;
+const TOKEN = /(DENY|WARN|ALLOW|exit 3|exit 2|exit 0|MISMATCH|matches the checked payee, amount and token|nothing signed)/g;
 function colorOf(tok) {
   if (tok === 'DENY' || tok === 'exit 3' || tok === 'MISMATCH') return C.deny;
   if (tok === 'WARN' || tok === 'exit 2') return C.warn;
+  if (tok === 'nothing signed') return C.acc;
   return C.ok;
 }
 
 function drawTerminal(sc, lt, plan) {
   g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
-  const x = 100, y = 58, w = 1720, h = 812;
+  const x = 90, y = 40, w = 1740, h = 850;
   rr(x, y, w, h, 18); g.fillStyle = '#0d1117'; g.fill(); g.strokeStyle = C.line; g.lineWidth = 2; g.stroke();
   g.save(); rr(x, y, w, 52, 18); g.clip(); g.fillStyle = '#161b22'; g.fillRect(x, y, w, 52); g.restore();
   ['#ff5f57', '#febc2e', '#28c840'].forEach((c, i) => { g.beginPath(); g.arc(x + 30 + i * 26, y + 26, 8, 0, Math.PI * 2); g.fillStyle = c; g.fill(); });
-  g.fillStyle = C.muted; g.font = '500 22px system-ui, Segoe UI, sans-serif'; g.textAlign = 'center';
-  g.fillText('Onchain OS buyer · node scripts/safe-pay.js', x + w / 2, y + 34); g.textAlign = 'left';
+  g.fillStyle = C.muted; g.font = '500 22px ' + SANS; g.textAlign = 'center';
+  g.fillText('Onchain OS buyer · test agent #13761 · node scripts/safe-pay.js', x + w / 2, y + 34); g.textAlign = 'left';
 
   const blocks = plan.terminal;
-  let starts;
-  if (Array.isArray(plan.terminalCues) && plan.terminalCues.length === blocks.length && sc.sentences.length) {
-    starts = plan.terminalCues.map((si, i) => (i === 0 ? 0 : Math.max(0, sc.sentences[Math.min(si, sc.sentences.length - 1)].start - sc.start - 0.3)));
-  } else {
-    const weights = blocks.map((b) => b.weight);
-    const sum = weights.reduce((a, b) => a + b, 0);
-    let acc = 0;
-    starts = weights.map((w) => { const st = acc; acc += sc.duration * w / sum; return st; });
-  }
+  const cues = plan.terminalCues;
+  const starts = blocks.map((b, i) => (i === 0 ? 0 : Math.max(0, sc.sentences[Math.min(cues[i], sc.sentences.length - 1)].start - sc.start - 0.3)));
   let bi = 0;
   for (let i = 0; i < blocks.length; i++) if (lt >= starts[i]) bi = i;
-  const bStart = starts[bi];
   const b = blocks[bi];
-  const t = lt - bStart;
-  g.font = '24px Consolas, "Cascadia Mono", ui-monospace, monospace';
+  const t = lt - starts[bi];
+  g.font = '25px ' + MONO;
   const cw = g.measureText('M').width;
-  const maxChars = Math.floor((w - 70) / cw);
-  const lineH = 35;
+  const maxChars = Math.floor((w - 80) / cw);
+  const lineH = 37;
   const lines = [];
-  const cps = Math.max(70, b.cmd.length / 1.1);
+  const cps = Math.max(70, b.cmd.length / 1.0);
   const typed = Math.min(b.cmd.length, Math.max(0, Math.floor((t - 0.2) * cps)));
-  const cmdLines = wrapChars('$ ' + b.cmd.slice(0, typed), maxChars);
-  cmdLines.forEach((l, i) => lines.push({ text: l, prompt: i === 0 }));
+  wrapChars('$ ' + b.cmd.slice(0, typed), maxChars, 4).forEach((l, i) => lines.push({ text: l, prompt: i === 0 }));
   const typedDone = 0.2 + b.cmd.length / cps;
   if (typed >= b.cmd.length) {
     const outT = t - typedDone - 0.45;
     const wrapped = [];
-    b.lines.forEach((l) => wrapChars(l, maxChars).forEach((x) => wrapped.push(x)));
-    const shown = outT < 0 ? 0 : Math.min(wrapped.length, Math.floor(outT / 0.075) + 1);
+    b.lines.forEach((l) => wrapChars(l, maxChars, 13).forEach((q) => wrapped.push(q)));
+    const shown = outT < 0 ? 0 : Math.min(wrapped.length, Math.floor(outT / 0.07) + 1);
     for (let i = 0; i < shown; i++) lines.push({ text: wrapped[i] });
-    if (shown < wrapped.length || Math.floor(lt * 2) % 2 === 0) lines.push({ text: shown >= wrapped.length ? '$ ' : '', cursor: shown >= wrapped.length });
+    if (shown >= wrapped.length && Math.floor(lt * 2) % 2 === 0) lines.push({ text: '$ ', cursor: true });
   } else if (Math.floor(lt * 3) % 2 === 0) {
     lines[lines.length - 1].caret = true;
   }
-  const maxLines = Math.floor((h - 90) / lineH);
+  const maxLines = Math.floor((h - 110) / lineH);
   const visible = lines.slice(Math.max(0, lines.length - maxLines));
   visible.forEach((ln, i) => {
-    const ly = y + 100 + i * lineH;
-    let lx = x + 36;
+    const ly = y + 102 + i * lineH;
+    let lx = x + 38;
     let text = ln.text;
-    if (text.startsWith('$ ')) { g.fillStyle = C.acc; g.fillText('$', lx, ly); lx += cw * 2; text = text.slice(2); g.fillStyle = C.txt; }
+    if (text.startsWith('$ ')) { g.font = '25px ' + MONO; g.fillStyle = C.acc; g.fillText('$', lx, ly); lx += cw * 2; text = text.slice(2); }
     let last = 0;
     text.replace(TOKEN, (m, _t, idx) => {
-      g.fillStyle = ln.prompt ? '#c9d1d9' : '#c9d1d9'; g.fillText(text.slice(last, idx), lx + last * cw, ly);
-      g.fillStyle = colorOf(m); g.font = 'bold 24px Consolas, "Cascadia Mono", ui-monospace, monospace'; g.fillText(m, lx + idx * cw, ly);
-      g.font = '24px Consolas, "Cascadia Mono", ui-monospace, monospace';
+      g.font = '25px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last, idx), lx + last * cw, ly);
+      g.font = 'bold 25px ' + MONO; g.fillStyle = colorOf(m); g.fillText(m, lx + idx * cw, ly);
       last = idx + m.length; return m;
     });
-    g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last), lx + last * cw, ly);
+    g.font = '25px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last), lx + last * cw, ly);
     if (ln.caret || ln.cursor) { g.fillStyle = C.txt; g.fillRect(lx + text.length * cw + 2, ly - 22, cw * 0.6, 28); }
   });
-  // block label
-  g.font = '600 20px system-ui, Segoe UI, sans-serif';
-  g.fillStyle = C.muted;
-  g.fillText((bi + 1) + ' / ' + blocks.length + ' · ' + b.label, x + 36, y + h - 24);
+  g.font = '600 21px ' + SANS; g.fillStyle = C.muted;
+  g.fillText('run ' + (bi + 1) + ' of ' + blocks.length + ' · ' + b.label, x + 38, y + h - 22);
 }
 
+// ---------- slides and subtitles ----------
 function drawSlide(sc, lt) {
   const b = img(sc.vis.img);
   g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   if (!b) return;
-  const k = 1 + 0.02 * clamp01(lt / sc.duration);
+  const k = 1 + 0.018 * clamp01(lt / sc.duration);
   g.save(); g.translate(W / 2, H / 2); g.scale(k, k); g.drawImage(b, -W / 2, -H / 2, W, H); g.restore();
 }
 
@@ -251,24 +380,24 @@ function wrapText(text, maxWidth) {
   return lines;
 }
 
-function drawSubtitle(scenes, t) {
+function drawSubtitle(sc, t) {
   let active = null;
-  for (const sc of scenes) for (let i = 0; i < sc.sentences.length; i++) {
+  for (let i = 0; i < sc.sentences.length; i++) {
     const s = sc.sentences[i];
     const next = sc.sentences[i + 1];
-    const until = next ? next.start - 0.02 : s.end + 0.25;
+    const until = next ? next.start - 0.02 : s.end + 0.35;
     if (t >= s.start - 0.08 && t < until) active = s;
   }
   if (!active) return;
-  g.font = '600 40px system-ui, Segoe UI, sans-serif';
-  const lines = wrapText(active.display, 1560);
-  const lh = 54;
-  const boxH = lines.length * lh + 30;
-  const widest = Math.max(...lines.map((l) => g.measureText(l).width));
-  const bx = W / 2 - widest / 2 - 30, by = H - 44 - boxH;
-  rr(bx, by, widest + 60, boxH, 14); g.fillStyle = 'rgba(6,8,12,0.82)'; g.fill();
+  g.font = '600 38px ' + SANS;
+  const lines = wrapText(active.display, 1580);
+  const lh = 50;
+  const boxH = lines.length * lh + 26;
+  const widest = Math.max.apply(null, lines.map((l) => g.measureText(l).width));
+  const bx = W / 2 - widest / 2 - 28, by = H - 34 - boxH;
+  rr(bx, by, widest + 56, boxH, 14); g.fillStyle = 'rgba(6,8,12,0.84)'; g.fill();
   g.fillStyle = '#ffffff'; g.textAlign = 'center';
-  lines.forEach((l, i) => g.fillText(l, W / 2, by + 15 + lh * (i + 1) - 14));
+  lines.forEach((l, i) => g.fillText(l, W / 2, by + 13 + lh * (i + 1) - 13));
   g.textAlign = 'left';
 }
 
@@ -280,30 +409,15 @@ function fadeFor(sc, lt, prev, next) {
   return a;
 }
 
-function imagesFor(sc, plan) {
+function imagesFor(sc) {
   const v = sc.vis;
   if (v.type === 'slide') return [v.img];
-  if (v.type === 'page') return ['page-' + v.key + '-hover.jpg', 'page-' + v.key + '-loading.jpg', 'page-' + v.key + '-result.jpg'];
+  if (v.type === 'page') return ['page-' + v.key + '-hover.jpg', 'page-' + v.key + '-loading.jpg', 'page-' + v.key + '-result.jpg', sc._enter && sc._enter.image];
   if (v.type === 'scan') return ['page-scan.jpg'];
   return [];
 }
 
-// ---------- timeline export (for subtitles and review) ----------
-window.getTimeline = async function () {
-  const plan = await (await fetch('/plan.json')).json();
-  const ac = new OfflineAudioContext(1, 48000, 48000);
-  const buffers = {};
-  for (const sc of plan.scenes) for (let i = 0; i < sc.sentences.length; i++) {
-    buffers[sc.id + '-' + i] = await ac.decodeAudioData(await (await fetch('/audio/' + sc.id + '-' + i + '.wav')).arrayBuffer());
-  }
-  const tl = buildTimeline(plan, buffers);
-  return { total: tl.total, scenes: tl.scenes.map((s) => ({ id: s.id, type: s.vis.type, start: s.start, duration: s.duration, sentences: s.sentences.map((x) => ({ start: x.start, end: x.end, display: x.display })) })) };
-};
-
-// ---------- main ----------
-window.renderVideo = async function (opts) {
-  const plan = await (await fetch('/plan.json')).json();
-  const ac = new AudioContext({ sampleRate: 48000 });
+async function loadAll(plan, ac) {
   const buffers = {};
   for (const sc of plan.scenes) {
     for (let i = 0; i < sc.sentences.length; i++) {
@@ -312,27 +426,37 @@ window.renderVideo = async function (opts) {
     }
   }
   const tl = buildTimeline(plan, buffers);
-  const from = opts && opts.from ? tl.scenes.findIndex((s) => s.id === opts.from) : 0;
-  const toIdx = opts && opts.to ? tl.scenes.findIndex((s) => s.id === opts.to) : tl.scenes.length - 1;
-  const scenes = tl.scenes.slice(from, toIdx + 1);
-  const t0 = scenes[0].start;
-  const total = scenes[scenes.length - 1].start + scenes[scenes.length - 1].duration - t0;
-
-  // carry page state through earlier scenes so partial renders start consistently
   let carry = { scroll: 0, cursor: null, image: 'page-base.jpg' };
   for (const sc of tl.scenes) {
     sc._enter = carry;
     if (sc.vis.type === 'page') { const p = scenarioPlan(sc, plan); carry = { scroll: p.yRes, cursor: p.btnCenter, image: 'page-' + sc.vis.key + '-result.jpg' }; }
     if (sc.vis.type === 'scan') carry = { scroll: 0, cursor: null, image: 'page-scan.jpg' };
   }
+  return tl;
+}
 
-  await preload(['page-base.jpg']);
-  await preload(imagesFor(scenes[0], plan));
-  if (scenes[0]._enter.image) await preload([scenes[0]._enter.image]);
+window.getTimeline = async function () {
+  const plan = await (await fetch('/plan.json')).json();
+  const tl = await loadAll(plan, new OfflineAudioContext(1, 48000, 48000));
+  return { total: tl.total, scenes: tl.scenes.map((s) => ({ id: s.id, type: s.vis.type, start: s.start, duration: s.duration, sentences: s.sentences.map((x) => ({ start: x.start, end: x.end, display: x.display })) })) };
+};
+
+// ---------- main ----------
+window.renderVideo = async function (opts) {
+  const plan = await (await fetch('/plan.json')).json();
+  const ac = new AudioContext({ sampleRate: 48000 });
+  const tl = await loadAll(plan, ac);
+  const from = opts && opts.from ? tl.scenes.findIndex((s) => s.id === opts.from) : 0;
+  const toIdx = opts && opts.to ? tl.scenes.findIndex((s) => s.id === opts.to) : tl.scenes.length - 1;
+  const scenes = tl.scenes.slice(from, toIdx + 1);
+  const t0 = scenes[0].start;
+  const total = scenes[scenes.length - 1].start + scenes[scenes.length - 1].duration - t0;
+
+  await preload(imagesFor(scenes[0]));
 
   const dest = ac.createMediaStreamDestination();
   const vtrack = cv.captureStream(30).getVideoTracks()[0];
-  const stream = new MediaStream([vtrack, ...dest.stream.getAudioTracks()]);
+  const stream = new MediaStream([vtrack].concat(dest.stream.getAudioTracks()));
   const mime = (opts && opts.mime) || 'video/webm;codecs=vp9,opus';
   const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: (opts && opts.bitrate) || 9000000, audioBitsPerSecond: 160000 });
   const chunks = [];
@@ -351,7 +475,7 @@ window.renderVideo = async function (opts) {
   }
 
   let frames = 0, slowFrames = 0, lastWall = performance.now();
-  const loaded = new Set();
+  const entered = new Set();
   await new Promise((resolve) => {
     function frame() {
       const now = performance.now();
@@ -364,13 +488,13 @@ window.renderVideo = async function (opts) {
       if (idx >= 0) {
         const sc = tl.scenes[idx];
         const lt = t - sc.start;
-        const need = imagesFor(sc, plan).concat(sc._enter && sc._enter.image && (sc.vis.type === 'page') ? [sc._enter.image] : []);
-        if (!loaded.has(sc.id)) {
-          loaded.add(sc.id);
+        if (!entered.has(sc.id)) {
+          entered.add(sc.id);
           const nxt = tl.scenes[idx + 1];
-          const keep = new Set(need.concat(nxt ? imagesFor(nxt, plan) : []));
-          for (const n of [...ready.keys()]) if (!keep.has(n)) release([n]);
-          if (nxt) preload(imagesFor(nxt, plan).concat(nxt.vis.type === 'page' && nxt._enter.image ? [nxt._enter.image] : []));
+          const keep = new Set(imagesFor(sc).concat(nxt ? imagesFor(nxt) : []));
+          for (const n of Array.from(ready.keys())) if (!keep.has(n)) release([n]);
+          preload(imagesFor(sc));
+          if (nxt) preload(imagesFor(nxt));
         }
         if (sc.vis.type === 'slide') drawSlide(sc, lt);
         else if (sc.vis.type === 'page') drawPage(sc, lt, plan);
@@ -378,7 +502,7 @@ window.renderVideo = async function (opts) {
         else if (sc.vis.type === 'terminal') drawTerminal(sc, lt, plan);
         const a = fadeFor(sc, lt, tl.scenes[idx - 1], tl.scenes[idx + 1]);
         if (a < 1) { g.fillStyle = 'rgba(0,0,0,' + (1 - a) + ')'; g.fillRect(0, 0, W, H); }
-        drawSubtitle([sc], t);
+        drawSubtitle(sc, t);
       }
       frames++;
       requestAnimationFrame(frame);

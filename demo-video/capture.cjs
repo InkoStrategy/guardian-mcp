@@ -23,12 +23,12 @@ const SCENARIOS = [
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: SCALE, colorScheme: 'dark' });
   const page = await context.newPage();
-  const meta = { scale: SCALE, viewport: { width: 1280, height: 720 }, states: {}, slides: [] };
+  const meta = { scale: SCALE, viewport: { width: 1280, height: 720 }, states: {}, slides: [], imageScanTop: {} };
 
   // slides
   await page.goto('file:///' + path.join(__dirname, 'slides.html').replace(/\\/g, '/'));
   await page.evaluate(() => document.fonts.ready);
-  for (const id of ['S1', 'S2', 'S10', 'S11', 'S12']) {
+  for (const id of ['S1', 'S2', 'S10', 'S11', 'S13', 'S12']) {
     await page.evaluate((s) => window.show(s), id);
     await page.screenshot({ path: path.join(OUT, 'slide-' + id + '.jpg'), type: 'jpeg', quality: 95 });
     meta.slides.push(id);
@@ -44,11 +44,14 @@ const SCENARIOS = [
   const shot = async (name, full) => {
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({ path: path.join(OUT, name + '.jpg'), type: 'jpeg', quality: 92, fullPage: true, clip: full ? undefined : { x: 0, y: 0, width: 1280, height: 1500 } });
-    return { file: name + '.jpg', docHeight: await page.evaluate(() => document.documentElement.scrollHeight) };
+    const info = await page.evaluate(() => { const lead = document.querySelector('#scanLead'); const h2 = lead.previousElementSibling; return { docHeight: document.documentElement.scrollHeight, scanTop: (h2 ? h2.getBoundingClientRect().top : lead.getBoundingClientRect().top) + scrollY }; });
+    meta.imageScanTop[name + '.jpg'] = info.scanTop;
+    return Object.assign({ file: name + '.jpg' }, info);
   };
   meta.states.base = await shot('page-base');
   meta.buttons = await page.evaluate(() => [...document.querySelectorAll('button.sc')].map((b) => { const r = b.getBoundingClientRect(); return { title: b.querySelector('.t').textContent, x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height }; }));
   meta.form = await boxOf('#custom');
+  meta.feeLabel = await boxOf('label[for=fee]');
 
   for (const s of SCENARIOS) {
     const btn = page.locator('button.sc', { hasText: s.title }).first();
