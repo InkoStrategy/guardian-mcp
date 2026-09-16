@@ -8,6 +8,8 @@
 
 Репозиторий: https://github.com/InkoStrategy/guardian-mcp. Каждый push в `main` автоматически деплоится в production.
 
+English overview for OKX Dev Day judges: [DEVDAY.md](DEVDAY.md). Live Pay-Safe demo: https://guardian-mcp-rho.vercel.app/pay-safe
+
 Семнадцать слоёв защиты, все детерминированные, без внешних API (только RPC и общее хранилище):
 
 | Слой | Что делает |
