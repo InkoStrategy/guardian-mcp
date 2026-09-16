@@ -43,7 +43,7 @@ function speechEnd(buf) {
 }
 
 function buildTimeline(plan, buffers) {
-  const LEAD = 0.45, GAP = 0.38, TAIL = 0.55;
+  const LEAD = 0.4, GAP = 0.3, TAIL = 0.5;
   const MIN = { slide: 5, page: 8.4, scan: 16, terminal: 24 };
   let t = 0;
   const scenes = [];
@@ -58,7 +58,7 @@ function buildTimeline(plan, buffers) {
       return out;
     });
     const isLast = sc === plan.scenes[plan.scenes.length - 1];
-    const speech = cursor - GAP + (isLast ? 2.6 : TAIL);
+    const speech = cursor - GAP + (isLast ? 2.0 : TAIL);
     let duration = Math.max(MIN[vis.type], speech);
     if (vis.type === 'page' && vis.clickCue !== undefined) {
       const cueRel = sentences[vis.clickCue].start - t;
@@ -344,12 +344,13 @@ function wrapChars(text, max, indent) {
   return out;
 }
 
-const TOKEN = /(DENY|WARN|ALLOW|exit 3|exit 2|exit 0|MISMATCH|matches the checked payee, amount and token|nothing signed|via onchainos [a-z]+ [a-z-]+|insufficient \(short [0-9.]+\)|not requested)/g;
+const TOKEN = /(DENY|WARN|ALLOW|exit 3|exit 2|exit 0|MISMATCH|matches the checked payee, amount and token|nothing signed|via onchainos [a-z]+ [a-z-]+|insufficient \(short [0-9.]+\)|not requested|"status":"success"|success in block [0-9]+|as checked)/g;
 function colorOf(tok) {
   if (tok === 'DENY' || tok === 'exit 3' || tok === 'MISMATCH') return C.deny;
   if (tok === 'WARN' || tok === 'exit 2') return C.warn;
   if (tok === 'nothing signed' || tok.indexOf('via onchainos') === 0) return C.acc;
   if (tok === 'not requested' || tok.indexOf('insufficient') === 0) return C.warn;
+  if (tok.indexOf('success') >= 0 || tok === 'as checked') return C.ok;
   return C.ok;
 }
 
@@ -369,10 +370,11 @@ function drawTerminal(sc, lt, plan) {
   for (let i = 0; i < blocks.length; i++) if (lt >= starts[i]) bi = i;
   const b = blocks[bi];
   const t = lt - starts[bi];
-  g.font = '25px ' + MONO;
+  const FS = b.fontSize || 25;
+  g.font = FS + 'px ' + MONO;
   const cw = g.measureText('M').width;
   const maxChars = Math.floor((w - 80) / cw);
-  const lineH = 37;
+  const lineH = Math.round(FS * 1.48);
   const lines = [];
   const cps = Math.max(70, b.cmd.length / 1.0);
   const typed = Math.min(b.cmd.length, Math.max(0, Math.floor((t - 0.2) * cps)));
@@ -388,25 +390,25 @@ function drawTerminal(sc, lt, plan) {
   } else if (Math.floor(lt * 3) % 2 === 0) {
     lines[lines.length - 1].caret = true;
   }
-  const maxLines = Math.floor((h - 110) / lineH);
+  const maxLines = Math.floor((h - 140) / lineH);
   const visible = lines.slice(Math.max(0, lines.length - maxLines));
-  if (bi === blocks.length - 1 && sc.sentences.length > 5) {
-    const payAt = sc.sentences[5].start - sc.start - 0.2;
-    const k = visible.findIndex((ln) => ln.text.indexOf('onchainos payment pay --payment-id') >= 0);
-    if (k >= 0) { const ly = y + 102 + k * lineH; glowBox(x + 24, ly - 30, w - 48, lineH + 8, C.acc, clamp01((lt - payAt) / 0.3), 10); }
+  if (b.highlight) {
+    const payAt = starts[bi] + 1.2;
+    const k = visible.findIndex((ln) => ln.text.indexOf(b.highlight) >= 0);
+    if (k >= 0) { const ly = y + 102 + k * lineH; glowBox(x + 24, ly - FS - 5, w - 48, lineH + 8, C.acc, clamp01((lt - payAt) / 0.3), 10); }
   }
   visible.forEach((ln, i) => {
     const ly = y + 102 + i * lineH;
     let lx = x + 38;
     let text = ln.text;
-    if (text.startsWith('$ ')) { g.font = '25px ' + MONO; g.fillStyle = C.acc; g.fillText('$', lx, ly); lx += cw * 2; text = text.slice(2); }
+    if (text.startsWith('$ ')) { g.font = FS + 'px ' + MONO; g.fillStyle = C.acc; g.fillText('$', lx, ly); lx += cw * 2; text = text.slice(2); }
     let last = 0;
     text.replace(TOKEN, (m, _t, idx) => {
-      g.font = '25px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last, idx), lx + last * cw, ly);
-      g.font = 'bold 25px ' + MONO; g.fillStyle = colorOf(m); g.fillText(m, lx + idx * cw, ly);
+      g.font = FS + 'px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last, idx), lx + last * cw, ly);
+      g.font = 'bold ' + FS + 'px ' + MONO; g.fillStyle = colorOf(m); g.fillText(m, lx + idx * cw, ly);
       last = idx + m.length; return m;
     });
-    g.font = '25px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last), lx + last * cw, ly);
+    g.font = FS + 'px ' + MONO; g.fillStyle = '#c9d1d9'; g.fillText(text.slice(last), lx + last * cw, ly);
     if (ln.caret || ln.cursor) { g.fillStyle = C.txt; g.fillRect(lx + text.length * cw + 2, ly - 22, cw * 0.6, 28); }
   });
   g.font = '600 21px ' + SANS; g.fillStyle = C.muted;

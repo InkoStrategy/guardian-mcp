@@ -39,7 +39,13 @@ ul.commits .dt{color:var(--muted);flex:0 0 130px}
 .note{color:#aeb6c2;font-size:19px;margin:12px 0 0;line-height:1.4}
 #S11{justify-content:flex-start;padding-top:44px}
 #S11 ul.commits li{padding:6px 0}
-#S11 .stats{margin-top:16px}
+#S11 .stats{margin-top:12px}
+#S11 h2{margin-bottom:14px}
+#S11 ul.commits{font-size:19px}
+#S11 ul.commits li{padding:4px 0}
+#S11 .stat{padding:8px 18px}
+#S11 .stat .v{font-size:32px}
+#S11 .note{font-size:17px;margin-top:10px}
 .quad{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .qc{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 22px}
 .qc .k{color:var(--acc);font-size:15px;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
@@ -76,7 +82,7 @@ ul.commits .dt{color:var(--muted);flex:0 0 130px}
     <div class="step g"><div class="n">3</div><div class="t">Guardian Pay-Safe</div><div class="d code">/check-payment · /probe-payment</div></div>
     <div class="step"><div class="n">4</div><div class="t code">payment quote</div><div class="d">Onchain OS persists a paymentId</div></div>
     <div class="step g"><div class="n">5</div><div class="t">Quote guard</div><div class="d">same payee, amount, token, network as checked</div></div>
-    <div class="step"><div class="n">6</div><div class="t code">payment pay</div><div class="d">the wallet owner confirms</div></div>
+    <div class="step"><div class="n">6</div><div class="t code">payment pay</div><div class="d">owner confirms · settlement verified on-chain</div></div>
   </div>
   <div class="chips"><span class="chip">X Layer · eip155:196</span><span class="chip">USD₮0</span><span class="chip">x402 v1 + v2</span><span class="chip">MCP servers</span><span class="chip">agent skill for Onchain OS</span></div>
 </section>
@@ -91,8 +97,9 @@ ul.commits .dt{color:var(--muted);flex:0 0 130px}
     <li><span class="h">05b1fa1</span><span class="dt">16 Sep 2026</span><span>OKX.AI marketplace trust scan with MCP probing</span></li>
     <li><span class="h">47bc206</span><span class="dt">16 Sep 2026</span><span>safe-pay: Onchain OS flow with quote guard</span></li>
     <li><span class="h">7c13562</span><span class="dt">16 Sep 2026</span><span>POST /probe-payment, demo sellers, /pay-safe page</span></li>
+    <li><span class="h">5fa5523</span><span class="dt">16 Sep 2026</span><span>On-chain settlement check; first real payment settled as checked</span></li>
   </ul>
-  <div class="stats"><div class="stat"><div class="v">36</div><div class="k">new payment rules</div></div><div class="stat"><div class="v">39</div><div class="k">new tests</div></div><div class="stat"><div class="v">62</div><div class="k">marketplace services scanned</div></div></div>
+  <div class="stats"><div class="stat"><div class="v">36</div><div class="k">new payment rules</div></div><div class="stat"><div class="v">43</div><div class="k">new tests</div></div><div class="stat"><div class="v">62</div><div class="k">services scanned</div></div><div class="stat"><div class="v">1</div><div class="k">real payment settled</div></div></div>
   <p class="note">Reuses earlier GuardianMCP checks (13–14 Sep 2026, not part of this submission): lookalike and fresh addresses, phishing-domain patterns, threat registry with ScamSniffer data.</p>
 </section>
 

@@ -30,8 +30,8 @@
    "id": "S3",
    "sentences": [
     {
-     "display": "Beside one honest seller, each demo seller stages one attack; Guardian checks it without paying or signing.",
-     "speech": "Beside one honest seller, each demo seller stages one attack. Guardian checks it without paying or signing."
+     "display": "One honest seller and six staged attacks; Guardian checks each one without paying.",
+     "speech": "One honest seller, and six staged attacks. Guardian checks each one without paying."
     },
     {
      "display": "Price, token and endpoint must match the listing, the payee must match the wallet you expect, and the EIP-712 domain must match the token.",
@@ -144,16 +144,16 @@
      "speech": "Run two, a marketplace seller with the wrong domain, stops on warn, exit two."
     },
     {
-     "display": "Run three, the URL Change Check API listing, passes with ALLOW.",
-     "speech": "Run three, the U R L Change Check A P I listing, passes with allow."
+     "display": "Run three, the URL Change Check API listing, passes with ALLOW, and the quote matches the check.",
+     "speech": "Run three, the U R L Change Check A P I listing, passes with allow, and the quote matches the check."
     },
     {
-     "display": "Quote guard: the Onchain OS quote pays the same payee, amount and token that Guardian checked.",
-     "speech": "Quote guard. The On chain O S quote pays the same payee, amount and token that Guardian checked."
+     "display": "The owner approved it: 0.005 USD₮0 settled on X Layer, and the seller returned its result.",
+     "speech": "The owner approved it. Zero point zero zero five U S D T zero settled on X Layer, and the seller returned its result."
     },
     {
-     "display": "Our test wallet holds no USD₮0, so nothing is paid; the script prints the pay command for the owner to confirm.",
-     "speech": "Our test wallet holds no U S D T zero, so nothing is paid. The script prints the pay command for the owner to confirm."
+     "display": "Run four reads the receipt on-chain: the transfer matches the payee, amount and token that Guardian checked.",
+     "speech": "Run four reads the receipt on chain. The transfer matches the payee, amount and token that Guardian checked."
     }
    ]
   },
@@ -161,12 +161,12 @@
    "id": "S10",
    "sentences": [
     {
-     "display": "Listings come from onchainos agent service-detail, and Guardian checks the challenge unpaid and unsigned.",
-     "speech": "Listings come from On chain O S agent service detail, and Guardian checks the challenge, unpaid and unsigned."
+     "display": "Every step runs on Onchain OS, with one Guardian check before the wallet signs.",
+     "speech": "Every step runs on On chain O S, with one Guardian check before the wallet signs."
     },
     {
-     "display": "Only a quote that matches the check reaches the pay command on X Layer.",
-     "speech": "Only a quote that matches the check reaches the pay command on X Layer."
+     "display": "Only a quote that matches the check reaches the pay command, and the settlement is verified on X Layer.",
+     "speech": "Only a quote that matches the check reaches the pay command, and the settlement is verified on X Layer."
     }
    ]
   },
@@ -174,8 +174,8 @@
    "id": "S11",
    "sentences": [
     {
-     "display": "Built from 16 September: 36 new payment rules and 39 new tests.",
-     "speech": "Built from September sixteenth. Thirty six new payment rules, and thirty nine new tests."
+     "display": "Built from 16 September: 36 new payment rules, 43 new tests, and a real payment settled as checked.",
+     "speech": "Built from September sixteenth. Thirty six new payment rules, forty three new tests, and a real payment settled as checked."
     },
     {
      "display": "It reuses our earlier GuardianMCP address and domain checks, which are not part of this submission.",
@@ -187,12 +187,12 @@
    "id": "S13",
    "sentences": [
     {
-     "display": "Buyer agents add it through our Onchain OS agent skill or one API call.",
-     "speech": "Buyer agents add it through our On chain O S agent skill, or one A P I call."
+     "display": "Buyer agents add it with our Onchain OS skill or one API call, and checks are free.",
+     "speech": "Buyer agents add it with our On chain O S skill, or one A P I call, and checks are free."
     },
     {
-     "display": "Pay-Safe checks are free; GuardianMCP premium verdicts cost 0.099 USD₮0 per call over x402 on X Layer.",
-     "speech": "Pay Safe checks are free. Guardian M C P premium verdicts cost zero point zero nine nine U S D T zero per call, over x four oh two on X Layer."
+     "display": "Premium GuardianMCP verdicts are paid per call over x402 on X Layer.",
+     "speech": "Premium Guardian M C P verdicts are paid per call, over x four oh two on X Layer."
     }
    ]
   },

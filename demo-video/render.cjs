@@ -46,7 +46,8 @@ function buildPlan() {
   const terminal = [
     { label: 'attack listing: endpoint never contacted', cmd: 'node scripts/safe-pay.js --sid 39876 --agent 13761', lines: readCapture('safepay-attack.txt'), weight: 0.27 },
     { label: 'marketplace seller, wrong EIP-712 domain: stopped on WARN', cmd: 'node scripts/safe-pay.js --sid 33342 --agent 13761 --param scoutMode=best', lines: readCapture('safepay-eip712.txt'), weight: 0.36 },
-    { label: 'marketplace listing: ALLOW, quote matches, pay command printed', cmd: 'node scripts/safe-pay.js --sid 39856 --agent 13761 --max 0.01', lines: readCapture('safepay-listing.txt'), weight: 0.37 },
+    { label: 'marketplace listing: ALLOW, quote matches, owner-approved payment', cmd: 'node scripts/safe-pay.js --sid 39856 --agent 13761 --max 0.01 --method POST --param url=https://guardian-mcp-rho.vercel.app/pay-safe --pay --yes', lines: readCapture('safepay-paid.txt'), weight: 0.3, fontSize: 21 },
+    { label: 'settlement verified on X Layer', cmd: 'node scripts/verify-settlement.js --tx 0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d --pay-to 0xc4622689eb6c38c929fe254777b449a5dedf9d60 --amount 5000 --payer 0xe1c6f89df50fb68282d52e34d6001d65005ff67b', lines: readCapture('settlement.txt'), weight: 0.2, highlight: 'Settled   as checked' },
   ];
   for (const sc of narration.scenes) if (!visuals[sc.id]) throw new Error('no visual for ' + sc.id);
   // payee inset card: the demo listing wallet vs the poisoned payTo, checksummed like the page shows them
@@ -70,7 +71,7 @@ function buildPlan() {
     }
   }
   const scanCards = { eip712, advisory: Object.fromEntries(Object.entries(advisory).map(([k, v]) => [k, v.size])), totals: scan.totals };
-  const plan = { scenes: narration.scenes, visuals, meta, terminal, payee, scanCards, terminalCues: [1, 2, 3], scanCues: { kpi: 1, deny: 3, warn: 4, advisory: 5 } };
+  const plan = { scenes: narration.scenes, visuals, meta, terminal, payee, scanCards, terminalCues: [1, 2, 3, 5], scanCues: { kpi: 1, deny: 3, warn: 4, advisory: 5 } };
   fs.writeFileSync(path.join(BUILD, 'plan.json'), JSON.stringify(plan, null, 1));
   return plan;
 }
