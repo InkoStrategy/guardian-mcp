@@ -54,9 +54,21 @@ signature firewall, shared threat registry, benchmark) is pre-existing and not p
 | `05b1fa1` | OKX.AI marketplace trust scan (`scripts/okxai-trust-scan.js`) with MCP probing; published report |
 | `47bc206` | `scripts/safe-pay.js`: end-to-end Onchain OS buyer flow with a quote time-of-check/time-of-use guard |
 | `7c13562` | `POST /probe-payment` (URL in, verdict out, SSRF-guarded), demo x402 sellers, the `/pay-safe` page |
+| `2a1a94a` | Quote guard reads the payee from `decodedChallenge.recipient` (found on a third-party listing), quote over the capture transport, no `--yes` in printed commands |
+| `5fa5523` | On-chain settlement check (`src/settlement.js`, `scripts/verify-settlement.js`, step 6 of safe-pay); first real guarded payment settled as checked |
 
-Pay-Safe now has 36 payment rules and 39 new tests; the full suite has 123 passing (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
+Pay-Safe now has 36 payment rules and 43 new tests; the full suite has 127 passing (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
 Permit2 payloads, SSRF targets and every demo scenario.
+
+## A real payment through the guarded flow
+
+On 16 Sep 2026 the team's Onchain OS wallet paid **0.005 USD₮0** for "URL Change Check API" (OKX.AI sid 39856)
+through `scripts/safe-pay.js`: listing → unpaid challenge → Pay-Safe ALLOW → quote guard → owner-approved
+`onchainos payment pay` → seller result → on-chain settlement check.
+
+- Transaction: [0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d](https://www.oklink.com/x-layer/tx/0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d) (X Layer, block 70825096, gas paid by the facilitator)
+- Transfer: 5000 atomic USD₮0 from `0xe1c6…f67b` to `0xc462…9d60`, the payee Pay-Safe checked
+- Reproduce the check: `node scripts/verify-settlement.js --tx 0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d --pay-to 0xc4622689eb6c38c929fe254777b449a5dedf9d60 --amount 5000`
 
 ## How it integrates with OKX AI
 
@@ -67,6 +79,7 @@ buyer agent ──► onchainos agent service-detail --sid N        listing: end
             ──► onchainos payment quote                        paymentId
             ──► quote guard: same payee, amount, token, network as checked
             ──► onchainos payment pay --payment-id …   the wallet asks the owner to confirm
+            ──► settlement check: the on-chain Transfer matches the checked payee, amount and token
 ```
 
 - **OKX.AI marketplace:** listings come from `onchainos agent service-detail` / `service-match`.
