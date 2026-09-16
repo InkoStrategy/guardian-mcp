@@ -1,0 +1,195 @@
+'use strict';
+
+/**
+ * OKX.AI Pay-Safe trust scan.
+ *
+ * For every paid A2MCP service listed on OKX.AI: request the endpoint once WITHOUT paying, capture the x402
+ * challenge (PAYMENT-REQUIRED header, v1 402 body, or an MCP tools/call 402 / JSON-RPC error), and run Pay-Safe against the marketplace listing
+ * (listed price, listed token, listed endpoint). Nothing is paid or signed.
+ *
+ *   node scripts/okxai-trust-scan.js [--limit 80] [--concurrency 2] [--guardian https://guardian-mcp-rho.vercel.app] [--local]
+ *
+ * Needs the onchainos CLI (logged in) to read marketplace listings. Writes docs/trust-scan.json and docs/trust-scan.md.
+ */
+
+const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
+const LIMIT = Number(arg('limit', 80));
+const GUARDIAN = arg('guardian', 'https://guardian-mcp-rho.vercel.app');
+const LOCAL = process.argv.includes('--local');
+const CONCURRENCY = Math.max(1, Number(arg('concurrency', 2)));
+const ONCHAINOS = process.env.ONCHAINOS_BIN || (process.platform === 'win32' ? path.join(process.env.USERPROFILE || '', '.local', 'bin', 'onchainos.exe') : 'onchainos');
+const KEYWORDS = ['market data', 'trading signals', 'token analysis', 'security', 'research', 'crypto', 'defi', 'wallet', 'news', 'api', 'data', 'ai', 'image', 'polymarket', 'x layer'];
+
+function cli(args) {
+  const r = spawnSync(ONCHAINOS, args, { encoding: 'utf8', maxBuffer: 32e6, windowsHide: true });
+  const out = r.stdout || '';
+  const i = out.indexOf('{');
+  try { return JSON.parse(out.slice(i)); } catch { return null; }
+}
+
+function listings() {
+  const seen = new Map();
+  for (const kw of KEYWORDS) {
+    let after = null;
+    for (let page = 0; page < 5 && seen.size < LIMIT * 3; page++) {
+      const args = ['agent', 'service-match', '--keywords', kw, '--min-payment-token-amount', '0.000001', '--limit', '10'];
+      if (after) args.push('--search-after', after);
+      const j = cli(args);
+      const data = j && j.data;
+      if (!data || !Array.isArray(data.services)) break;
+      for (const s of data.services) {
+        if (s.serviceType !== 'A2MCP' || !s.endpoint || !(Number(s.feeAmount) > 0)) continue;
+        if (!seen.has(s.sid)) seen.set(s.sid, { sid: s.sid, serviceName: s.serviceName, endpoint: s.endpoint, feeAmount: Number(s.feeAmount), feeToken: s.feeToken, feeTokenSymbol: s.feeTokenSymbol, aspAgentId: s.asp && s.asp.aspAgentId, aspName: s.asp && s.asp.aspName, soldCount: s.asp && s.asp.soldCount, keyword: kw });
+      }
+      if (!data.hasMore || !data.searchAfter) break;
+      after = data.searchAfter;
+    }
+  }
+  return [...seen.values()].slice(0, LIMIT);
+}
+
+async function fetchChallenge(url) {
+  const attempt = async (method) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12000);
+    try {
+      const res = await fetch(url, { method, headers: { accept: 'application/json', 'content-type': 'application/json', 'user-agent': 'guardian-mcp-trust-scan/1.0 (no payment; x402 challenge probe)' }, body: method === 'POST' ? '{}' : undefined, signal: ctrl.signal, redirect: 'manual' });
+      const header = res.headers.get('payment-required');
+      let body = null;
+      try { body = await res.json(); } catch { body = null; }
+      return { status: res.status, header, body, method };
+    } finally { clearTimeout(t); }
+  };
+  let r;
+  try { r = await attempt('GET'); } catch (e) { return { error: e.name === 'AbortError' ? 'timeout' : e.message }; }
+  if (hasChallenge(r)) return r;
+  try { const p = await attempt('POST'); if (hasChallenge(p)) return p; } catch { /* keep GET result */ }
+  // MCP servers (streamable HTTP) ask for payment on tools/call, usually as a 402 or a JSON-RPC error carrying x402 data.
+  try { const m = await mcpProbe(url); if (m && hasChallenge(m)) return m; } catch { /* not MCP */ }
+  return r;
+}
+
+function x402In(body) {
+  if (!body || typeof body !== 'object') return null;
+  if (Array.isArray(body.accepts)) return body;
+  const e = body.error && body.error.data;
+  if (e && Array.isArray(e.accepts)) return e;
+  const res = body.result && body.result.structuredContent;
+  if (res && Array.isArray(res.accepts)) return res;
+  return null;
+}
+
+function hasChallenge(r) {
+  return Boolean(r && (r.header || x402In(r.body)));
+}
+
+async function mcpProbe(url) {
+  const rpc = async (method, params, sessionId) => {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12000);
+    try {
+      const headers = { accept: 'application/json, text/event-stream', 'content-type': 'application/json', 'user-agent': 'guardian-mcp-trust-scan/1.0 (no payment; x402 challenge probe)' };
+      if (sessionId) headers['mcp-session-id'] = sessionId;
+      const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', id: method === 'initialize' ? 1 : 2, method, params }), signal: ctrl.signal, redirect: 'manual' });
+      const text = await res.text();
+      let body = null;
+      try { body = JSON.parse(text); } catch {
+        const line = text.split(/\r?\n/).find((l) => l.startsWith('data:'));
+        if (line) try { body = JSON.parse(line.slice(5)); } catch { body = null; }
+      }
+      return { status: res.status, header: res.headers.get('payment-required'), body, method: 'MCP ' + method, sessionId: res.headers.get('mcp-session-id') || sessionId };
+    } finally { clearTimeout(t); }
+  };
+  const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'guardian-mcp-trust-scan', version: '1.0' } });
+  if (hasChallenge(init)) return init;
+  if (!init.body || !init.body.result) return null;
+  const list = await rpc('tools/list', {}, init.sessionId);
+  if (hasChallenge(list)) return list;
+  const tools = list.body && list.body.result && Array.isArray(list.body.result.tools) ? list.body.result.tools : [];
+  for (const tool of tools.slice(0, 3)) {
+    const call = await rpc('tools/call', { name: tool.name, arguments: {} }, init.sessionId);
+    if (hasChallenge(call)) return call;
+  }
+  return null;
+}
+
+async function check(body) {
+  if (LOCAL) return require('../src/paysafe').checkPayment(body, {});
+  const res = await fetch(GUARDIAN + '/check-payment', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await res.json();
+  if (res.status !== 200) throw new Error(j.error || 'HTTP ' + res.status);
+  return j;
+}
+
+async function main() {
+  const services = listings();
+  console.error('listed paid A2MCP services:', services.length);
+  const results = [];
+  const queue = services.slice();
+  const worker = async () => {
+    while (queue.length) {
+      const s = queue.shift();
+      const row = { sid: s.sid, service: s.serviceName, asp: s.aspName, aspAgentId: s.aspAgentId, endpoint: s.endpoint, listed: { feeAmount: s.feeAmount, feeToken: s.feeToken, symbol: s.feeTokenSymbol } };
+      const ch = await fetchChallenge(s.endpoint);
+      if (ch.error) { row.probe = 'unreachable'; row.detail = ch.error; results.push(row); continue; }
+      row.http = { method: ch.method, status: ch.status };
+      const challenge = ch.header || x402In(ch.body);
+      if (!challenge) { row.probe = ch.status === 402 ? '402_without_x402_challenge' : 'no_payment_challenge'; results.push(row); continue; }
+      row.probe = 'challenge';
+      try {
+        const v = await check({ paymentRequired: challenge, requestUrl: s.endpoint, expected: { feeAmount: s.feeAmount, feeToken: s.feeToken, endpoint: s.endpoint } });
+        row.verdict = v.verdict;
+        row.reasons = v.reasons;
+        row.summary = v.summary;
+        row.findings = v.details.findings.map((f) => ({ code: f.code, severity: f.severity, subject: f.subject || null, message: String(f.message || '').slice(0, 400) }));
+        const sel = v.details.selected;
+        row.challenge = { network: sel.network, scheme: sel.scheme, asset: sel.asset, amount: sel.amount, payTo: sel.payTo, entries: v.details.entries.length };
+      } catch (e) {
+        row.probe = 'challenge_invalid';
+        row.detail = e.message;
+      }
+      results.push(row);
+      console.error(String(results.length).padStart(3), (row.verdict || row.probe).padEnd(28), s.serviceName);
+    }
+  };
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+
+  const count = (pred) => results.filter(pred).length;
+  const reasonCounts = {};
+  for (const r of results) for (const c of r.reasons || []) reasonCounts[c] = (reasonCounts[c] || 0) + 1;
+  const report = {
+    generatedAt: new Date().toISOString(),
+    source: 'OKX.AI marketplace (onchainos agent service-match), paid A2MCP services',
+    method: 'One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.',
+    totals: {
+      services: results.length,
+      challenge: count((r) => r.probe === 'challenge'),
+      allow: count((r) => r.verdict === 'ALLOW'),
+      warn: count((r) => r.verdict === 'WARN'),
+      deny: count((r) => r.verdict === 'DENY'),
+      no_challenge: count((r) => r.probe === 'no_payment_challenge' || r.probe === '402_without_x402_challenge'),
+      unreachable: count((r) => r.probe === 'unreachable'),
+      invalid: count((r) => r.probe === 'challenge_invalid'),
+    },
+    reasons: Object.fromEntries(Object.entries(reasonCounts).sort((a, b) => b[1] - a[1])),
+    results: results.sort((a, b) => ({ DENY: 0, WARN: 1, ALLOW: 2 }[a.verdict] ?? 3) - ({ DENY: 0, WARN: 1, ALLOW: 2 }[b.verdict] ?? 3)),
+  };
+  const docs = path.join(__dirname, '..', 'docs');
+  fs.writeFileSync(path.join(docs, 'trust-scan.json'), JSON.stringify(report, null, 1));
+  const esc = (t) => String(t).replace(/\|/g, '/').replace(/[\r\n]+/g, ' ');
+  const highlights = report.results.filter((r) => r.verdict && r.verdict !== 'ALLOW').flatMap((r) => (r.findings || []).filter((f) => f.severity !== 'ALLOW').map((f) => '- **' + f.severity + ' ' + f.code + '** in ' + esc(r.service) + ' (sid ' + r.sid + '): ' + esc(f.message)));
+  const md = ['# OKX.AI Pay-Safe trust scan', '', 'Generated ' + report.generatedAt + '. ' + report.method, '', '| Metric | Count |', '|---|---|']
+    .concat(Object.entries(report.totals).map(([k, v]) => '| ' + k + ' | ' + v + ' |'))
+    .concat(['', '## Reasons', '', '| Rule | Services |', '|---|---|'], Object.entries(report.reasons).map(([k, v]) => '| `' + k + '` | ' + v + ' |'))
+    .concat(['', '## Findings', ''], highlights)
+    .concat(['', '## Services', '', '| Verdict | Service | Listed | Challenge | Reasons |', '|---|---|---|---|---|'],
+      report.results.map((r) => '| ' + (r.verdict || r.probe) + ' | ' + String(r.service).replace(/\|/g, '/') + ' (sid ' + r.sid + ') | ' + r.listed.feeAmount + ' ' + (r.listed.symbol || '') + ' | ' + (r.challenge ? (r.challenge.amount.human || r.challenge.amount.atomic) + ' ' + ((r.challenge.asset && r.challenge.asset.symbol) || '') + ' on ' + r.challenge.network : '—') + ' | ' + ((r.reasons || []).join(', ') || r.detail || '') + ' |'));
+  fs.writeFileSync(path.join(docs, 'trust-scan.md'), md.join('\n') + '\n');
+  console.log(JSON.stringify(report.totals), JSON.stringify(report.reasons));
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
