@@ -4,8 +4,8 @@
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
-> what the OKX.AI listing promised (price, token, payee, endpoint) and with the token contract itself
-> (EIP-712 domain), and returns ALLOW / WARN / DENY with evidence. Nothing is signed or paid.
+> what the OKX.AI listing promised (price, token, endpoint), with the payee the buyer expects, and with the
+> token contract itself (EIP-712 domain), and returns ALLOW / WARN / DENY with evidence. Nothing is signed or paid.
 
 ## The problem
 
@@ -66,7 +66,7 @@ buyer agent ──► onchainos agent service-detail --sid N        listing: end
             ──► Guardian POST /check-payment                   ALLOW / WARN / DENY + evidence
             ──► onchainos payment quote                        paymentId
             ──► quote guard: same payee, amount, token, network as checked
-            ──► onchainos payment pay --payment-id … (owner confirms with --yes)
+            ──► onchainos payment pay --payment-id …   the wallet asks the owner to confirm
 ```
 
 - **OKX.AI marketplace:** listings come from `onchainos agent service-detail` / `service-match`.

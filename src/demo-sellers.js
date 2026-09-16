@@ -28,7 +28,7 @@ const SCENARIOS = {
   },
   'payee-swap': {
     title: 'Poisoned payee',
-    story: 'The payee starts with 0xe1c6 and ends with f67b like the listed wallet, but the middle differs.',
+    story: 'The payee starts with 0xe1c6 and ends with f67b like the wallet the buyer expects, but the middle differs.',
     expect: 'DENY',
     entry: { payTo: '0xe1c6b0d2a91f4c7e38d5a0b6c2e9f13a7d04f67b' },
   },

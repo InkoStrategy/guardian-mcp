@@ -44,7 +44,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 .foot{color:var(--muted);font-size:13px;margin-top:40px}
 </style></head><body><div class="wrap">
 <h1>Pay-Safe</h1>
-<p class="lead">Check an x402 payment <strong>before</strong> your agent pays it. Guardian requests the paid endpoint once without paying, reads the 402 challenge and compares it with what the marketplace listing promised (price, token, payee, endpoint) and with the token contract itself (EIP-712 domain). Nothing is signed or paid.</p>
+<p class="lead">Check an x402 payment <strong>before</strong> your agent pays it. Guardian requests the paid endpoint once without paying, reads the 402 challenge and compares it with what the marketplace listing promised (price, token, endpoint), with the payee you expect, and with the token contract itself (EIP-712 domain). Nothing is signed or paid.</p>
 <div class="flow"><span>1 · listing</span><span>2 · unpaid request</span><span>3 · verdict</span><span>4 · quote matches check</span><span>5 · wallet pays</span></div>
 
 <h2>Try a seller</h2>
@@ -55,7 +55,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
   <div class="wide"><label for="url">Paid endpoint URL (https)</label><input id="url" name="url" placeholder="https://seller.example/paid/route" required></div>
   <div><label for="fee">Listed price</label><input id="fee" name="fee" placeholder="0.002" inputmode="decimal"></div>
   <div><label for="token">Listed token</label><input id="token" name="token" value="0x779ded0c9e1022225f8e0630b35a9b54be713736"></div>
-  <div><label for="payto">Listed payee (optional)</label><input id="payto" name="payto" placeholder="0x…"></div>
+  <div><label for="payto">Expected payee (optional)</label><input id="payto" name="payto" placeholder="0x…"></div>
   <div><label for="cap">Your spending cap (optional)</label><input id="cap" name="cap" placeholder="0.05" inputmode="decimal"></div>
   <div><label for="method">Request</label><select id="method" name="method"><option value="auto">auto (GET, POST, MCP)</option><option>GET</option><option>POST</option><option>MCP</option></select></div>
   <div><button class="go" type="submit" id="goBtn">Check payment</button></div>
@@ -107,6 +107,14 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
     finally{ if(btn) btn.disabled=false; result.scrollIntoView({behavior:'smooth',block:'nearest'}); }
   }
 
+  function fill(url, listing, cap){
+    document.getElementById('url').value=url;
+    document.getElementById('fee').value=listing.feeAmount!==undefined?String(listing.feeAmount):'';
+    document.getElementById('token').value=listing.feeToken||'';
+    document.getElementById('payto').value=listing.payTo||'';
+    document.getElementById('cap').value=cap||'';
+  }
+
   fetch('/demo/x402').then(function(r){return r.json();}).then(function(c){
     var box=document.getElementById('scenarios'); box.textContent='';
     var items=c.scenarios.slice();
@@ -115,7 +123,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
     items.forEach(function(s){
       var b=el('button','sc'); b.type='button';
       b.appendChild(el('div','t',s.title)); b.appendChild(el('div','s',s.story)); b.appendChild(el('div','e '+s.expected_verdict,'expected '+s.expected_verdict));
-      b.addEventListener('click',function(){ var listing=Object.assign({},s.listing,{endpoint:s.endpoint}); probe({url:s.endpoint,expected:listing,context:{max_amount:'0.05'}}, s.title, b); });
+      b.addEventListener('click',function(){ var listing=Object.assign({},s.listing,{endpoint:s.endpoint}); fill(s.endpoint,listing,'0.05'); probe({url:s.endpoint,expected:listing,context:{max_amount:'0.05'}}, s.title, b); });
       box.appendChild(b);
     });
   }).catch(function(e){ document.getElementById('scenarios').textContent='Could not load demo sellers: '+e.message; });

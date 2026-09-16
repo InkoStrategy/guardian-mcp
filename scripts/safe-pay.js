@@ -12,7 +12,8 @@
  * 3. Verdict   Guardian POST /check-payment against the listing and your cap
  * 4. Quote     onchainos payment quote, then verify the quote pays the same payee, amount and token
  *              that Guardian checked (the seller cannot swap the challenge between check and pay)
- * 5. Pay       only with --pay; passes --yes to the wallet only when you pass --yes yourself
+ * 5. Pay       only with --pay; passes --yes to the wallet only when you pass --yes yourself.
+ *              Without --pay it prints the pay command without --yes, so the wallet still asks the owner.
  *
  * Options: --agent <your agent id for service-detail>  --method auto|GET|POST|MCP  --tool <mcp tool>
  *          --accept-warn  --guardian <url>  --local  --json
@@ -162,13 +163,21 @@ async function main() {
   }
 
   const qargs = ['payment', 'quote', L.endpoint];
-  const method = String(opt('method', 'auto')).toUpperCase();
-  if (method === 'POST') qargs.push('--method', 'POST');
-  if (opt('tool')) qargs.push('--tool', opt('tool'));
+  // Quote over the same transport that produced the checked challenge.
+  const via = String(ch.method || '');
+  const mcpTool = via.startsWith('MCP tools/call ') ? via.slice('MCP tools/call '.length) : null;
+  if (opt('tool') || mcpTool) qargs.push('--tool', opt('tool') || mcpTool);
+  else if (via === 'POST' || String(opt('method', '')).toUpperCase() === 'POST') qargs.push('--method', 'POST');
   for (const kv of multi('param')) qargs.push('--param', kv);
   const q = onchainos(qargs);
   const cmp = compareQuote(q.json, { index: chosen.index, payTo: chosen.payTo, amount: chosen.amount, asset: chosen.asset, network: chosen.network });
   report.steps.quote = cmp;
+  if (!cmp.ok && cmp.kind === 'unavailable') {
+    out('4. Quote     unavailable, nothing to pay: ' + cmp.problems.join('; '));
+    process.exitCode = 1;
+    if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
+    return;
+  }
   if (!cmp.ok) {
     out('4. Quote     MISMATCH, do not pay: ' + cmp.problems.join('; '));
     report.verdict = 'DENY';
@@ -181,9 +190,10 @@ async function main() {
 
   const payArgs = ['payment', 'pay', '--payment-id', cmp.paymentId, '--selected-index', String(chosen.index)];
   if (!flag('pay')) {
-    report.next = 'onchainos ' + payArgs.join(' ') + ' --yes';
-    out('5. Pay       not requested. To pay exactly what was checked:');
+    report.next = 'onchainos ' + payArgs.join(' ');
+    out('5. Pay       not requested. To pay exactly what was checked, run:');
     out('             ' + report.next);
+    out('             The wallet shows the payment for confirmation; add --yes only to approve it.');
   } else {
     if (flag('yes')) payArgs.push('--yes');
     const p = onchainos(payArgs);

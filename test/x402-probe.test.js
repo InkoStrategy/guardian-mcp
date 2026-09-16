@@ -70,21 +70,28 @@ test('x402-probe: free endpoint returns the response without a challenge', async
 });
 
 const CHECKED = { index: 0, payTo: '0xE1c6F89df50Fb68282d52e34d6001d65005ff67b', amount: { atomic: '2000' }, asset: { address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736' }, network: 'eip155:196' };
-const QUOTE = { ok: true, data: { paymentId: 'pay_1', accepts: [{ index: 0, amount: '2000', asset: '0x779ded0c9e1022225f8e0630b35a9b54be713736', network: 'eip155:196', scheme: 'exact' }], candidates: [{ acceptsIndex: 0, amount: '2000', depositAddress: '0xe1c6f89df50fb68282d52e34d6001d65005ff67b', balanceStatus: 'sufficient' }] } };
+// Shape of a real onchainos payment quote: depositAddress is the BUYER wallet, the payee is decodedChallenge.recipient.
+const QUOTE = { ok: true, data: { paymentId: 'pay_1', accepts: [{ index: 0, amount: '2000', asset: '0x779ded0c9e1022225f8e0630b35a9b54be713736', network: 'eip155:196', scheme: 'exact' }], candidates: [{ acceptsIndex: 0, amount: '2000', depositAddress: '0x9999999999999999999999999999999999999999', balanceStatus: 'sufficient' }], decodedChallenge: { amount: '2000', recipient: '0xE1c6F89df50Fb68282d52e34d6001d65005ff67b' } } };
 
-test('quote-guard: quote that pays exactly what was checked passes', () => {
+test('quote-guard: quote that pays exactly what was checked passes, whatever the buyer deposit address is', () => {
   const r = compareQuote(QUOTE, CHECKED);
   assert.equal(r.ok, true, r.problems.join('; '));
+  assert.equal(r.kind, 'match');
   assert.equal(r.paymentId, 'pay_1');
+  assert.equal(r.recipient, '0xE1c6F89df50Fb68282d52e34d6001d65005ff67b');
 });
 
 test('quote-guard: seller swapping payee, amount or token between check and quote is caught', () => {
   const swapped = JSON.parse(JSON.stringify(QUOTE));
-  swapped.data.candidates[0].depositAddress = '0x1111111111111111111111111111111111111111';
+  swapped.data.decodedChallenge.recipient = '0x1111111111111111111111111111111111111111';
   swapped.data.candidates[0].amount = '2000000';
   swapped.data.accepts[0].asset = '0x74b7f16337b8972027f6196a17a631ac6de26d22';
   const r = compareQuote(swapped, CHECKED);
   assert.equal(r.ok, false);
-  assert.equal(r.problems.length, 3, r.problems.join('; '));
-  assert.equal(compareQuote({ data: {} }, CHECKED).ok, false);
+  assert.equal(r.kind, 'mismatch');
+  assert.ok(r.problems.some((p) => p.startsWith('payee changed')), r.problems.join('; '));
+  assert.ok(r.problems.some((p) => p.startsWith('amount changed')), r.problems.join('; '));
+  assert.ok(r.problems.some((p) => p.startsWith('token changed')), r.problems.join('; '));
+  assert.equal(compareQuote({ data: {} }, CHECKED).kind, 'unavailable');
+  assert.equal(compareQuote({ ok: false, error: 'endpoint_unreachable: unexpected HTTP 404' }, CHECKED).kind, 'unavailable');
 });
