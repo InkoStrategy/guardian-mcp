@@ -43,7 +43,9 @@ What the scan found:
   `USDT₀` v1 or `USD₮0` v2. The USD₮0 contract on X Layer (`0x779d…3736`) returns
   `DOMAIN_SEPARATOR 0xd591d9ba…`, which matches only name `USD₮0` version `1`. `onchainos payment
   pay-local` builds the domain from `extra.name` / `extra.version`, so signatures built from those challenges
-  fail on-chain. One of the five is the attack listing above; the other four are regular sellers.
+  fail on-chain. One of the five is the attack listing above; the other four are regular sellers. This is an
+  on-chain fact, not a table lookup: `node scripts/verify-eip712-domain.js` reads `DOMAIN_SEPARATOR()`
+  (selector `0x3644e515`) live from the token and shows every declared pair but the canonical one is rejected.
 - **Heuristics tuned on real data.** The first pass produced 3 false DENYs on honest sellers whose
   hosts contain "okx" or use cheap TLDs. Host patterns are now split by strength and weighed against
   the listing, and the rerun has one DENY: the real attack.
