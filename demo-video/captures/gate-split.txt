@@ -1,0 +1,12 @@
+$ onchainos payment quote .../demo/x402/header-body-split
+  Will pay 0.001 USDT (exact, X Layer)
+  the CLI saved payee 0x5b0c...1A09 from the header; the 402 body shows 0xe1c6...f67b
+  its summary never names the payee
+
+$ node scripts/check-quote.js --payment-id pay_adde... --endpoint ... --fee 0.001
+  Verdict   DENY challenge_header_body_mismatch
+            the 402 body shows one payment, the entry payment pay signs pays another
+  Bound     verdict written; onchainos payment pay is now blocked for this quote
+
+$ Claude Code hook on: onchainos payment pay --payment-id pay_adde... --yes
+  deny -- GuardianMCP: DENY challenge_header_body_mismatch

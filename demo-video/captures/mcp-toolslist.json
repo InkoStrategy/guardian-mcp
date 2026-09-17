@@ -1,0 +1,15 @@
+{
+ "count": 10,
+ "tools": [
+  "check_payment",
+  "probe_payment",
+  "check_quote",
+  "verify_settlement",
+  "check_listing",
+  "check_address",
+  "check_domain",
+  "analyze_transaction",
+  "analyze_signature",
+  "guard"
+ ]
+}

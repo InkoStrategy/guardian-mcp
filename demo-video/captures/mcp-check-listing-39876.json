@@ -1,0 +1,13 @@
+{
+ "service": "Market Signal API",
+ "seller": "Atlas Data API",
+ "sid": 39876,
+ "verdict": "DENY",
+ "reasons": [
+  "endpoint_url_injection",
+  "challenge_field_injection",
+  "long_payment_timeout",
+  "eip712_domain_mismatch"
+ ],
+ "summary": "Payment of 0.00001 USDT0 (10) on xlayer to 0x1232…DBBA for 0m.ar (accepts[0], exact). DENY: endpoint_url_injection, challenge_field_injection, long_payment_timeout, eip712_domain_mismatch."
+}

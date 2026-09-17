@@ -4,8 +4,12 @@
    "id": "S1",
    "sentences": [
     {
-     "display": "GuardianMCP Pay-Safe, by team LNO Alpha.",
-     "speech": "Guardian M C P Pay Safe, by team L N O Alpha."
+     "display": "GuardianMCP Pay-Safe — one call before every x402 payment on OKX.AI.",
+     "speech": "Guardian M C P Pay Safe. One call before every x four oh two payment on O K X dot A I."
+    },
+    {
+     "display": "It runs inside OKX's own CLI — watch it ask Guardian about a live malicious listing.",
+     "speech": "It runs inside O K X's own command line tool. Watch it ask Guardian about a live malicious listing."
     }
    ]
   },
@@ -13,16 +17,16 @@
    "id": "S2",
    "sentences": [
     {
-     "display": "A buyer agent calls a paid OKX.AI service and gets an x402 challenge.",
-     "speech": "A buyer agent calls a paid O K X dot A I service and gets an x four oh two challenge."
+     "display": "A buyer agent gets a 402 payment challenge — and it is written by the seller.",
+     "speech": "A buyer agent gets a four oh two payment challenge. And it is written by the seller."
     },
     {
-     "display": "It signs and pays through Onchain OS, and nothing checks that challenge against the listing.",
-     "speech": "It signs and pays through On chain O S, and nothing checks that challenge against the listing."
+     "display": "Today the agent trusts it blindly — nothing checks that challenge against the listing before it signs.",
+     "speech": "Today the agent trusts it blindly. Nothing checks that challenge against the listing, before it signs."
     },
     {
-     "display": "This listing was on OKX.AI on 16 September: pass its endpoint to a shell, and attacker commands run.",
-     "speech": "This listing was on O K X dot A I on September sixteenth. Pass its endpoint to a shell, and attacker commands run."
+     "display": "Guardian is that one check — and nothing is signed or paid to run it.",
+     "speech": "Guardian is that one check. And nothing is signed or paid to run it."
     }
    ]
   },
@@ -30,16 +34,12 @@
    "id": "S3",
    "sentences": [
     {
-     "display": "One honest seller and six staged attacks; Guardian checks each one without paying.",
-     "speech": "One honest seller, and six staged attacks. Guardian checks each one without paying."
+     "display": "On the live Pay-Safe page, Guardian compares each challenge to the listing, to the payee you expect, and to the token’s EIP-712 domain.",
+     "speech": "On the live Pay Safe page, Guardian compares each challenge to the listing, to the payee you expect, and to the token's E I P seven one two domain."
     },
     {
-     "display": "Price, token and endpoint must match the listing, the payee must match the wallet you expect, and the EIP-712 domain must match the token.",
-     "speech": "Price, token and endpoint must match the listing, the payee must match the wallet you expect, and the E I P seven twelve domain must match the token."
-    },
-    {
-     "display": "Honest seller, no rule fires: ALLOW.",
-     "speech": "Honest seller, no rule fires, allow."
+     "display": "The honest seller matches on every row: ALLOW. The rest are staged attacks.",
+     "speech": "The honest seller matches on every row. Allow. The rest, are staged attacks."
     }
    ]
   },
@@ -47,12 +47,8 @@
    "id": "S4",
    "sentences": [
     {
-     "display": "Price bait-and-switch: the challenge asks 1000 times the listed price.",
-     "speech": "Price bait and switch. The challenge asks a thousand times the listed price."
-    },
-    {
-     "display": "DENY: amount above listing.",
-     "speech": "Deny, amount above listing."
+     "display": "Price bait asks a thousand times the listed price: DENY, amount above listing.",
+     "speech": "Price bait asks a thousand times the listed price. Deny, amount above listing."
     }
    ]
   },
@@ -60,16 +56,8 @@
    "id": "S5",
    "sentences": [
     {
-     "display": "Poisoned payee: it starts and ends like the wallet the buyer expects.",
-     "speech": "Poisoned payee. It starts and ends like the wallet the buyer expects."
-    },
-    {
-     "display": "Only the middle differs, so a quick glance passes it.",
-     "speech": "Only the middle differs, so a quick glance passes it."
-    },
-    {
-     "display": "DENY: payTo poisoning.",
-     "speech": "Deny, pay to poisoning."
+     "display": "A poisoned payee copies the first and last characters of your wallet: DENY, payTo poisoning.",
+     "speech": "A poisoned payee copies the first and last characters of your wallet. Deny, pay to poisoning."
     }
    ]
   },
@@ -77,12 +65,8 @@
    "id": "S6",
    "sentences": [
     {
-     "display": "Wrong EIP-712 domain: the challenge declares USDT, but X Layer's USD₮0 signs only as USD₮0, version 1.",
-     "speech": "Wrong E I P seven twelve domain. The challenge declares U S D T, but X Layer's U S D T zero signs only as U S D T zero, version one."
-    },
-    {
-     "display": "WARN: signed that way, the paid call fails at settlement, and Guardian names the domain that works.",
-     "speech": "Warn. Signed that way, the paid call fails at settlement, and Guardian names the domain that works."
+     "display": "A challenge declaring an EIP-712 domain the token does not use would fail at settlement: WARN.",
+     "speech": "A challenge declaring an E I P seven one two domain the token does not use, would fail at settlement. Warn."
     }
    ]
   },
@@ -90,12 +74,12 @@
    "id": "S7",
    "sentences": [
     {
-     "display": "Shell payload: the listed URL carries a pipe and a curl command.",
-     "speech": "Shell payload. The listed U R L carries a pipe and a curl command."
+     "display": "These aren't hypothetical: on 16 September we scanned 62 paid OKX.AI services, without paying any.",
+     "speech": "These are not hypothetical. On September sixteenth, we scanned sixty two paid O K X dot A I services. Without paying any."
     },
     {
-     "display": "DENY: endpoint URL injection. Guardian never contacts the endpoint.",
-     "speech": "Deny, endpoint U R L injection. Guardian never contacts the endpoint."
+     "display": "25 returned a challenge — 13 ALLOW, 11 WARN, and exactly one DENY: a real attack listing.",
+     "speech": "Twenty five returned a challenge. Thirteen allow, eleven warn, and exactly one deny. A real attack listing."
     }
    ]
   },
@@ -103,28 +87,16 @@
    "id": "S8",
    "sentences": [
     {
-     "display": "Now the real marketplace: we scanned 62 paid OKX.AI services without paying.",
-     "speech": "Now the real marketplace. We scanned sixty two paid O K X dot A I services without paying."
+     "display": "Guardian is a real MCP server at /mcp, and OKX's own CLI discovers all ten of its tools.",
+     "speech": "Guardian is a real M C P server at slash M C P. And O K X's own C L I discovers all ten of its tools."
     },
     {
-     "display": "25 returned a challenge: 13 ALLOW, 11 WARN, 1 DENY.",
-     "speech": "Twenty five returned a challenge. Thirteen allow, eleven warn, one deny."
+     "display": "The nine free tools return a verdict; guard returns an x402 payment quote.",
+     "speech": "The nine free tools return a verdict. Guard returns an x four oh two payment quote."
     },
     {
-     "display": "After tuning out 3 false alarms, the only DENY is the attack.",
-     "speech": "After tuning out three false alarms, the only deny is the attack."
-    },
-    {
-     "display": "Our scanner fetched it once, without a shell: its URL and challenge both carry shell payloads.",
-     "speech": "Our scanner fetched it once, without a shell. Its U R L and challenge both carry shell payloads."
-    },
-    {
-     "display": "Four other sellers declare the wrong EIP-712 domain, so paid calls signed from their challenges fail at settlement.",
-     "speech": "Four other sellers declare the wrong E I P seven twelve domain, so paid calls signed from their challenges fail at settlement."
-    },
-    {
-     "display": "The other seven WARNs are advisory: new payee wallets and hostnames that look like OKX.",
-     "speech": "The other seven warns are advisory. New payee wallets, and host names that look like O K X."
+     "display": "check_listing on sid 39876 — a live OKX.AI service, Market Signal API — returns DENY: its endpoint hides a shell command, caught without ever contacting it.",
+     "speech": "Check listing, on S I D three nine eight seven six. A live O K X dot A I service, Market Signal A P I. Returns deny. Its endpoint hides a shell command, caught without ever contacting it."
     }
    ]
   },
@@ -132,28 +104,20 @@
    "id": "S9",
    "sentences": [
     {
-     "display": "Now the buyer flow on Onchain OS: our safe-pay script, using test agent 13761.",
-     "speech": "Now the buyer flow on On chain O S. Our safe pay script, using test agent one three seven six one."
+     "display": "The second new piece guards the payment itself: Onchain OS saves each quote to a file, and payment pay signs that exact file.",
+     "speech": "The second new piece guards the payment itself. Onchain O S saves each quote to a file. And payment pay signs that exact file."
     },
     {
-     "display": "Run one, the attack listing, stops before contact: exit 3.",
-     "speech": "Run one, the attack listing, stops before contact, exit three."
+     "display": "Here a seller's 402 body shows the listed wallet, but its header pays a different address — and the CLI saved the header.",
+     "speech": "Here a seller's four oh two body shows the listed wallet. But its header pays a different address. And the C L I saved the header."
     },
     {
-     "display": "Run two, a marketplace seller with the wrong domain, stops on WARN: exit 2.",
-     "speech": "Run two, a marketplace seller with the wrong domain, stops on warn, exit two."
+     "display": "Guardian checks the saved file and returns DENY, challenge_header_body_mismatch — without even knowing the listing’s payee.",
+     "speech": "Guardian checks the saved file, and returns deny. Challenge header body mismatch. Without even knowing the listing's payee."
     },
     {
-     "display": "Run three, the URL Change Check API listing, passes with ALLOW, and the quote matches the check.",
-     "speech": "Run three, the U R L Change Check A P I listing, passes with allow, and the quote matches the check."
-    },
-    {
-     "display": "The owner approved it: 0.005 USD₮0 settled on X Layer, and the seller returned its result.",
-     "speech": "The owner approved it. Zero point zero zero five U S D T zero settled on X Layer, and the seller returned its result."
-    },
-    {
-     "display": "Run four reads the receipt on-chain: the transfer matches the payee, amount and token that Guardian checked.",
-     "speech": "Run four reads the receipt on chain. The transfer matches the payee, amount and token that Guardian checked."
+     "display": "The Claude Code hook then blocks payment pay. On 24 live challenges the rule fired zero false DENYs.",
+     "speech": "The Claude Code hook then blocks payment pay. On twenty four live challenges, the rule fired zero false denies."
     }
    ]
   },
@@ -161,38 +125,12 @@
    "id": "S10",
    "sentences": [
     {
-     "display": "Every step runs on Onchain OS, with one Guardian check before the wallet signs.",
-     "speech": "Every step runs on On chain O S, with one Guardian check before the wallet signs."
+     "display": "Guardian also lets good payments through: a real listing, sid 39856, passed ALLOW and the quote matched the check.",
+     "speech": "Guardian also lets good payments through. A real listing, S I D three nine eight five six. Passed allow, and the quote matched the check."
     },
     {
-     "display": "Only a quote that matches the check reaches the pay command, and the settlement is verified on X Layer.",
-     "speech": "Only a quote that matches the check reaches the pay command, and the settlement is verified on X Layer."
-    }
-   ]
-  },
-  {
-   "id": "S11",
-   "sentences": [
-    {
-     "display": "Built from 16 September: 36 new payment rules, 43 new tests, and a real payment settled as checked.",
-     "speech": "Built from September sixteenth. Thirty six new payment rules, forty three new tests, and a real payment settled as checked."
-    },
-    {
-     "display": "It reuses our earlier GuardianMCP address and domain checks, which are not part of this submission.",
-     "speech": "It reuses our earlier Guardian M C P address and domain checks, which are not part of this submission."
-    }
-   ]
-  },
-  {
-   "id": "S13",
-   "sentences": [
-    {
-     "display": "Buyer agents add it with our Onchain OS skill or one API call, and checks are free.",
-     "speech": "Buyer agents add it with our On chain O S skill, or one A P I call, and checks are free."
-    },
-    {
-     "display": "Premium GuardianMCP verdicts are paid per call over x402 on X Layer.",
-     "speech": "Premium Guardian M C P verdicts are paid per call, over x four oh two on X Layer."
+     "display": "The owner approved it; 0.005 USD₮0 settled on X Layer, block 70825096, and an on-chain check confirms it matches.",
+     "speech": "The owner approved it. Point zero zero five U S D T zero settled on X Layer, block seven zero eight two five zero nine six. And an on chain check confirms it matches."
     }
    ]
   },
@@ -200,12 +138,12 @@
    "id": "S12",
    "sentences": [
     {
-     "display": "One call before every x402 payment on OKX.AI.",
-     "speech": "One call before every x four oh two payment on O K X dot A I."
+     "display": "Add Guardian to any MCP client in one line — ten tools, 41 payment rules, 170 passing tests, built 16 to 17 September.",
+     "speech": "Add Guardian to any M C P client in one line. Ten tools, forty one payment rules, one hundred seventy passing tests. Built September sixteenth to seventeenth."
     },
     {
-     "display": "Try the live demo of Pay-Safe.",
-     "speech": "Try the live demo of Pay Safe."
+     "display": "One call before every x402 payment on OKX.AI.",
+     "speech": "One call before every x four oh two payment on O K X dot A I."
     }
    ]
   }

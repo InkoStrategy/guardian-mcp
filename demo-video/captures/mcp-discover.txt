@@ -1,0 +1,11 @@
+$ onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp
+  MCP server exposes 10 tool(s): check_payment, probe_payment, check_quote,
+  verify_settlement, check_listing, check_address, check_domain,
+  analyze_transaction, analyze_signature, guard
+
+$ onchainos payment quote .../mcp --tool check_listing --param sid=39876
+  service   Market Signal API,  seller Atlas Data API #11194
+  listed    0.00001 USDT,  endpoint on 0m.ar
+  verdict   DENY
+  reasons   endpoint_url_injection, challenge_field_injection,
+            long_payment_timeout, eip712_domain_mismatch
