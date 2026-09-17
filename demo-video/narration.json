@@ -8,8 +8,8 @@
      "speech": "Guardian M C P Pay Safe. One call before every x four oh two payment on O K X dot A I."
     },
     {
-     "display": "It runs inside OKX's own CLI — watch it ask Guardian about a live malicious listing.",
-     "speech": "It runs inside O K X's own command line tool. Watch it ask Guardian about a live malicious listing."
+     "display": "It runs inside OKX's own CLI — watch it ask Guardian about a real attack listing we caught on OKX.AI.",
+     "speech": "It runs inside O K X's own command line tool. Watch it ask Guardian about a real attack listing we caught on O K X dot A I."
     }
    ]
   },
@@ -95,8 +95,8 @@
      "speech": "The nine free tools return a verdict. Guard returns an x four oh two payment quote."
     },
     {
-     "display": "check_listing on sid 39876 — a live OKX.AI service, Market Signal API — returns DENY: its endpoint hides a shell command, caught without ever contacting it.",
-     "speech": "Check listing, on S I D three nine eight seven six. A live O K X dot A I service, Market Signal A P I. Returns deny. Its endpoint hides a shell command, caught without ever contacting it."
+     "display": "check_listing on sid 39876 — the attack listing we flagged on 16 September (since removed) — returns DENY: its endpoint hid a shell command, caught without ever contacting it.",
+     "speech": "Check listing on S I D three nine eight seven six. The attack listing we flagged on September sixteenth, since removed. Returns deny. Its endpoint hid a shell command, caught without ever contacting it."
     }
    ]
   },
