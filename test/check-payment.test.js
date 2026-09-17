@@ -291,3 +291,27 @@ test('HTTP POST /check-payment returns 200 with a verdict and 400 on bad body', 
     server.close();
   }
 });
+
+test('check-payment: no listing supplied floors the verdict at WARN listing_not_checked', async () => {
+  // A URL-only check (no `expected`) compared the challenge to nothing, so it must not read as a clean ALLOW.
+  const r = await checkPayment({ paymentRequired: b64(REAL), requestUrl: REQUEST_URL }, deps());
+  assert.equal(r.verdict, 'WARN');
+  assert.ok(r.reasons.includes('listing_not_checked'), r.reasons.join());
+  assert.equal(r.details.listing_checked, false);
+  // With the listing supplied, the same challenge is ALLOW and the flag is not raised.
+  const ok = await checkPayment({ paymentRequired: b64(REAL), requestUrl: REQUEST_URL, expected: LISTING }, deps());
+  assert.equal(ok.verdict, 'ALLOW', ok.reasons.join());
+  assert.ok(!ok.reasons.includes('listing_not_checked'));
+  assert.equal(ok.details.listing_checked, true);
+});
+
+test('check-payment: a shared-store timeout is reported as degraded, never as a seller-risk WARN', async () => {
+  // A reader whose registry lookups reject simulates Guardian's own store being unreachable.
+  const store = createMemoryStore();
+  store.command = async () => { throw new Error('store timeout'); };
+  const r = await checkPayment({ paymentRequired: b64(REAL), requestUrl: REQUEST_URL, expected: LISTING }, deps({ store }));
+  assert.ok(!r.reasons.includes('shared_state_unavailable'), 'infra code must not be a seller reason: ' + r.reasons.join());
+  if (r.details.degraded) assert.ok(Array.isArray(r.details.degraded.checks_skipped));
+  // The seller itself is clean, so the verdict is ALLOW despite the store being down.
+  assert.equal(r.verdict, 'ALLOW', r.reasons.join());
+});

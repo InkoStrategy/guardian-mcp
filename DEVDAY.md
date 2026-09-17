@@ -182,6 +182,26 @@ Exit code 0 means the quote is ready to pay exactly what was checked, 2 means WA
 Other endpoints: `GET /demo/x402` (scenarios and their listings), `GET /trust-scan` (scan JSON),
 `GET /rules` (all rules with severities).
 
+## The company
+
+The full case is a page on the site: **[/company](https://guardian-mcp-rho.vercel.app/company)**. In short,
+told honestly (the checks are free today; **0 paid calls so far**):
+
+- **The gap, in dollars.** From our own scans, of the paid OKX.AI services that returned a challenge on
+  16 Sep, ~48% (12 of 25) drew a WARN or DENY, including one outright attack listing and five sellers whose
+  wrong EIP-712 domain makes a paid call fail at settlement. Every unguarded payment is an uncapped loss:
+  a swapped payee sends funds to an attacker; a wrong domain means the buyer pays and the call still fails.
+- **Customer.** Buyer agents and their operators on OKX.AI (who lose the funds), agent frameworks and wallets
+  that want a drop-in safety layer, and OKX.AI itself (marketplace integrity).
+- **Wedge.** The one call that has to happen before every x402 payment and currently doesn't — free,
+  deterministic, one line to add as an Onchain OS skill, an MCP tool, or a Claude Code hook.
+- **Model.** Free per-call checks land everywhere and feed the shared threat registry; premium `guard`
+  (0.099 USD₮0/call over x402 on X Layer — live) adds session health, owner alerts and reference-template
+  diffs; a hosted SLA tier for frameworks and wallets comes next.
+- **Defensibility.** A shared cross-agent threat registry whose value compounds with usage (a network effect),
+  deterministic auditable verdicts, a check wired into OKX's own CLI flow and the pay command itself, and the
+  dated public trust scan as both distribution and a growing dataset of real attack shapes.
+
 ## Rules
 
 DENY: `amount_above_listing`, `amount_above_user_cap`, `asset_mismatch_listing`, `asset_lookalike`,
@@ -198,9 +218,24 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 `resource_host_mismatch`, `insecure_payment_endpoint`, `signed_validity_too_long`, `signed_expired`,
 `signed_payer_mismatch`, `signature_does_not_recover`, `quote_expired`, `quote_partial`, `fresh_recipient`.
 
+## Status and honest notes
+
+- **Numbers.** "41 payment rules" is the Pay-Safe payment layer; the full `GET /rules` catalogue across all
+  layers (transaction, signature, payment, registry, session) is 94. 170 tests pass (`npm test`).
+- **OKX.AI listing.** Agent identity **#13730 is registered**; the marketplace *service listing* is still
+  under review by OKX, so it is not "approved". The integration is live regardless — through the
+  CLI-discoverable MCP server (`onchainos payment quote …/mcp`) and the guarded Onchain OS pay flow.
+- **Revenue.** The `guard` premium is priced and live, but `GET /stats` shows **0 paid calls** — no revenue
+  or users are claimed. The company case at [/company](https://guardian-mcp-rho.vercel.app/company) is a plan.
+- **Live scan drifts.** The malicious sid 39876 has left the marketplace since 16 Sep, so `/trust` now shows
+  0 DENY; `check_listing` re-derives its verdict from the dated 16 Sep snapshot, and `/trust` keeps the catch
+  visible under "previously flagged".
+
 ## Limits
 
 - Deterministic rules, not a guarantee. ALLOW means no rule fired.
+- A check with no listing supplied returns WARN `listing_not_checked`, never a clean ALLOW: with nothing to
+  compare against, price, token and payee were not verified.
 - 37 of 62 marketplace services did not return a challenge to an unpaid request without their
   business parameters, so the scan covers the 25 that did.
 - A listing does not publish the seller's payout wallet, and 11 of 25 challenges pay an address other

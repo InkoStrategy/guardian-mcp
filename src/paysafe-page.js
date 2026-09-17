@@ -64,6 +64,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 
 <h2>OKX.AI marketplace trust scan</h2>
 <p class="lead" id="scanLead">Loading…</p>
+<p class="lead" style="margin-top:0"><strong style="color:var(--deny)">Caught a real attack:</strong> the 16 Sep scan flagged a live listing (Market Signal API, sid 39876) hiding a shell payload on <span class="code">0m.ar</span> — DENY. It has since left the marketplace; see it and the full dated history at <a href="/trust">/trust</a>.</p>
 <div class="grid" id="scanKpi"></div>
 <ul class="f card" id="scanFindings" style="margin-top:12px"></ul>
 

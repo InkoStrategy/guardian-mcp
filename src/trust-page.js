@@ -44,6 +44,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 </style></head><body><div class="wrap">
 <h1>OKX.AI trust scan</h1>
 <p class="lead">Every paid A2MCP service we can find on OKX.AI, requested once <strong>without paying</strong>. Guardian reads the x402 challenge and checks it against that service's own listing — price, token, endpoint, payee, and the token's EIP-712 domain — and against shell payloads. Verdict <span class="ALLOW">ALLOW</span> / <span class="WARN">WARN</span> / <span class="DENY">DENY</span>. Nothing is signed or paid.</p>
+<div id="hero" class="card deny-card" style="display:none;margin:14px 0 4px"></div>
 <div id="asof" class="muted" style="margin:8px 0 18px"></div>
 
 <h2>Check any OKX.AI listing by sid</h2>
@@ -119,6 +120,23 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   var goneBySid={};
   snaps.forEach(function(s){(s.deny||[]).forEach(function(d){if(!latestSids[d.sid])goneBySid[d.sid]={d:d,date:s.date}})});
   var gone=Object.keys(goneBySid).map(function(k){return goneBySid[k]});
+  // All-time count of malicious listings caught (any DENY in any snapshot), for the hero line.
+  var caughtSids={};snaps.forEach(function(s){(s.deny||[]).forEach(function(d){caughtSids[d.sid]=d})});
+  var caught=Object.keys(caughtSids);
+  var hero=$('hero');
+  if(caught.length){
+    hero.style.display='';
+    var first=caughtSids[caught[0]];
+    var strong=el('div');strong.style.fontSize='17px';strong.style.marginBottom='4px';
+    strong.appendChild(el('span','badge DENY','CAUGHT'));
+    strong.appendChild(document.createTextNode(' '+caught.length+' malicious OKX.AI listing'+(caught.length>1?'s':'')+' flagged across our scans.'));
+    hero.appendChild(strong);
+    var sub=el('div','muted');
+    sub.textContent=(first.service||('sid '+first.sid))+' (sid '+first.sid+', seller '+(first.seller||'?')+') hid a shell payload on '+(first.endpointHost||'its endpoint')+' — DENY '+(first.reasons||[]).slice(0,2).join(', ')+'. It has since left the marketplace; the verdict below is re-derived live from the saved challenge.';
+    hero.appendChild(sub);
+    // Show the caught attack immediately: pre-fill and run the live check for the first caught sid.
+    var si=$('sid');if(si){si.value=caught[0];try{checkSid()}catch(e){}}
+  }
   if(gone.length){
     $('goneWrap').style.display='';
     var g=$('gone');

@@ -37,7 +37,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "17723": {
   "sid": 17723,
@@ -86,7 +86,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "19874": {
   "sid": 19874,
@@ -135,7 +135,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "25864": {
   "sid": 25864,
@@ -175,7 +175,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "29539": {
   "sid": 29539,
@@ -189,7 +189,7 @@
    "symbol": "USDT"
   },
   "http": {
-   "method": "MCP tools/call ctbz_draw_questions",
+   "method": "MCP tools/call",
    "status": 402
   },
   "probe": "challenge",
@@ -214,8 +214,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scanDate": "2026-09-16",
+  "scannedAt": "2026-09-16T12:02:28.158Z"
  },
  "30379": {
   "sid": 30379,
@@ -255,7 +255,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "33200": {
   "sid": 33200,
@@ -295,7 +295,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "33278": {
   "sid": 33278,
@@ -313,19 +313,10 @@
    "status": 402
   },
   "probe": "challenge",
-  "verdict": "WARN",
-  "reasons": [
-   "shared_state_unavailable"
-  ],
-  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xB7d7…f0D7 for opcfoundry.org (accepts[0], exact). WARN: shared_state_unavailable.",
-  "findings": [
-   {
-    "code": "shared_state_unavailable",
-    "severity": "WARN",
-    "subject": "endpoint",
-    "message": "The persistent store for threat intelligence did not answer (This operation was aborted). Shared-intel and session checks were skipped for this request."
-   }
-  ],
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xB7d7…f0D7 for opcfoundry.org (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
   "challenge": {
    "network": "eip155:196",
    "scheme": "exact",
@@ -344,7 +335,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "33279": {
   "sid": 33279,
@@ -384,7 +375,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "33342": {
   "sid": 33342,
@@ -482,7 +473,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "34080": {
   "sid": 34080,
@@ -522,7 +513,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "34150": {
   "sid": 34150,
@@ -571,7 +562,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "34176": {
   "sid": 34176,
@@ -620,7 +611,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "34606": {
   "sid": 34606,
@@ -669,7 +660,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "35287": {
   "sid": 35287,
@@ -718,7 +709,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "35305": {
   "sid": 35305,
@@ -767,7 +758,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "35351": {
   "sid": 35351,
@@ -807,7 +798,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "35352": {
   "sid": 35352,
@@ -847,7 +838,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "36109": {
   "sid": 36109,
@@ -887,7 +878,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "36366": {
   "sid": 36366,
@@ -927,7 +918,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "38037": {
   "sid": 38037,
@@ -976,7 +967,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "39139": {
   "sid": 39139,
@@ -1016,7 +1007,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "39343": {
   "sid": 39343,
@@ -1105,7 +1096,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "39876": {
   "sid": 39876,
@@ -1193,19 +1184,10 @@
    "status": 402
   },
   "probe": "challenge",
-  "verdict": "WARN",
-  "reasons": [
-   "shared_state_unavailable"
-  ],
-  "summary": "Payment of 0.5 USDT0 (500000) on xlayer to 0x4eA3…48d0 for vivra.lol (accepts[0], exact). WARN: shared_state_unavailable.",
-  "findings": [
-   {
-    "code": "shared_state_unavailable",
-    "severity": "WARN",
-    "subject": "endpoint",
-    "message": "The persistent store for threat intelligence did not answer (This operation was aborted). Shared-intel and session checks were skipped for this request."
-   }
-  ],
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.5 USDT0 (500000) on xlayer to 0x4eA3…48d0 for vivra.lol (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
   "challenge": {
    "network": "eip155:196",
    "scheme": "exact",
@@ -1224,7 +1206,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "39938": {
   "sid": 39938,
@@ -1264,7 +1246,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40010": {
   "sid": 40010,
@@ -1313,7 +1295,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40011": {
   "sid": 40011,
@@ -1333,17 +1315,10 @@
   "probe": "challenge",
   "verdict": "WARN",
   "reasons": [
-   "shared_state_unavailable",
    "fresh_recipient"
   ],
-  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: shared_state_unavailable, fresh_recipient.",
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
   "findings": [
-   {
-    "code": "shared_state_unavailable",
-    "severity": "WARN",
-    "subject": "endpoint",
-    "message": "The persistent store for threat intelligence did not answer (This operation was aborted). Shared-intel and session checks were skipped for this request."
-   },
    {
     "code": "fresh_recipient",
     "severity": "WARN",
@@ -1369,7 +1344,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40012": {
   "sid": 40012,
@@ -1418,7 +1393,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40042": {
   "sid": 40042,
@@ -1458,7 +1433,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40665": {
   "sid": 40665,
@@ -1507,6 +1482,6 @@
    "entries": 1
   },
   "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:09:09.213Z"
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  }
 }

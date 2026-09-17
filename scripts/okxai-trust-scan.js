@@ -78,10 +78,19 @@ async function main() {
       row.probe = 'challenge';
       try {
         const v = await check({ paymentRequired: challenge, requestUrl: s.endpoint, expected: { feeAmount: s.feeAmount, feeToken: s.feeToken, endpoint: s.endpoint } });
-        row.verdict = v.verdict;
-        row.reasons = v.reasons;
+        const allFindings = v.details.findings.map((f) => ({ code: f.code, severity: f.severity, subject: f.subject || null, message: String(f.message || '').slice(0, 400) }));
+        // Separate Guardian's own infrastructure conditions (a store/RPC timeout during the scan) from the
+        // seller's risk. They mean "some checks were skipped for this row", never that the seller is riskier.
+        const INFRA = new Set(['shared_state_unavailable', 'rpc_unavailable', 'threat_intel_unavailable']);
+        const sellerFindings = allFindings.filter((f) => !INFRA.has(f.code));
+        const infra = (v.reasons || []).filter((c) => INFRA.has(c));
+        const SEV = { ALLOW: 0, WARN: 1, DENY: 2 };
+        const verdict = sellerFindings.reduce((acc, f) => (SEV[f.severity] > SEV[acc] ? f.severity : acc), 'ALLOW');
+        row.verdict = verdict;
+        row.reasons = (v.reasons || []).filter((c) => !INFRA.has(c));
+        if (infra.length) row.infra = infra;
         row.summary = v.summary;
-        row.findings = v.details.findings.map((f) => ({ code: f.code, severity: f.severity, subject: f.subject || null, message: String(f.message || '').slice(0, 400) }));
+        row.findings = allFindings;
         const sel = v.details.selected;
         row.challenge = { network: sel.network, scheme: sel.scheme, asset: sel.asset, amount: sel.amount, payTo: sel.payTo, entries: v.details.entries.length };
       } catch (e) {

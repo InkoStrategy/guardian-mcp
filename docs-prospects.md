@@ -1,4 +1,8 @@
-# OKX.AI prospects: trading, signal and analysis ASPs
+# OKX.AI marketplace: services scanned by Pay-Safe
+
+Note: this is a **scan-target inventory**, not a customer list. Pay-Safe's customers are buyer agents and
+their operators (and frameworks/wallets); these are the paid seller services whose x402 challenges the
+public trust scan checks. See the live scan at `/trust` and the business case at `/company`.
 
 Generated 2026-09-13 from onchainos agent service-match. soldCount = orders sold across the ASP.
 

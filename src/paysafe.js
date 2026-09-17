@@ -686,7 +686,18 @@ async function checkPayment(input, deps) {
   else {
     chosen = evaluated.slice().sort((a, b) => SEV[a.verdict] - SEV[b.verdict] || Number(Boolean(b.asset && b.asset.canonical)) - Number(Boolean(a.asset && a.asset.canonical)) || (BigInt(a.amount.atomic) < BigInt(b.amount.atomic) ? -1 : 1))[0];
   }
-  const findings = global.concat(chosen.findings);
+  const allFindings = global.concat(chosen.findings);
+  // No listing was supplied to compare against, so price/token/payee were not checked. On its own that is
+  // not a safe-to-pay result — floor the verdict at WARN. (check-quote may already have added this.)
+  const listingSupplied = Boolean(expected.feeAmount !== undefined || expected.feeToken || expected.payTo || expected.endpoint || expected.maxAmount !== undefined);
+  if (!listingSupplied && !allFindings.some((f) => f.code === 'listing_not_checked')) {
+    allFindings.push(finding('listing_not_checked', 'No marketplace listing was supplied (expected: feeAmount, feeToken, endpoint, payTo), so price, token and payee were not compared against a listing. On its own this is not a safe-to-pay result.', { subject: 'listing' }));
+  }
+  // Guardian's own infrastructure conditions (a shared-store or RPC timeout) mean some checks were skipped;
+  // they are reported as a degraded state, never as a reason the counterparty is riskier.
+  const INFRA_CODES = new Set(['shared_state_unavailable', 'rpc_unavailable', 'threat_intel_unavailable']);
+  const degraded = allFindings.filter((f) => INFRA_CODES.has(f.code)).map((f) => f.code);
+  const findings = allFindings.filter((f) => !INFRA_CODES.has(f.code));
   const verdict = verdictOf(findings);
   const reasons = Array.from(new Set(findings.map((f) => f.code)));
   const amountText = chosen.amount.human !== null ? chosen.amount.human + ' ' + (chosen.asset && chosen.asset.symbol ? chosen.asset.symbol : 'tokens') + ' (' + chosen.amount.atomic + ')' : chosen.amount.atomic + ' atomic units';
@@ -713,8 +724,10 @@ async function checkPayment(input, deps) {
       signed: signed ? { scheme: signed.scheme || null, network: signed.network || null, checkedAgainstIndex: shared.signedEntryIndex, kind: signed.authorization ? 'eip3009' : signed.permit2 ? 'permit2' : 'unknown' } : null,
       selected: chosen,
       entries: evaluated.map((e) => ({ index: e.index, verdict: e.verdict, reasons: e.reasons, scheme: e.scheme, network: e.network, asset: e.asset, amount: e.amount, payTo: e.payTo })),
-      global_findings: global,
+      global_findings: global.filter((f) => !INFRA_CODES.has(f.code)),
       findings,
+      degraded: degraded.length ? { checks_skipped: degraded, note: 'Guardian could not reach its shared store or an RPC; these checks were skipped. Not a signal about the counterparty.' } : null,
+      listing_checked: listingSupplied,
       shared_state: { backend: store.kind, persistent: store.persistent },
       analyzedAt: new Date().toISOString(),
     },
