@@ -22,6 +22,7 @@ const { ExactEvmScheme } = require('@okxweb3/x402-evm/exact/server');
 const pkg = require('../package.json');
 
 const ROUTE = 'POST /guard';
+const MCP_ROUTE = 'POST /mcp';
 const DEFAULTS = { price: '$0.099', network: 'eip155:196' };
 
 function config(env) {
@@ -75,10 +76,16 @@ async function getServer(opts) {
   if (cached && !opts.facilitatorClient && !opts.env) return cached;
   const facilitator = opts.facilitatorClient || new OKXFacilitatorClient({ apiKey: cfg.apiKey, secretKey: cfg.secretKey, passphrase: cfg.passphrase, syncSettle: cfg.syncSettle });
   const resourceServer = new x402ResourceServer(facilitator).register(cfg.network, new ExactEvmScheme());
+  const accepts = { scheme: 'exact', network: cfg.network, payTo: cfg.payTo || opts.payTo, price: cfg.price, maxTimeoutSeconds: 300 };
   const routes = {
     [ROUTE]: {
-      accepts: { scheme: 'exact', network: cfg.network, payTo: cfg.payTo || opts.payTo, price: cfg.price, maxTimeoutSeconds: 300 },
+      accepts,
       description: 'Guardian MCP premium: transaction or signature verdict with session health, owner alerts, differential check and shared threat intelligence (' + pkg.version + ')',
+      mimeType: 'application/json',
+    },
+    [MCP_ROUTE]: {
+      accepts,
+      description: 'GuardianMCP MCP server: paid guard tool (premium verdict) (' + pkg.version + ')',
       mimeType: 'application/json',
     },
   };
@@ -154,4 +161,4 @@ function status(env) {
   return { route: ROUTE, ready: cfg.ready, reason: cfg.reason, price: cfg.price, network: cfg.network, payTo: cfg.payTo ? cfg.payTo : null, facilitator: 'https://web3.okx.com/facilitator' };
 }
 
-module.exports = { gate, getServer, config, status, supported, nodeAdapter, ROUTE };
+module.exports = { gate, getServer, config, status, supported, nodeAdapter, ROUTE, MCP_ROUTE };

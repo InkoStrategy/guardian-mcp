@@ -79,9 +79,13 @@ async function request(url, { method, headers, body, timeoutMs, fetchImpl, maxBy
     try {
       parsed = JSON.parse(text);
     } catch {
-      const line = text.split(/\r?\n/).find((l) => l.startsWith('data:'));
-      if (line) {
-        try { parsed = JSON.parse(line.slice(5)); } catch { parsed = null; }
+      // SSE: take the first data event that carries a JSON-RPC result or error; skip in-stream notifications.
+      const events = text.split(/\r?\n\r?\n/).map((block) => block.split(/\r?\n/).filter((l) => l.startsWith('data:')).map((l) => l.slice(5).replace(/^ /, '')).join('\n')).filter(Boolean);
+      for (const data of events) {
+        let msg = null;
+        try { msg = JSON.parse(data); } catch { msg = null; }
+        if (msg && (msg.result !== undefined || msg.error !== undefined || Array.isArray(msg.accepts))) { parsed = msg; break; }
+        if (msg && parsed === null) parsed = msg;
       }
     }
     return { status: res.status, header: res.headers.get('payment-required'), body: parsed, headers: res.headers };
@@ -92,15 +96,20 @@ async function request(url, { method, headers, body, timeoutMs, fetchImpl, maxBy
 
 async function mcpProbe(url, opts) {
   const o = Object.assign({ timeoutMs: 12000, maxTools: 3, tool: null, args: {} }, opts || {});
+  let protocolVersion = null;
   const rpc = async (method, params, sessionId, id) => {
     const headers = { accept: 'application/json, text/event-stream', 'content-type': 'application/json', 'user-agent': USER_AGENT };
     if (sessionId) headers['mcp-session-id'] = sessionId;
-    const r = await request(url, { method: 'POST', headers, body: JSON.stringify({ jsonrpc: '2.0', id, method, params }), timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl, maxBytes: o.maxBytes });
+    if (protocolVersion) headers['mcp-protocol-version'] = protocolVersion;
+    const message = id === null ? { jsonrpc: '2.0', method, params } : { jsonrpc: '2.0', id, method, params };
+    const r = await request(url, { method: 'POST', headers, body: JSON.stringify(message), timeoutMs: o.timeoutMs, fetchImpl: o.fetchImpl, maxBytes: o.maxBytes });
     return { status: r.status, header: r.header, body: r.body, method: 'MCP ' + method + (params && params.name ? ' ' + params.name : ''), sessionId: r.headers.get('mcp-session-id') || sessionId };
   };
   const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'guardian-mcp-pay-safe', version: '1.0' } }, null, 1);
   if (hasChallenge(init)) return init;
   if (!init.body || !init.body.result) return null;
+  protocolVersion = init.body.result.protocolVersion || null;
+  try { await rpc('notifications/initialized', undefined, init.sessionId, null); } catch { /* optional */ }
   const names = [];
   if (o.tool) names.push(o.tool);
   else {

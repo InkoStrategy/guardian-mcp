@@ -56,7 +56,7 @@ test('x402-probe: MCP server that asks for payment on tools/call is captured', a
     const r = await fetchChallenge(url + '/mcp');
     assert.equal(r.method, 'MCP tools/call snapshot');
     assert.equal(challengeOf(r).accepts[0].payTo, CHALLENGE.accepts[0].payTo);
-    assert.deepEqual(calls, ['plain', 'initialize', 'tools/list', 'tools/call']);
+    assert.deepEqual(calls, ['plain', 'initialize', 'notifications/initialized', 'tools/list', 'tools/call']);
   } finally { server.close(); }
 });
 
@@ -66,6 +66,28 @@ test('x402-probe: free endpoint returns the response without a challenge', async
     const r = await fetchChallenge(url + '/free', { method: 'GET' });
     assert.equal(r.status, 200);
     assert.equal(challengeOf(r), null);
+  } finally { server.close(); }
+});
+
+test('x402-probe: SSE stream with a notification before the JSON-RPC error is parsed', async () => {
+  const sse = (obj) => 'event: message\ndata: ' + JSON.stringify(obj) + '\n\n';
+  const { server, url } = await serve((req, res, raw) => {
+    let msg = {};
+    try { msg = JSON.parse(raw); } catch { /* ignore */ }
+    if (req.method !== 'POST' || !msg.method) { res.writeHead(405); res.end(); return; }
+    if (msg.method === 'initialize') { res.writeHead(200, { 'content-type': 'text/event-stream' }); res.end(sse({ jsonrpc: '2.0', id: msg.id, result: { protocolVersion: '2025-03-26', capabilities: {} } })); return; }
+    if (msg.method === 'notifications/initialized') { res.writeHead(202); res.end(); return; }
+    if (msg.method === 'tools/call') {
+      assert.equal(req.headers['mcp-protocol-version'], '2025-03-26');
+      res.writeHead(402, { 'content-type': 'text/event-stream' });
+      res.end(sse({ jsonrpc: '2.0', method: 'notifications/progress', params: { progress: 1 } }) + sse({ jsonrpc: '2.0', id: msg.id, error: { code: 402, message: 'Payment required', data: CHALLENGE } }));
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'application/json' }); res.end('{}');
+  });
+  try {
+    const r = await fetchChallenge(url + '/mcp', { method: 'MCP', tool: 'snapshot' });
+    assert.equal(challengeOf(r).accepts[0].amount, '2000');
   } finally { server.close(); }
 });
 

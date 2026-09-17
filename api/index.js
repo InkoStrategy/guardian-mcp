@@ -20,6 +20,8 @@ const paysafe = require('../src/paysafe');
 const probePayment = require('../src/probe-payment');
 const demoSellers = require('../src/demo-sellers');
 const paysafePage = require('../src/paysafe-page');
+const { createMcpHandler } = require('../src/mcp-server');
+const { verifySettlement } = require('../src/settlement');
 const crypto = require('crypto');
 
 const RULE_CODES = new Set(RULE_CATALOG.map((r) => r.code).concat(SIGNATURE_RULES.map((r) => r.code), paysafe.PAYMENT_RULES.map((r) => r.code)));
@@ -58,7 +60,7 @@ function send(res, status, payload) {
 function setCors(res) {
   res.setHeader('access-control-allow-origin', '*');
   res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
-  res.setHeader('access-control-allow-headers', 'content-type, PAYMENT-SIGNATURE, X-PAYMENT');
+  res.setHeader('access-control-allow-headers', 'content-type, accept, PAYMENT-SIGNATURE, X-PAYMENT, mcp-session-id, mcp-protocol-version');
   res.setHeader('access-control-expose-headers', 'PAYMENT-REQUIRED, PAYMENT-RESPONSE');
 }
 
@@ -133,7 +135,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', mcp: 'POST /mcp (MCP Streamable HTTP: check_payment, probe_payment, verify_settlement, check_listing, check_address, check_domain, analyze_transaction, analyze_signature, guard [paid x402])', verifySettlement: 'POST /verify-settlement { txHash, payTo, amount, token?, payer?, chainId? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -142,6 +144,24 @@ function info(req) {
     docs: 'https://github.com/' + (process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG ? process.env.VERCEL_GIT_REPO_OWNER + '/' + process.env.VERCEL_GIT_REPO_SLUG : 'your-org/guardian-mcp'),
   };
 }
+
+const mcpHandler = createMcpHandler({
+  version: require('../package.json').version,
+  reporterOf: (req) => reporterOf(req),
+  analyze: (body, deps) => analyze(body, deps),
+  analyzeSignature: (body, deps) => analyzeSignature(body, deps),
+  quick,
+  paysafe,
+  probePayment,
+  verifySettlement: (p) => verifySettlement(p),
+  premium,
+  options: () => ({ quick: module.exports.quickOptions, probe: module.exports.probeOptions, premium: module.exports.premiumOptions, settlement: module.exports.settlementOptions }),
+  trustScan: () => { try { return require('../docs/trust-scan.json'); } catch { return null; } },
+  recordStat: (kind, r) => {
+    const verdict = r && r.payload && r.payload.result && r.payload.result.structuredContent && r.payload.result.structuredContent.verdict;
+    stats.record(getStore(), { verdict: ['ALLOW', 'WARN', 'DENY'].includes(verdict) ? verdict : 'ALLOW', kind, codes: [], sessionId: null }).catch(() => {});
+  },
+});
 
 module.exports = async function handler(req, res) {
   setCors(res);
@@ -165,6 +185,42 @@ module.exports = async function handler(req, res) {
     });
   }
   const apiPath = path.replace(/^\/api(?=\/)/, '');
+  if (apiPath === '/verify-settlement' && method === 'POST') {
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return send(res, 400, { error: 'Invalid JSON body: ' + err.message });
+    }
+    try {
+      const store = getStore();
+      const hour = Math.floor(Date.now() / 3600000);
+      const key = 'settle:rl:' + reporterOf(req) + ':' + hour;
+      const count = await store.command('INCRBY', key, 1).catch(() => 0);
+      await store.command('EXPIRE', key, 3700).catch(() => {});
+      if (Number(count) > 60) return send(res, 429, { error: 'verify-settlement rate limit exceeded (60 per hour)' });
+      const opts = module.exports.settlementOptions || {};
+      const result = await verifySettlement({ txHash: body.txHash, payTo: body.payTo, amount: body.amount === undefined ? undefined : String(body.amount), asset: body.token || body.asset || '0x779ded0c9e1022225f8e0630b35a9b54be713736', payer: body.payer, chainId: body.chainId || 196, fetchImpl: opts.fetchImpl, rpcUrls: opts.rpcUrls });
+      return send(res, 200, result);
+    } catch (err) {
+      if (/must be|txHash|address|atomic/.test(err.message || '')) return send(res, 400, { error: err.message });
+      console.error('verify-settlement failed', err);
+      return send(res, 502, { error: 'Could not read the chain: ' + err.message });
+    }
+  }
+  if (apiPath === '/mcp') {
+    if (method !== 'POST') {
+      res.setHeader('allow', 'POST');
+      return send(res, 405, { jsonrpc: '2.0', id: null, error: { code: -32000, message: 'GuardianMCP is a stateless Streamable HTTP MCP server: POST JSON-RPC to /mcp' } });
+    }
+    let body;
+    try {
+      body = await readBody(req);
+    } catch (err) {
+      return send(res, 400, { jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error: ' + err.message } });
+    }
+    return mcpHandler(req, res, body);
+  }
   if (method === 'GET' && apiPath === '/pay-safe') {
     res.statusCode = 200;
     res.setHeader('content-type', 'text/html; charset=utf-8');
