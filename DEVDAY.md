@@ -3,6 +3,7 @@
 **Team:** LNO Alpha (remote) · **Track:** Build a Company · **Live:** https://guardian-mcp-rho.vercel.app/pay-safe
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
 **Demo video (3:50):** https://www.youtube.com/watch?v=5TtavgILRLU
+**MCP server:** https://guardian-mcp-rho.vercel.app/mcp
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
 > what the OKX.AI listing promised (price, token, endpoint), with the payee the buyer expects, and with the
@@ -42,10 +43,17 @@ What the scan found:
   hosts contain "okx" or use cheap TLDs. Host patterns are now split by strength and weighed against
   the listing, and the rerun has one DENY: the real attack.
 
-## What was built during the build period
+## Built in the online build window (17–25 Sep 2026)
 
-All Pay-Safe work is new, committed 16 Sep 2026 onward. Earlier GuardianMCP work (transaction and
-signature firewall, shared threat registry, benchmark) is pre-existing and not part of this submission.
+| Commit (UTC date) | Feature |
+|---|---|
+| `0a622e9` 17 Sep | Real MCP server at `POST /mcp` (Streamable HTTP): free tools `check_payment`, `probe_payment`, `verify_settlement`, `check_listing`, `check_address`, `check_domain`, `analyze_transaction`, `analyze_signature`, plus the x402-paid `guard` tool (0.099 USD₮0 on X Layer, 402 at `tools/call`). Verified with OKX's own CLI: `onchainos payment quote` discovers all 9 tools, gets DENY results from the free tools and a payment quote for `guard` ([captures](demo-video/captures)). Public `POST /verify-settlement`. |
+
+## Built on 16 Sep 2026
+
+The team was selected for the build round on 16 Sep and started the same day, one day before the 17–25 Sep
+window shown in the builder briefing, so this work is listed separately. Earlier GuardianMCP work (13–14 Sep:
+transaction and signature firewall, shared threat registry, benchmark) is pre-existing and not part of this submission.
 
 | Commit | Feature |
 |---|---|
@@ -86,9 +94,44 @@ buyer agent ──► onchainos agent service-detail --sid N        listing: end
 - **OKX.AI marketplace:** listings come from `onchainos agent service-detail` / `service-match`.
 - **Onchain OS payments:** `payment quote` and `payment pay` on X Layer (`eip155:196`) in USD₮0.
   The wrapper never adds `--yes` on its own; moving funds stays with the wallet owner, who passes it explicitly.
+- **MCP server:** `https://guardian-mcp-rho.vercel.app/mcp` works with Onchain OS A2MCP clients: the paywall sits at `tools/call`, so tool discovery and free checks cost nothing and only `guard` returns an x402 challenge.
 - **Agent skill:** `skills/guardian-mcp/SKILL.md` tells Onchain OS agents to call `/check-payment`
   before paying any 402 challenge.
 - **Listed service:** GuardianMCP is registered on OKX.AI as agent #13730.
+
+## Test in 60 seconds
+
+All commands were run against production on 17 Sep 2026.
+
+List the MCP tools:
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/mcp -H "content-type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Ask the MCP server to probe a demo seller whose payee imitates the expected wallet (expect DENY `payto_poisoning`):
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/mcp -H "content-type: application/json" -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"probe_payment","arguments":{"url":"https://guardian-mcp-rho.vercel.app/demo/x402/payee-swap","expected":{"feeAmount":0.001,"feeToken":"0x779ded0c9e1022225f8e0630b35a9b54be713736","payTo":"0xe1c6f89df50fb68282d52e34d6001d65005ff67b","endpoint":"https://guardian-mcp-rho.vercel.app/demo/x402/payee-swap"}}}}'
+```
+
+Verify the real guarded payment on X Layer:
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/verify-settlement -H "content-type: application/json" -d '{"txHash":"0xd0dab0bb9ae26fd68b4772d2a7f197314ec296a606530077a233c3769cf3070d","payTo":"0xc4622689eb6c38c929fe254777b449a5dedf9d60","amount":"5000"}'
+```
+
+With Onchain OS (read-only, nothing is signed):
+
+```bash
+onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp --tool check_listing --param sid=39876
+```
+
+Add it to any MCP client, for example Claude Code:
+
+```bash
+claude mcp add --transport http guardian https://guardian-mcp-rho.vercel.app/mcp
+```
 
 ## Try it
 

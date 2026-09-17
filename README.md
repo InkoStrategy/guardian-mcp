@@ -168,6 +168,29 @@ node scripts/safe-pay.js --sid 33342 --param scoutMode=best --max 0.5
 делает один неоплаченный запрос к каждому, прогоняет вызов 402 через Pay-Safe и пишет
 [docs/trust-scan.md](docs/trust-scan.md).
 
+### `POST /mcp` (MCP-сервер)
+
+GuardianMCP работает как MCP-сервер (Streamable HTTP, без состояния) по адресу `https://guardian-mcp-rho.vercel.app/mcp`.
+Поддерживаются `initialize`, `ping`, `tools/list` и `tools/call`; ответ JSON или SSE, если клиент принимает только
+`text/event-stream`.
+
+| Инструмент | Что делает | Цена |
+|---|---|---|
+| `check_payment` | Вердикт Pay-Safe по x402-вызову | бесплатно |
+| `probe_payment` | Запрос платного URL без оплаты и вердикт | бесплатно |
+| `verify_settlement` | Сверка оплаченной транзакции в сети | бесплатно |
+| `check_listing` | Результат скана OKX.AI по sid объявления | бесплатно |
+| `check_address`, `check_domain` | Быстрые проверки адреса и домена | бесплатно |
+| `analyze_transaction`, `analyze_signature` | Проверка транзакции и подписи | бесплатно |
+| `guard` | Премиум-вердикт | 0.099 USD₮0 за вызов, x402 в X Layer |
+
+Платный инструмент совместим с клиентами Onchain OS A2MCP: неоплаченный `tools/call` для `guard` получает HTTP 402
+с `PAYMENT-REQUIRED`, клиент повторяет тот же вызов с `PAYMENT-SIGNATURE`. Проверено командой
+`onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp`: клиент находит все 9 инструментов, получает результаты
+бесплатных и котировку платного.
+
+`POST /verify-settlement` `{ txHash, payTo, amount, token?, payer?, chainId? }`: та же сверка расчёта без MCP.
+
 ### `GET /threats/stats`, `GET /threats/{chainId}/{address}`, `GET /threats/domain/{host}`
 
 Статистика общего реестра; запись по адресу (число отчётов, независимых репортёров, правила, селекторы, первое и

@@ -14,6 +14,10 @@ metadata:
 Deterministic security verdicts for agent-initiated on-chain actions. Free endpoints need no key.
 Base URL: `https://guardian-mcp-rho.vercel.app`
 
+## Connect as an MCP server
+
+GuardianMCP is also a Streamable HTTP MCP server at `https://guardian-mcp-rho.vercel.app/mcp`. Tools: `check_payment`, `probe_payment`, `verify_settlement`, `check_listing`, `check_address`, `check_domain`, `analyze_transaction`, `analyze_signature` (all free) and `guard` (paid per call over x402 on X Layer). Claude Code: `claude mcp add --transport http guardian https://guardian-mcp-rho.vercel.app/mcp`. Onchain OS: `onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp --tool <name> --param k=v`.
+
 ## When to call
 
 Call **before** any of these, never after:
