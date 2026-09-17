@@ -1,14 +1,20 @@
 $ onchainos payment quote https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split
-  -> Will pay 0.001 USDT (exact, X Layer) (decoded payee 0x5b0c6a8d2e41f97b3c0d18e6a4f2b95c7d3e1a09), paymentId pay_f7ce258becb337f02c2bca89
+  -> Will pay 0.001 USDT (exact, X Layer) (decoded payee 0x5b0c6a8d2e41f97b3c0d18e6a4f2b95c7d3e1a09), paymentId pay_adde644c933d4b3f4c6febd1
      The OKX.AI listing carries no payee, so this run passes only --fee and --token, no --pay-to.
 
-$ node scripts/check-quote.js --payment-id pay_f7ce258becb337f02c2bca89 --endpoint https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split --fee 0.001 --token 0x779ded0c9e1022225f8e0630b35a9b54be713736   (exit 1)
-1. Quote     pay_f7ce258becb337f02c2bca89 for "https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split" (1 entries, expires 2026-09-17T08:46:28.000Z)
+$ node scripts/check-quote.js --payment-id pay_adde644c933d4b3f4c6febd1 --endpoint https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split --fee 0.001 --token 0x779ded0c9e1022225f8e0630b35a9b54be713736   (exit 3)
+1. Quote     pay_adde644c933d4b3f4c6febd1 for "https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split" (1 entries, expires 2026-09-17T08:58:22.000Z)
              read from ~\.onchainos\payments, the entries payment pay signs without re-fetching the 402
 2. Listing   from flags
 3. Verdict   Guardian
              POST https://guardian-mcp-rho.vercel.app/check-quote (owner wallet id, deposit address and balance removed)
-check-quote: Guardian checked a different entry than the persisted quote holds; nothing was bound
+             DENY challenge_header_body_mismatch, fresh_recipient (risk 55)
+             Quote pay_adde644c933d4b3f4c6febd1: Payment of 0.001 USDT0 (1000) on xlayer to 0x5b0c…1A09 for guardian-mcp-rho.vercel.app (accepts[0], exact). DENY: challenge_header_body_mismatch, fresh_recipient.
+             - DENY challenge_header_body_mismatch: The merchant 402 body stored with the quote shows a different payment than the persisted quote entries that payment pay signs: accepts[0].payTo 0x5b0c6a8d2E41F97B3C0d18e6a4f2b95C7D3e1A09 vs 0xE1c6F89df50Fb68282d52e34d6001d65005ff67b.
+             - WARN fresh_recipient: 0x5b0c6a8d2E41F97B3C0d18e6a4f2b95C7D3e1A09 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
+             > Do not pay. The seller shows one payment and asks the wallet to sign another; report the listing.
+4. Bound     accepts[0] fingerprint 3a6974cdc5c89253… written to ~\.guardian\payments\pay_adde644c933d4b3f4c6febd1.json
+5. Next      do not pay this quote. No pay command on DENY.
 
-$ Claude Code PreToolUse hook on: onchainos payment pay --payment-id pay_f7ce258becb337f02c2bca89 --selected-index 0 --yes
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"GuardianMCP: no Guardian verdict is bound to pay_f7ce258becb337f02c2bca89. Run: node scripts/check-quote.js --payment-id pay_f7ce258becb337f02c2bca89 --selected-index 0 --sid <OKX.AI sid> (or --endpoint <listed url> --fee <listed price> --token <listed token>)"}}
+$ Claude Code PreToolUse hook on: onchainos payment pay --payment-id pay_adde644c933d4b3f4c6febd1 --selected-index 0 --yes
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"GuardianMCP: DENY challenge_header_body_mismatch, fresh_recipient. Quote pay_adde644c933d4b3f4c6febd1: Payment of 0.001 USDT0 (1000) on xlayer to 0x5b0c…1A09 for guardian-mcp-rho.vercel.app (accepts[0], exact). DENY: challenge_header_body_mismatch, fresh_recipient."}}
