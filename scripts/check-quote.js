@@ -56,6 +56,15 @@ async function checkAndBind(o) {
   if (!result.binding || !localFp || result.binding.fingerprint !== localFp) {
     throw new Error('Guardian checked a different entry than the persisted quote holds; nothing was bound');
   }
+  // The server never sees the owner's business params (publicState strips them), so rebuild the pay command
+  // from the full local state; it stays here and never goes over the network.
+  if (result.verdict === 'ALLOW' && result.next_command && nq.rawAccepts) result.next_command = binding.payCommand(nq, index).command;
+  // Never downgrade a DENY already bound to the same entry: re-checking a bait quote (perhaps without a
+  // listing) must not turn it into an ALLOW the pay hook accepts. Get a fresh quote instead.
+  const prior = binding.readLedger(nq.paymentId, env);
+  if (prior && prior.verdict === 'DENY' && Number(prior.selectedIndex) === index && prior.fingerprint === localFp && result.verdict !== 'DENY') {
+    throw new Error('a DENY is already bound to ' + nq.paymentId + ' accepts[' + index + '] (' + (prior.reasons || []).join(', ') + '); it will not be replaced with ' + result.verdict + '. Get a new quote and check that.');
+  }
   const entry = {
     paymentId: nq.paymentId,
     selectedIndex: index,
@@ -64,12 +73,13 @@ async function checkAndBind(o) {
     reasons: result.reasons,
     summary: result.summary,
     next_command: result.next_command || null,
+    listingCompared: result.binding.listingCompared !== false,
     endpoint: nq.endpointUrl,
     expected: o.expected || null,
     expectedSource: result.details.quote.expectedSource || null,
     checkedAt: new Date().toISOString(),
     quoteExpiresAt: result.details.quote.expiresAt,
-    guardian: o.local ? 'local' : String(o.guardian || GUARDIAN_DEFAULT),
+    guardian: o.local ? 'local' : String(o.guardian || GUARDIAN_DEFAULT).replace(/\/+$/, ''),
   };
   const ledgerFile = binding.writeLedger(entry, env);
   return { result, ledgerFile, entry };
@@ -101,7 +111,11 @@ async function main() {
   } else if (opt('endpoint') || opt('fee') || opt('token') || opt('pay-to')) {
     expected = {};
     if (opt('endpoint')) expected.endpoint = opt('endpoint');
-    if (opt('fee') !== undefined) expected.feeAmount = Number(opt('fee'));
+    if (opt('fee') !== undefined) {
+      const fee = Number(opt('fee'));
+      if (!Number.isFinite(fee)) throw new Error('--fee "' + opt('fee') + '" is not a number (use a dot decimal, e.g. 0.005); refusing to bind without a real price');
+      expected.feeAmount = fee;
+    }
     if (opt('token')) expected.feeToken = opt('token');
     if (opt('pay-to')) expected.payTo = opt('pay-to');
     out('2. Listing   from flags');

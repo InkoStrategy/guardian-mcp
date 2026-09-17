@@ -187,7 +187,7 @@ GuardianMCP работает как MCP-сервер (Streamable HTTP, без с
 
 Платный инструмент совместим с клиентами Onchain OS A2MCP: неоплаченный `tools/call` для `guard` получает HTTP 402
 с `PAYMENT-REQUIRED`, клиент повторяет тот же вызов с `PAYMENT-SIGNATURE`. Проверено командой
-`onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp`: клиент находит все 9 инструментов, получает результаты
+`onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp`: клиент находит все 10 инструментов, получает результаты
 бесплатных и котировку платного.
 
 `POST /verify-settlement` `{ txHash, payTo, amount, token?, payer?, chainId? }`: та же сверка расчёта без MCP.
@@ -255,7 +255,7 @@ OKX Payment SDK: без заголовка `PAYMENT-SIGNATURE` ответ `402` 
 
 ### `GET /health`, `GET /rules`, `GET /trusted-domains`
 
-Информация о сервисе, включая бэкенд общего хранилища и его персистентность; полный каталог из 88 правил
+Информация о сервисе, включая бэкенд общего хранилища и его персистентность; полный каталог из 94 правил
 с серьёзностью, слоем и описанием; текущий белый список доменов и настройки.
 
 ## Правила

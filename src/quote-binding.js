@@ -78,7 +78,9 @@ function normalizeQuote(input) {
   return {
     source: isState ? 'payment-state' : 'quote-output',
     paymentId,
-    endpointUrl: typeof q.endpoint_url === 'string' ? q.endpoint_url : bodyChallenge && bodyChallenge.resource && typeof bodyChallenge.resource.url === 'string' ? bodyChallenge.resource.url : null,
+    // Only the CLI's own record of the URL it called. Never the seller-written merchantBody.resource.url,
+    // which would let a header-only seller name the listed host and pass the domain check.
+    endpointUrl: typeof q.endpoint_url === 'string' ? q.endpoint_url : null,
     method: typeof q.method === 'string' ? q.method : null,
     createdAt: Number.isFinite(Number(q.created_at)) ? Number(q.created_at) : null,
     expiresAt: Number.isFinite(Number(q.expires_at)) && Number(q.expires_at) > 0 ? Number(q.expires_at) : null,
@@ -97,49 +99,87 @@ function normalizeQuote(input) {
 function cliDefaultIndex(entries) {
   const list = Array.isArray(entries) ? entries : [];
   if (!list.length) return 0;
-  const idx = (e, i) => (e && Number.isInteger(Number(e.index)) ? Number(e.index) : i);
+  // Array position only. A seller can add an `index` field to a raw_accepts entry; the CLI signs by
+  // position (accepts[].index and candidates[].acceptsIndex are positions), so trusting it would let a
+  // seller point Guardian's default at a cheap entry while the CLI pays an expensive one.
   for (const scheme of ['exact', 'aggr_deferred']) {
     const i = list.findIndex((e) => e && String(e.scheme || 'exact') === scheme);
-    if (i >= 0) return idx(list[i], i);
+    if (i >= 0) return i;
   }
-  return idx(list[0], 0);
+  return 0;
 }
 
-/** Stable fingerprint of what `payment pay --payment-id <id> --selected-index <index>` will sign. */
+/** Recursively key-sorted JSON, with 0x addresses lowercased, so an equal entry hashes equally. */
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const k of Object.keys(value).sort()) out[k] = canonical(value[k]);
+    return out;
+  }
+  if (typeof value === 'string' && /^0x[0-9a-fA-F]{40}$/.test(value)) return value.toLowerCase();
+  return value;
+}
+
+/**
+ * Stable fingerprint of what `payment pay --payment-id <id> --selected-index <index>` will sign.
+ * v2 hashes the whole selected raw entry (every field the wallet signs, including maxTimeoutSeconds and
+ * every extra field), plus the resource url, x402 version, endpoint and method. Only fields publicState()
+ * keeps, so the server and the local scripts compute the same value.
+ */
 function fingerprint(nq, index) {
   const e = nq.rawAccepts ? nq.rawAccepts[index] : null;
   if (!e) return null;
-  const extra = e.extra && typeof e.extra === 'object' ? e.extra : {};
-  const parts = [
-    'guardian-quote-v1',
-    nq.paymentId,
-    String(nq.endpointUrl || ''),
-    String(nq.method || ''),
-    String(index),
-    String(e.scheme || ''),
-    String(e.network || ''),
-    String(e.asset || '').toLowerCase(),
-    String(e.amount !== undefined ? e.amount : e.maxAmountRequired || ''),
-    String(e.payTo || '').toLowerCase(),
-    String(extra.name === undefined ? '' : extra.name),
-    String(extra.version === undefined ? '' : extra.version),
-  ];
+  const amount = e.amount !== undefined && e.amount !== null && e.amount !== '' ? e.amount : e.maxAmountRequired;
+  const parts = {
+    v: 'guardian-quote-v2',
+    paymentId: nq.paymentId,
+    endpoint: nq.endpointUrl || null,
+    method: nq.method || null,
+    index,
+    entry: canonical(e),
+    amount: amount === undefined ? null : String(amount),
+    resource: nq.resource && typeof nq.resource.url === 'string' ? nq.resource.url : null,
+    x402Version: (nq.bodyChallenge && nq.bodyChallenge.x402Version) || 2,
+  };
   return crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex');
 }
 
-/** State without the owner's wallet id, deposit address or balance: what gets sent to Guardian. */
+const CANDIDATE_PRIVATE = ['depositAddress', 'availableAmount', 'shortfall', 'requiredAmount', 'hasBalance', 'balanceStatus'];
+
+/** State without the owner's wallet id, deposit address, balance or business params: what is sent to Guardian. */
 function publicState(state) {
   const s = JSON.parse(JSON.stringify(state));
   delete s.owner_wallet;
+  // The owner's business params (a URL being checked, an instrument id) are not needed for the verdict.
+  delete s.known_params;
   if (Array.isArray(s.candidates)) {
     s.candidates = s.candidates.map((c) => {
       const o = Object.assign({}, c);
-      delete o.depositAddress;
-      delete o.availableAmount;
+      for (const k of CANDIDATE_PRIVATE) delete o[k];
       return o;
     });
   }
   return s;
+}
+
+const SAFE_PARAM_KEY = /^[A-Za-z0-9_.-]{1,64}$/;
+const SAFE_PARAM_VALUE = /^[A-Za-z0-9_.:/@%+=,~-]{1,256}$/;
+
+/**
+ * The `onchainos payment pay` command for this quote and index, or null when a stored business param needs
+ * manual quoting. Never includes --yes: without it the wallet returns a confirming prompt and pays nothing.
+ */
+function payCommand(nq, index) {
+  const args = ['onchainos', 'payment', 'pay', '--payment-id', nq.paymentId, '--selected-index', String(index)];
+  for (const [k, v] of Object.entries(nq.knownParams || {})) {
+    const value = typeof v === 'number' || typeof v === 'boolean' ? String(v) : v;
+    if (!SAFE_PARAM_KEY.test(k) || typeof value !== 'string' || !SAFE_PARAM_VALUE.test(value)) {
+      return { command: null, note: 'A stored business param needs manual quoting, so no command is printed. Pass the params you quoted with to payment pay yourself.' };
+    }
+    args.push('--param', k + '=' + value);
+  }
+  return { command: args.join(' '), note: 'No --yes: the wallet returns a confirming prompt (exit 2) and pays nothing until the owner approves.' };
 }
 
 function readJson(file) {
@@ -172,6 +212,7 @@ module.exports = {
   cliDefaultIndex,
   fingerprint,
   publicState,
+  payCommand,
   readPaymentState,
   readLedger,
   writeLedger,

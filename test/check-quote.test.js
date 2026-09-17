@@ -124,6 +124,85 @@ test('quote-binding: CLI default index, fingerprint sensitivity and public state
   assert.deepEqual(pub.candidates, [{ amount: '1' }]);
 });
 
+const USDT0 = '0x779ded0c9e1022225f8e0630b35a9b54be713736';
+
+test('check-quote: an x402 v1 persisted quote (maxAmountRequired, "x-layer") is ALLOW, not a false quote_inconsistent', async () => {
+  const v1 = F('state-honest');
+  v1.merchant_body = JSON.stringify({ x402Version: 1, accepts: [{ scheme: 'exact', network: 'x-layer', maxAmountRequired: '1000', asset: USDT0, payTo: demo.DEMO_PAY_TO, extra: { name: 'USD₮0', version: '1' } }] });
+  v1.raw_accepts = [{ scheme: 'exact', network: 'x-layer', maxAmountRequired: '1000', asset: USDT0, payTo: demo.DEMO_PAY_TO, extra: { name: 'USD₮0', version: '1' } }];
+  const r = await checkQuote({ quote: v1, expected: listing('honest') }, deps(DEMO_NOW));
+  assert.equal(r.verdict, 'ALLOW', JSON.stringify(r.reasons) + ' ' + JSON.stringify(r.details.findings.map((f) => f.message)));
+  const bad = F('state-honest');
+  bad.raw_accepts = [{ scheme: 'exact', network: 'x-layer', maxAmountRequired: '5000', asset: USDT0, payTo: demo.DEMO_PAY_TO, extra: { name: 'USD₮0', version: '1' } }];
+  const rb = await checkQuote({ quote: bad, expected: listing('honest') }, deps(DEMO_NOW));
+  assert.ok(rb.reasons.includes('quote_inconsistent'), rb.reasons.join());
+});
+
+test('check-quote: a seller-spoofed accepts[].index cannot steer Guardian to a different entry than the CLI signs', async () => {
+  const q = F('state-honest');
+  const cheap = Object.assign({}, q.raw_accepts[0]);
+  const dear = Object.assign({}, q.raw_accepts[0], { amount: '5000000', index: 0 });
+  cheap.index = 1;
+  q.raw_accepts = [dear, cheap];
+  q.accepts = [{ index: 0, amount: '5000000', asset: USDT0, network: 'eip155:196', scheme: 'exact' }, { index: 1, amount: '1000', asset: USDT0, network: 'eip155:196', scheme: 'exact' }];
+  const r = await checkQuote({ quote: q, expected: listing('honest') }, deps(DEMO_NOW));
+  assert.equal(r.details.quote.cliDefaultIndex, 0, 'default is array position 0, not the spoofed index');
+  assert.equal(r.verdict, 'DENY');
+  assert.ok(r.reasons.includes('amount_above_listing'), r.reasons.join());
+});
+
+test('check-quote: a copycat endpoint on the same hosting platform as the listing is DENY payment_domain_mismatch', async () => {
+  for (const host of ['copycat.vercel.app', 'evil.onrender.com', 'x.1-2-3-4.sslip.io']) {
+    const q = F('state-honest');
+    const url = 'https://' + host + '/paid';
+    q.endpoint_url = url;
+    q.merchant_body = q.merchant_body.replace('https://guardian-mcp-rho.vercel.app/demo/x402/honest', url);
+    const r = await checkQuote({ quote: q, expected: listing('honest') }, deps(DEMO_NOW));
+    assert.equal(r.verdict, 'DENY', host + ': ' + r.reasons.join());
+    assert.ok(r.reasons.includes('payment_domain_mismatch'), host + ': ' + r.reasons.join());
+  }
+});
+
+test('check-quote: no listing, and a sid outside the trust scan, are WARN listing_not_checked with no pay command', async () => {
+  const none = await checkQuote({ quote: F('state-honest') }, deps(DEMO_NOW));
+  assert.equal(none.verdict, 'WARN');
+  assert.ok(none.reasons.includes('listing_not_checked'), none.reasons.join());
+  assert.equal(none.next_command, null);
+  assert.equal(none.binding.listingCompared, false);
+  const badSid = await checkQuote({ quote: F('state-honest'), sid: 999999 }, deps(DEMO_NOW));
+  assert.equal(badSid.verdict, 'WARN');
+  assert.ok(badSid.reasons.includes('listing_not_checked'), badSid.reasons.join());
+  assert.match(badSid.details.quote.expectedSource, /not in the trust scan/);
+});
+
+test('check-quote: fingerprint changes when a signed field the wallet commits to changes', () => {
+  const nq = binding.normalizeQuote(F('state-honest'));
+  const fp = binding.fingerprint(nq, 0);
+  for (const mutate of [
+    (s) => { s.raw_accepts[0].maxTimeoutSeconds = 99999; },
+    (s) => { s.raw_accepts[0].extra.assetTransferMethod = 'permit2'; },
+    (s) => { s.resource = { url: 'https://elsewhere.example/paid' }; },
+  ]) {
+    const s = F('state-honest');
+    mutate(s);
+    assert.notEqual(binding.fingerprint(binding.normalizeQuote(s), 0), fp, 'mutation should change the fingerprint');
+  }
+  // publicState keeps every field the fingerprint reads, so the server and local values match.
+  assert.equal(binding.fingerprint(binding.normalizeQuote(binding.publicState(F('state-honest'))), 0), fp);
+});
+
+test('check-quote: decoded_challenge that matches the selected entry does not DENY a multi-payee quote', async () => {
+  const q = F('state-honest');
+  const other = '0x1234567890123456789012345678901234567890';
+  q.raw_accepts = [Object.assign({}, q.raw_accepts[0], { payTo: other }), Object.assign({}, q.raw_accepts[0])];
+  q.accepts = [{ index: 0, amount: '1000', asset: USDT0, network: 'eip155:196', scheme: 'exact' }, { index: 1, amount: '1000', asset: USDT0, network: 'eip155:196', scheme: 'exact' }];
+  q.candidates = [Object.assign({}, q.candidates[0], { acceptsIndex: 1, recommended: true })];
+  q.decoded_challenge = { amount: '1000', recipient: demo.DEMO_PAY_TO };
+  const r = await checkQuote({ quote: q, selectedIndex: 1, expected: listing('honest') }, deps(DEMO_NOW));
+  assert.ok(!r.reasons.includes('quote_inconsistent'), r.reasons.join());
+  assert.ok(r.reasons.includes('multiple_payees'), r.reasons.join());
+});
+
 test('check-quote: live header-body-split quote, the CLI persisted the header payee while the body shows the listing wallet', async () => {
   const q = F('state-header-body-split');
   assert.equal(q.raw_accepts[0].payTo.toLowerCase(), demo.SPLIT_PAY_TO);

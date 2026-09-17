@@ -22,11 +22,18 @@ const paysafe = require('./paysafe');
 const binding = require('./quote-binding');
 
 const { QuoteValidationError } = binding;
-const SAFE_PARAM_KEY = /^[A-Za-z0-9_.-]{1,64}$/;
-const SAFE_PARAM_VALUE = /^[A-Za-z0-9_.:\/@%+=,~-]{1,256}$/;
 
 function eqAddr(a, b) {
   return typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
+}
+
+// x402 v1 entries carry maxAmountRequired and a v1 network name ("x-layer"); v2 carry amount and eip155:196.
+const amountOf = (e) => (e && e.amount !== undefined && e.amount !== null && e.amount !== '' ? e.amount : e && e.maxAmountRequired);
+const netOf = (n) => paysafe._internals.parseNetwork(n).network;
+
+/** A listing with something to compare (price, token or payee), not just an endpoint. NaN price does not count. */
+function listingHasChecks(expected) {
+  return Boolean(expected && (Number.isFinite(Number(expected.feeAmount)) || Number.isFinite(Number(expected.maxAmount)) || expected.feeToken || expected.payTo));
 }
 
 function expectedFromScan(sid, deps) {
@@ -42,23 +49,21 @@ function expectedFromScan(sid, deps) {
   return { expected, source: 'trust scan of ' + scan.generatedAt + ' (sid ' + n + ')' };
 }
 
-function nextCommand(nq, index) {
-  const args = ['onchainos', 'payment', 'pay', '--payment-id', nq.paymentId, '--selected-index', String(index)];
-  for (const [k, v] of Object.entries(nq.knownParams)) {
-    const value = typeof v === 'number' || typeof v === 'boolean' ? String(v) : v;
-    if (!SAFE_PARAM_KEY.test(k) || typeof value !== 'string' || !SAFE_PARAM_VALUE.test(value)) {
-      return { command: null, note: 'A stored business param needs manual quoting, so no command is printed. Pass the params you quoted with to payment pay yourself.' };
-    }
-    args.push('--param', k + '=' + value);
-  }
-  return { command: args.join(' '), note: 'No --yes: the wallet returns a confirming prompt (exit 2) and pays nothing until the owner approves.' };
-}
-
 /**
  * @param {object} input see file header
  * @param {object} deps  checkPayment deps plus { trustScan: () => scan, now }
  */
 async function checkQuote(input, deps) {
+  try {
+    return await checkQuoteInner(input, deps);
+  } catch (err) {
+    if (err && err.name === 'ValidationError') throw err;
+    // Any other throw on caller-supplied quote fields is bad input, not a server fault: 400, not 500.
+    throw new QuoteValidationError('the quote could not be checked: ' + String(err && err.message).slice(0, 200));
+  }
+}
+
+async function checkQuoteInner(input, deps) {
   deps = deps || {};
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new QuoteValidationError('Request body must be a JSON object');
   if (input.quote === undefined || input.quote === null) throw new QuoteValidationError('"quote" is required: the persisted payment state (~/.onchainos/payments/<paymentId>.json) or the JSON output of onchainos payment quote');
@@ -77,14 +82,18 @@ async function checkQuote(input, deps) {
 
   let expected = input.expected || null;
   let expectedSource = expected ? 'request' : null;
-  if (!expected && input.sid !== undefined && input.sid !== null) {
+  if (!listingHasChecks(expected) && input.sid !== undefined && input.sid !== null) {
     const fromScan = expectedFromScan(input.sid, deps);
-    expected = fromScan.expected;
+    if (fromScan.expected) { expected = fromScan.expected; }
     expectedSource = fromScan.source;
   }
 
   const extraFindings = [];
   const add = (code, message, extra) => extraFindings.push({ code, message, extra });
+  // No listing to compare (no expected, or a sid that resolved to nothing) is never a clean ALLOW: price,
+  // token and payee went unchecked, so the best verdict is WARN and no pay command is offered.
+  const listingCompared = listingHasChecks(expected);
+  if (!listingCompared) add('listing_not_checked', 'No marketplace listing was compared for ' + nq.paymentId + (input.sid !== undefined && input.sid !== null ? ' (' + expectedSource + ')' : '') + '; price, token and payee were not checked against a listing.', { subject: 'quote' });
   let challenge;
   let bodyChallenge = null;
   let challengeLabel;
@@ -95,7 +104,10 @@ async function checkQuote(input, deps) {
     challengeLabel = 'persisted quote entries that payment pay signs';
     bodyChallengeLabel = 'merchant 402 body stored with the quote';
   } else if (nq.bodyChallenge) {
-    challenge = nq.bodyChallenge;
+    // Quote output, no persisted entries. Drop the seller-written resource so checkPayment does not use
+    // resource.url as the pay host, and mark it partial: only the persisted state is what pay signs.
+    challenge = Object.assign({}, nq.bodyChallenge, { resource: undefined });
+    add('quote_partial', 'The quote output does not include the URL the CLI called or the entries payment pay signs, so the endpoint and non-recommended payees were not verified. Check the persisted state file ~/.onchainos/payments/' + nq.paymentId + '.json.', { subject: 'quote' });
   } else {
     if (!nq.accepts.length || !nq.decoded || !nq.decoded.recipient) throw new QuoteValidationError('the quote output has no challenge body and no decoded payee; pass the persisted state file instead');
     challenge = { x402Version: 2, resource: nq.endpointUrl ? { url: nq.endpointUrl } : undefined, accepts: nq.accepts.map((e) => ({ scheme: e.scheme, network: e.network, amount: e.amount, asset: e.asset, payTo: nq.decoded.recipient })) };
@@ -108,21 +120,24 @@ async function checkQuote(input, deps) {
   const problems = [];
   const summaryEntry = nq.accepts.find((e) => Number(e.index) === index);
   if (summaryEntry && signed) {
-    if (String(summaryEntry.amount) !== String(signed.amount)) problems.push('accepts[' + index + '].amount ' + summaryEntry.amount + ' in the summary, ' + signed.amount + ' signed');
+    if (String(amountOf(summaryEntry)) !== String(amountOf(signed))) problems.push('accepts[' + index + '].amount ' + amountOf(summaryEntry) + ' in the summary, ' + amountOf(signed) + ' signed');
     if (summaryEntry.asset && !eqAddr(summaryEntry.asset, signed.asset)) problems.push('accepts[' + index + '].asset ' + summaryEntry.asset + ' in the summary, ' + signed.asset + ' signed');
-    if (summaryEntry.network && summaryEntry.network !== signed.network) problems.push('accepts[' + index + '].network ' + summaryEntry.network + ' in the summary, ' + signed.network + ' signed');
+    if (summaryEntry.network && netOf(summaryEntry.network) !== netOf(signed.network)) problems.push('accepts[' + index + '].network ' + summaryEntry.network + ' in the summary, ' + signed.network + ' signed');
     if (summaryEntry.scheme && signed.scheme && summaryEntry.scheme !== signed.scheme) problems.push('accepts[' + index + '].scheme differs between summary and signed entry');
   }
   const cand = nq.candidates.find((c) => Number(c.acceptsIndex) === index);
-  if (cand && signed && cand.amount !== undefined && String(cand.amount) !== String(signed.amount)) problems.push('candidate amount ' + cand.amount + ', signed ' + signed.amount);
+  if (cand && signed && cand.amount !== undefined && String(cand.amount) !== String(amountOf(signed))) problems.push('candidate amount ' + cand.amount + ', signed ' + amountOf(signed));
   if (nq.decoded && (nq.decoded.recipient || nq.decoded.amount !== undefined)) {
+    // The wallet's decodedChallenge names one payee/amount. With raw_accepts we know every entry's payee,
+    // so only complain when no signed entry matches the decoded pair (not just the recommended one).
+    const decodedMatches = (e) => e && (!nq.decoded.recipient || eqAddr(nq.decoded.recipient, e.payTo)) && (nq.decoded.amount === undefined || String(nq.decoded.amount) === String(amountOf(e)));
     const rec = nq.candidates.find((c) => c.recommended);
     const di = rec && Number.isInteger(Number(rec.acceptsIndex)) ? Number(rec.acceptsIndex) : defaultIndex;
-    const d = signedEntries[di];
+    const d = nq.rawAccepts && signedEntries.some(decodedMatches) ? null : signedEntries[di];
     if (d) {
       const decodedProblems = [];
       if (nq.decoded.recipient && !eqAddr(nq.decoded.recipient, d.payTo)) decodedProblems.push('the wallet decoded payee ' + nq.decoded.recipient + ', the entry pays ' + d.payTo);
-      if (nq.decoded.amount !== undefined && String(nq.decoded.amount) !== String(d.amount)) decodedProblems.push('the wallet decoded amount ' + nq.decoded.amount + ', the entry asks ' + d.amount);
+      if (nq.decoded.amount !== undefined && String(nq.decoded.amount) !== String(amountOf(d))) decodedProblems.push('the wallet decoded amount ' + nq.decoded.amount + ', the entry asks ' + amountOf(d));
       if (decodedProblems.length && nq.rawAccepts) problems.push.apply(problems, decodedProblems);
       else if (decodedProblems.length) add('challenge_header_body_mismatch', 'The 402 body shows a different payment than the challenge the wallet decoded: ' + decodedProblems.join('; ') + '.', { subject: 'challenge' });
     }
@@ -144,10 +159,12 @@ async function checkQuote(input, deps) {
   }, Object.assign({}, deps, { extraFindings, statsKind: 'check-quote' }));
 
   const fp = binding.fingerprint(nq, index);
-  const next = result.verdict === 'ALLOW' && !expired ? nextCommand(nq, index) : { command: null, note: result.verdict === 'ALLOW' ? 'Quote again; this one expired.' : 'No pay command on ' + result.verdict + '.' };
+  // A pay command is offered only for the persisted state, whose raw_accepts is what payment pay signs.
+  const next = result.verdict === 'ALLOW' && !expired && nq.rawAccepts ? binding.payCommand(nq, index)
+    : { command: null, note: result.verdict !== 'ALLOW' ? 'No pay command on ' + result.verdict + '.' : expired ? 'Quote again; this one expired.' : 'No pay command: pass the persisted state file, not the quote output, to bind and pay.' };
   result.summary = 'Quote ' + nq.paymentId + ': ' + result.summary;
   result.next_command = next.command;
-  result.binding = fp ? { paymentId: nq.paymentId, selectedIndex: index, fingerprint: fp, verdict: result.verdict, expiresAt: nq.expiresAt } : null;
+  result.binding = fp ? { paymentId: nq.paymentId, selectedIndex: index, fingerprint: fp, verdict: result.verdict, expiresAt: nq.expiresAt, listingCompared } : null;
   result.details.quote = {
     source: nq.source,
     paymentId: nq.paymentId,
@@ -158,6 +175,7 @@ async function checkQuote(input, deps) {
     expiresAt: nq.expiresAt ? new Date(nq.expiresAt * 1000).toISOString() : null,
     balanceStatus: cand ? cand.balanceStatus || null : null,
     expectedSource,
+    listingCompared,
     note: next.note,
   };
   if (!fp) result.details.quote.bindingNote = 'Bind a verdict with the persisted state file; the quote output does not include the signed entries.';

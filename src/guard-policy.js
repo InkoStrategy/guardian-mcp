@@ -20,8 +20,9 @@
 const binding = require('./quote-binding');
 const { _internals: { urlShellSyntax, textShellSyntax } } = require('./paysafe');
 
-const ONCHAINOS_RE = /(?:^|[\\/])onchainos(?:\.exe)?$/i;
-const BOOLEAN_FLAGS = new Set(['--yes', '--force', '-h', '--help', '--json', '--dry-run']);
+const ONCHAINOS_RE = /(?:^|[\\/])onchainos(?:\.exe|\.cmd|\.ps1|\.bat)?$/i;
+// --% is PowerShell's stop-parsing token; keep it from swallowing the next token as its value.
+const BOOLEAN_FLAGS = new Set(['--yes', '--force', '-h', '--help', '--json', '--dry-run', '--%']);
 const ESCAPABLE = new Set([' ', '\t', '"', "'", '\\', '$', ';', '&', '|', '<', '>', '(', ')', '`', '\n']);
 
 /** Minimal shell lexer: segments split on unquoted ; & | && || and newlines, tokens on unquoted whitespace. */
@@ -42,7 +43,8 @@ function lex(command) {
     if (tokens.length) segments.push(tokens);
     tokens = [];
   };
-  const s = String(command || '');
+  // Join line continuations first: bash "\<newline>" and PowerShell "`<newline>".
+  const s = String(command || '').replace(/\\\r?\n/g, ' ').replace(/`\r?\n/g, ' ');
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (quote === "'") {
@@ -58,8 +60,10 @@ function lex(command) {
       continue;
     }
     if (depth > 0) {
+      // Track quotes inside a $(...) body so parens within a quoted string do not unbalance the scan.
       raw += c;
       value += c;
+      if (c === "'" || c === '"') { const end = s.indexOf(c, i + 1); if (end > i) { raw += s.slice(i + 1, end + 1); value += s.slice(i + 1, end + 1); i = end; } continue; }
       if (c === '(') depth++;
       else if (c === ')') depth--;
       continue;
@@ -101,9 +105,49 @@ function parseArgs(tokens) {
   return { positionals, flags };
 }
 
+const WRAPPER_ARG_FLAGS = new Set(['-c', '--command', '-command', '/c', '/k', '-e', '--eval', '-e=', '-encodedcommand']);
+
+/** Balanced body between an opening and its matching close, starting just after the opener at `from`. */
+function balancedBody(s, from, open, close) {
+  let depth = 1;
+  let q = null;
+  for (let i = from; i < s.length; i++) {
+    const c = s[i];
+    if (q) { if (c === q) q = null; continue; }
+    if (c === "'" || c === '"') { q = c; continue; }
+    if (c === open) depth++;
+    else if (c === close) { depth--; if (depth === 0) return s.slice(from, i); }
+  }
+  return s.slice(from);
+}
+
+/** Command strings a shell would also execute: $(...), `...`, (subshell), and bash -c / cmd /c / node -e args. */
+function innerCommands(command) {
+  const out = [];
+  const s = String(command);
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === '$' && s[i + 1] === '(') { out.push(balancedBody(s, i + 2, '(', ')')); }
+    else if (s[i] === '`') { const end = s.indexOf('`', i + 1); if (end > i) { out.push(s.slice(i + 1, end)); i = end; } }
+    else if (s[i] === '(') { out.push(balancedBody(s, i + 1, '(', ')')); }
+  }
+  for (const seg of lex(s)) {
+    for (let j = 0; j < seg.length; j++) {
+      if (WRAPPER_ARG_FLAGS.has(seg[j].value.toLowerCase()) && seg[j + 1]) out.push(seg[j + 1].value);
+    }
+  }
+  return out;
+}
+
+/** All command segments a shell would run: the top level plus what wrappers and substitutions execute. */
+function gatherSegments(command, depth) {
+  const segs = lex(command).slice();
+  if (depth > 0) for (const inner of innerCommands(command)) if (inner && inner !== command) for (const seg of gatherSegments(inner, depth - 1)) segs.push(seg);
+  return segs;
+}
+
 function onchainosInvocations(command) {
   const out = [];
-  for (const seg of lex(command)) {
+  for (const seg of gatherSegments(command, 3)) {
     const at = seg.findIndex((t) => ONCHAINOS_RE.test(t.value));
     if (at >= 0) out.push(parseArgs(seg.slice(at + 1)));
   }
@@ -145,8 +189,10 @@ function checkPay(inv, opts) {
     if (!Number.isInteger(index) || index < 0 || index >= nq.rawAccepts.length) return deny('pay_bad_index', '--selected-index ' + String(f['--selected-index']).slice(0, 12) + ' does not point at an entry of ' + id + '.');
   }
   const ledger = opts.readLedger(id);
-  const checkCmd = 'node scripts/check-quote.js --payment-id ' + id + ' --selected-index ' + index + ' --sid <listing sid>';
+  const checkCmd = 'node scripts/check-quote.js --payment-id ' + id + ' --selected-index ' + index + ' --sid <OKX.AI sid> (or --endpoint <listed url> --fee <listed price> --token <listed token>)';
   if (!ledger) return deny('pay_unchecked', 'no Guardian verdict is bound to ' + id + '. Run: ' + checkCmd);
+  // The verdict must come from the Guardian the owner trusts, not a mirror the agent named with --guardian.
+  if (!opts.trustedGuardians.has(String(ledger.guardian || '').replace(/\/+$/, ''))) return deny('pay_untrusted_guardian', 'the verdict for ' + id + ' came from ' + String(ledger.guardian).slice(0, 80) + ', not the Guardian this hook trusts. Run: ' + checkCmd);
   if (Number(ledger.selectedIndex) !== index) return deny('pay_index_changed', 'Guardian checked accepts[' + ledger.selectedIndex + '] of ' + id + ', but this command pays accepts[' + index + ']. Run: ' + checkCmd);
   const fp = binding.fingerprint(nq, index);
   if (!fp || fp !== ledger.fingerprint) return deny('pay_state_changed', 'the persisted quote ' + id + ' no longer matches what Guardian checked. Quote again and check the new paymentId.');
@@ -154,6 +200,8 @@ function checkPay(inv, opts) {
   if (ledger.verdict === 'DENY') return deny('pay_denied', 'DENY ' + (ledger.reasons || []).join(', ') + '. ' + summary);
   if (ledger.verdict === 'WARN') return ask('pay_warn', 'WARN ' + (ledger.reasons || []).join(', ') + '. ' + summary + ' Pay only if the wallet owner accepts these findings.');
   if (ledger.verdict !== 'ALLOW') return deny('pay_unchecked', 'the Guardian record for ' + id + ' has no verdict. Run: ' + checkCmd);
+  // An ALLOW with no listing compared means price, token and payee were never checked: ask, never auto-pay.
+  if (ledger.listingCompared === false) return ask('pay_no_listing', 'ALLOW, but no marketplace listing was compared, so price, token and payee were not checked. ' + summary + ' Re-check with a listing, or approve only if you know it is correct.');
   if ((f['--yes'] || f['--force']) && !opts.allowAutopay) return ask('pay_approve', 'ALLOW. ' + summary + ' This moves funds; approve only if you asked for this payment.');
   return null;
 }
@@ -169,15 +217,25 @@ function evaluateCommand(command, opts) {
   opts.readState = opts.readState || ((id) => binding.readPaymentState(id, env));
   opts.readLedger = opts.readLedger || ((id) => binding.readLedger(id, env));
   if (opts.allowAutopay === undefined) opts.allowAutopay = env.GUARDIAN_ALLOW_AUTOPAY === '1';
+  if (!opts.trustedGuardians) {
+    opts.trustedGuardians = new Set(['local', String(env.GUARDIAN_URL || 'https://guardian-mcp-rho.vercel.app').replace(/\/+$/, '')]);
+  }
 
   const invocations = onchainosInvocations(command);
   if (!invocations.length) return null;
 
-  const urls = String(command).match(/https?:\/\/[^\s'"]+/gi) || [];
+  const s = String(command);
+  // The URL as the shell parses it (a lexed token, so a quoted endpoint that carries the payload inside it
+  // is seen) and as a raw non-whitespace run (so an unquoted payload trailing the URL is seen too).
+  const urls = s.match(/https?:\/\/\S+/gi) || [];
+  for (const seg of gatherSegments(s, 3)) for (const t of seg) { const i = t.value.search(/https?:\/\//i); if (i >= 0) urls.push(t.value.slice(i)); }
   for (const u of urls) {
     const hit = urlShellSyntax(u);
     if (hit) return deny('endpoint_url_injection', 'a URL in this onchainos command carries ' + hit.what + ' (' + JSON.stringify(hit.at) + '). A listing that puts shell syntax in its endpoint is an attack; do not call or pay it.');
   }
+  // A quoted URL closed and immediately followed by a shell separator or substitution: a quote-break payload,
+  // where the seller endpoint contains a quote that ends the agent's own quoting and runs the rest.
+  if (/https?:\/\/[^'"\n]*['"][ \t]*(?:[;&|`\n]|\$\()/i.test(s)) return deny('endpoint_url_injection', 'a quoted URL in this onchainos command is closed and followed by another shell command; the endpoint carries a quote-break payload. Do not call or pay it.');
 
   let result = null;
   const stricter = (r) => {

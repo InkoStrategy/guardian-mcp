@@ -106,6 +106,7 @@ const PAYMENT_RULES = [
   { code: 'quote_inconsistent', severity: 'DENY', layer: 'payment', description: 'An Onchain OS payment quote disagrees with itself: the payee, amount, token or network in its summary differs from the accepts entry that payment pay will sign.' },
   { code: 'quote_expired', severity: 'WARN', layer: 'payment', description: 'The persisted Onchain OS quote has expired; payment pay will refuse it, so quote again and check the new paymentId.' },
   { code: 'quote_partial', severity: 'WARN', layer: 'payment', description: 'The quote output does not include the full challenge (header-only seller), so the EIP-712 domain and free-text fields were not visible. Check the persisted payment state instead.' },
+  { code: 'listing_not_checked', severity: 'WARN', layer: 'payment', description: 'No marketplace listing was supplied or resolved, so price, token and payee were not compared against a listing. On its own this is not a safe-to-pay result.' },
 ];
 const RULE_INDEX = Object.fromEntries(PAYMENT_RULES.map((r) => [r.code, r]));
 
@@ -146,6 +147,7 @@ const RECOMMENDATIONS = {
   quote_inconsistent: 'Do not pay this paymentId. Discard it, quote again from the listed endpoint and check the new quote.',
   quote_expired: 'Run onchainos payment quote again and check the new paymentId before paying.',
   quote_partial: 'Check the persisted state in ~/.onchainos/payments/<paymentId>.json, which holds the exact entries payment pay signs.',
+  listing_not_checked: 'Supply the marketplace listing (expected: feeAmount, feeToken, endpoint, payTo, or a sid in the trust scan) so price, token and payee are compared before you pay.',
 };
 
 const SEV = { ALLOW: 0, WARN: 1, DENY: 2 };
@@ -617,7 +619,9 @@ async function checkPayment(input, deps) {
   const resourceHost = httpHostOf(challenge.resourceUrl);
   const listedHost = hostOf(expected.endpoint);
   const payHost = requestHost || resourceHost;
-  if (listedHost && payHost && contextAnalyzer.registrableDomain(listedHost) !== contextAnalyzer.registrableDomain(payHost)) {
+  // Exact host, not registrable domain: hosting platforms (vercel.app, onrender.com, sslip.io, workers.dev…)
+  // give every customer a subdomain, so a copycat endpoint shares the listing's registrable domain.
+  if (listedHost && payHost && listedHost !== payHost) {
     global.push(finding('payment_domain_mismatch', 'The 402 came from ' + payHost + ' but the listing endpoint is on ' + listedHost + '.', { listed: listedHost, observed: payHost }));
   }
   if (requestHost && resourceHost && contextAnalyzer.registrableDomain(requestHost) !== contextAnalyzer.registrableDomain(resourceHost)) {
@@ -641,7 +645,7 @@ async function checkPayment(input, deps) {
     try {
       const d = await quick.checkDomain({ domain: payHost }, { store, env: deps.env, now: deps.now, skipStats: true });
       domainCheck = { host: payHost, verdict: d.verdict, reasons: d.reasons, summary: d.summary };
-      const vouched = Boolean(listedHost && contextAnalyzer.registrableDomain(listedHost) === contextAnalyzer.registrableDomain(payHost));
+      const vouched = Boolean(listedHost && listedHost === payHost);
       for (const f of d.details.findings) {
         if (f.code === 'injection_pattern') {
           // Strong patterns imitate someone; weak ones (cheap TLD, keyword, deep subdomains) are common on real seller hosts.

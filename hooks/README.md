@@ -35,22 +35,34 @@ onchainos payment quote https://seller.example/paid
 node scripts/check-quote.js --payment-id pay_… --sid 39856
 ```
 
-`check-quote.js` sends the saved quote to `POST /check-quote`, after removing the owner wallet id, the deposit
-address and the balance. It writes the verdict and a SHA-256 fingerprint of the selected entry to
-`~/.guardian/payments/<paymentId>.json`: payee, amount, token, network, scheme, EIP-712 name and version,
-endpoint and method. At pay time the hook recomputes the fingerprint from the quote file. If anything changed,
-it denies. `node scripts/safe-pay.js` binds the verdict the same way.
+`check-quote.js` sends the saved quote to `POST /check-quote`, after dropping the owner wallet id, the deposit
+address, the balance fields and the business params. (The atomic amount and required amount are the payment
+itself, so the balance is still inferable from them; the drop removes the wallet's own totals, not the price.)
+It writes the verdict and a SHA-256 fingerprint of the whole selected entry — payee, amount, token, network,
+scheme, every `extra` field, `maxTimeoutSeconds`, the resource url, endpoint and method — plus the verdict
+source and whether a listing was compared, to `~/.guardian/payments/<paymentId>.json`. At pay time the hook
+recomputes the fingerprint from the quote file and denies if anything changed. `node scripts/safe-pay.js`
+binds the verdict the same way. The MCP `check_quote` tool and `POST /check-quote` return the same verdict and
+fingerprint, but only these local scripts write the ledger the hook reads; a bare tool call does not bind.
 
 ## Install
 
-Add the hook to `.claude/settings.json` in your project, or to `~/.claude/settings.json`:
+First install dependencies in the repo (the hook fails closed and blocks every payment until this is done):
+
+```bash
+npm ci --omit=dev
+```
+
+Then add the hook to `.claude/settings.json` in your project, or to `~/.claude/settings.json`. Match all tools
+(or at least every command-running tool), so a payment started through Bash, PowerShell or another runner is
+still seen:
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash|PowerShell",
+        "matcher": "*",
         "hooks": [{ "type": "command", "command": "node /path/to/guardian-mcp/hooks/claude-code-pretooluse.js" }]
       }
     ]
@@ -58,8 +70,10 @@ Add the hook to `.claude/settings.json` in your project, or to `~/.claude/settin
 }
 ```
 
-It needs Node 20 or newer and this repository checked out. It works offline: the verdict comes from the local
-ledger, not from a network call at pay time.
+It needs Node 20 or newer, this repository checked out and `npm install` run. It works offline: the verdict
+comes from the local ledger, not from a network call at pay time. Only a verdict from the Guardian named in
+`GUARDIAN_URL` (or the default deployment), or a `--local` check, is honored; a verdict a command sourced from
+some other `--guardian` URL is refused.
 
 Environment: `ONCHAINOS_PAYMENTS_DIR` and `GUARDIAN_LEDGER_DIR` override the two directories, and
 `GUARDIAN_ALLOW_AUTOPAY=1` lets an ALLOW payment with `--yes` run without asking.

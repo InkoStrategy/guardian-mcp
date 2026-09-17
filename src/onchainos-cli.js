@@ -19,9 +19,17 @@ function run(args) {
   return { code: r.status, json, text };
 }
 
-/** Printable argv: plain tokens as-is, anything else JSON-quoted so seller text cannot fake a command. */
+/**
+ * Printable argv. Plain tokens as-is; anything else is single-quoted (POSIX and PowerShell both treat a
+ * single-quoted string as literal), so seller-controlled text cannot run command substitution if pasted.
+ * This is for display only; the CLI itself is always run without a shell.
+ */
 function formatArgv(args) {
-  return ['onchainos'].concat(args.map((a) => (/^[A-Za-z0-9_.:\/@%+=,-]+$/.test(String(a)) ? String(a) : JSON.stringify(String(a))))).join(' ');
+  return ['onchainos'].concat(args.map((a) => {
+    const s = String(a);
+    if (/^[A-Za-z0-9_.:/@%+=,-]+$/.test(s)) return s;
+    return "'" + s.replace(/'/g, "'\\''") + "'";
+  })).join(' ');
 }
 
 /** Listing of an OKX.AI service: endpoint, price, token, seller agent and its wallet. */
