@@ -46,6 +46,13 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <p class="lead">Every paid A2MCP service we can find on OKX.AI, requested once <strong>without paying</strong>. Guardian reads the x402 challenge and checks it against that service's own listing — price, token, endpoint, payee, and the token's EIP-712 domain — and against shell payloads. Verdict <span class="ALLOW">ALLOW</span> / <span class="WARN">WARN</span> / <span class="DENY">DENY</span>. Nothing is signed or paid.</p>
 <div id="asof" class="muted" style="margin:8px 0 18px"></div>
 
+<h2>Check any OKX.AI listing by sid</h2>
+<form id="sidForm" class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+  <div style="flex:1;min-width:200px"><label for="sid" style="display:block;font-size:12px;color:var(--muted);margin-bottom:4px">OKX.AI service id (sid)</label><input id="sid" inputmode="numeric" placeholder="39876" style="width:100%;background:#0f1318;color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit"></div>
+  <button class="go" id="sidGo" style="background:var(--acc);color:#081018;border:0;border-radius:8px;padding:10px 16px;font-weight:600;cursor:pointer">Check</button>
+</form>
+<div id="sidResult" style="margin-top:12px"></div>
+
 <h2>Latest scan</h2>
 <div class="kpis" id="kpis"></div>
 <div class="bar" id="bar" style="display:none"><span class="a"></span><span class="w"></span><span class="d"></span><span class="n"></span></div>
@@ -72,6 +79,35 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 var $=function(id){return document.getElementById(id)};
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
 function host(h){return h||'—'}
+
+// Live check any OKX.AI listing by sid via the check_listing MCP tool (read-only, nothing paid).
+function checkSid(){
+  var sid=Number(($('sid').value||'').trim());
+  var box=$('sidResult');box.textContent='';
+  if(!Number.isInteger(sid)||sid<=0){box.appendChild(el('div','card muted','Enter a numeric sid, e.g. 39876.'));return}
+  $('sidGo').disabled=true;box.appendChild(el('div','card muted','Checking sid '+sid+' …'));
+  fetch('/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'check_listing',arguments:{sid:sid}}})})
+  .then(function(r){return r.json()}).then(function(j){
+    $('sidGo').disabled=false;box.textContent='';
+    var c=j&&j.result&&j.result.structuredContent;
+    if(!c){box.appendChild(el('div','card muted','No result.'));return}
+    var card=el('div','card'+(c.verdict==='DENY'?' deny-card':''));
+    var top=el('div');top.style.display='flex';top.style.gap='10px';top.style.alignItems='baseline';top.style.flexWrap='wrap';
+    if(!c.found){top.appendChild(el('span','pill','sid '+sid));top.appendChild(el('span','muted',c.note||'Not found in the scan.'));card.appendChild(top);box.appendChild(card);return}
+    if(c.verdict)top.appendChild(el('span','badge '+c.verdict,c.verdict));
+    var nm=el('strong');nm.textContent=c.service||('sid '+sid);top.appendChild(nm);
+    if(c.seller)top.appendChild(el('span','muted','· seller '+c.seller));
+    top.appendChild(el('span','pill','sid '+sid));
+    if(c.scanDate)top.appendChild(el('span','pill',(c.current===false?'last seen ':'scanned ')+c.scanDate));
+    card.appendChild(top);
+    if(c.current===false&&c.note)card.appendChild(el('div','muted',c.note));
+    if(c.reasons&&c.reasons.length)card.appendChild(el('div','reasons','reasons: '+c.reasons.join(', ')));
+    if(c.summary)card.appendChild(el('div','muted',c.summary));
+    (c.findings||[]).forEach(function(f){var d=el('div','reasons');d.textContent='• '+(f.severity||'')+' '+(f.code||'')+': '+(f.message||'');card.appendChild(d)});
+    box.appendChild(card);
+  }).catch(function(){$('sidGo').disabled=false;box.textContent='';box.appendChild(el('div','card muted','Request failed. Try again.'))});
+}
+document.getElementById('sidForm').addEventListener('submit',function(e){e.preventDefault();checkSid()});
 function kpi(v,k,cls){var c=el('div','card kpi');var vv=el('div','v'+(cls?' '+cls:''),String(v));c.appendChild(vv);c.appendChild(el('div','k',k));return c}
 
 var LATEST_DENY_SIDS={};
