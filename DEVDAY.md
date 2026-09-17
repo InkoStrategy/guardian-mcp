@@ -2,7 +2,7 @@
 
 **Team:** LNO Alpha (remote) · **Track:** Build a Company · **Live:** https://guardian-mcp-rho.vercel.app/pay-safe
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
-**Demo video (3:50):** https://www.youtube.com/watch?v=5TtavgILRLU
+**Demo video (3:22):** https://youtu.be/s8KSV2YMlyE
 **MCP server:** https://guardian-mcp-rho.vercel.app/mcp
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
