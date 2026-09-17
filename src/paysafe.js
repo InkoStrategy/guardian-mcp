@@ -102,6 +102,10 @@ const PAYMENT_RULES = [
   { code: 'signed_expired', severity: 'WARN', layer: 'payment', description: 'The signed authorisation is already expired or not yet valid; the payment will be rejected.' },
   { code: 'signed_payer_mismatch', severity: 'WARN', layer: 'payment', description: 'The signed authorisation spends from a different wallet than context.from.' },
   { code: 'signature_does_not_recover', severity: 'WARN', layer: 'payment', description: 'The EIP-3009 signature does not recover to authorization.from; the facilitator will reject it.' },
+  { code: 'challenge_header_body_mismatch', severity: 'DENY', layer: 'payment', description: 'The PAYMENT-REQUIRED header (or the entries a wallet quote persisted) and the 402 JSON body describe different payments. Whoever reads the body is shown one payee or price while the wallet signs another.' },
+  { code: 'quote_inconsistent', severity: 'DENY', layer: 'payment', description: 'An Onchain OS payment quote disagrees with itself: the payee, amount, token or network in its summary differs from the accepts entry that payment pay will sign.' },
+  { code: 'quote_expired', severity: 'WARN', layer: 'payment', description: 'The persisted Onchain OS quote has expired; payment pay will refuse it, so quote again and check the new paymentId.' },
+  { code: 'quote_partial', severity: 'WARN', layer: 'payment', description: 'The quote output does not include the full challenge (header-only seller), so the EIP-712 domain and free-text fields were not visible. Check the persisted payment state instead.' },
 ];
 const RULE_INDEX = Object.fromEntries(PAYMENT_RULES.map((r) => [r.code, r]));
 
@@ -138,6 +142,10 @@ const RECOMMENDATIONS = {
   testnet_payment: 'Real OKX.AI services settle on mainnet; do not use testnet funds as proof of payment.',
   signed_expired: 'Re-sign with a fresh validity window.',
   signature_does_not_recover: 'Re-sign with the paying wallet; this signature will be rejected.',
+  challenge_header_body_mismatch: 'Do not pay. The seller shows one payment and asks the wallet to sign another; report the listing.',
+  quote_inconsistent: 'Do not pay this paymentId. Discard it, quote again from the listed endpoint and check the new quote.',
+  quote_expired: 'Run onchainos payment quote again and check the new paymentId before paying.',
+  quote_partial: 'Check the persisted state in ~/.onchainos/payments/<paymentId>.json, which holds the exact entries payment pay signs.',
 };
 
 const SEV = { ALLOW: 0, WARN: 1, DENY: 2 };
@@ -546,6 +554,28 @@ async function evaluateEntry(entry, input, deps, shared) {
   };
 }
 
+/** Differences between normalized entries and a second, raw accepts[] list, index by index. */
+function acceptsDiff(entries, otherRaw, v) {
+  const diffs = [];
+  if (otherRaw.length !== entries.length) diffs.push('accepts[] has ' + entries.length + ' entries, the other copy has ' + otherRaw.length);
+  const n = Math.min(entries.length, otherRaw.length);
+  for (let i = 0; i < n; i++) {
+    const a = entries[i];
+    let b;
+    try { b = normalizeEntry(otherRaw[i], i, v); } catch (err) { diffs.push('accepts[' + i + '] in the other copy is invalid (' + err.message + ')'); continue; }
+    const label = 'accepts[' + i + '].';
+    if (!eqAddr(a.payTo, b.payTo)) diffs.push(label + 'payTo ' + a.payTo + ' vs ' + b.payTo);
+    if (a.amount !== b.amount) diffs.push(label + 'amount ' + a.amount + ' vs ' + b.amount);
+    if (!eqAddr(a.asset, b.asset)) diffs.push(label + 'asset ' + a.asset + ' vs ' + b.asset);
+    if (a.network !== b.network) diffs.push(label + 'network ' + a.network + ' vs ' + b.network);
+    if (a.scheme !== b.scheme) diffs.push(label + 'scheme ' + quoteUntrusted(a.scheme, 24) + ' vs ' + quoteUntrusted(b.scheme, 24));
+    for (const k of ['name', 'version']) {
+      if (String(a.extra[k] === undefined ? '' : a.extra[k]) !== String(b.extra[k] === undefined ? '' : b.extra[k])) diffs.push(label + 'extra.' + k + ' ' + quoteUntrusted(a.extra[k] === undefined ? '' : a.extra[k], 32) + ' vs ' + quoteUntrusted(b.extra[k] === undefined ? '' : b.extra[k], 32));
+    }
+  }
+  return diffs;
+}
+
 function pickSignedEntry(signed, entries) {
   if (!signed) return null;
   if (signed.accepted) {
@@ -631,6 +661,14 @@ async function checkPayment(input, deps) {
   }
   const payees = new Set(challenge.entries.filter((e) => e.payTo).map((e) => e.payTo.toLowerCase()));
   if (payees.size > 1) global.push(finding('multiple_payees', 'accepts[] pays ' + payees.size + ' different recipients.'));
+  if (input.bodyChallenge && typeof input.bodyChallenge === 'object' && Array.isArray(input.bodyChallenge.accepts)) {
+    const diffs = acceptsDiff(challenge.entries, input.bodyChallenge.accepts, challenge.x402Version);
+    if (diffs.length) {
+      global.push(finding('challenge_header_body_mismatch', 'The ' + (input.bodyChallengeLabel || '402 body') + ' shows a different payment than the ' + (input.challengeLabel || 'PAYMENT-REQUIRED header') + ': ' + diffs.slice(0, 3).join('; ') + '.', { subject: 'challenge', diffs: diffs.slice(0, 10) }));
+    }
+  }
+  // Findings computed by a caller that saw more than the challenge (for example an Onchain OS quote). Never taken from the request body.
+  for (const f of Array.isArray(deps.extraFindings) ? deps.extraFindings : []) global.push(finding(f.code, f.message, f.extra));
 
   const evaluated = [];
   for (const entry of challenge.entries) {
@@ -652,7 +690,7 @@ async function checkPayment(input, deps) {
   const recommendations = reasons.filter((c) => RECOMMENDATIONS[c]).map((code) => ({ code, action: RECOMMENDATIONS[code] }));
 
   try {
-    await stats.record(store, { now: deps.now, verdict, kind: 'check-payment', codes: reasons, sessionId: input.context && typeof input.context.session_id === 'string' ? input.context.session_id.slice(0, 128) : null });
+    await stats.record(store, { now: deps.now, verdict, kind: deps.statsKind || 'check-payment', codes: reasons, sessionId: input.context && typeof input.context.session_id === 'string' ? input.context.session_id.slice(0, 128) : null });
   } catch { /* best-effort */ }
 
   return {
@@ -707,5 +745,5 @@ module.exports = {
   X402_EXACT_PERMIT2_PROXY,
   X402_UPTO_PERMIT2_PROXY,
   PERMIT2,
-  _internals: { normalizeChallenge, decodeSigned, parseNetwork, toAtomic, formatAtomic, assetMeta, urlShellSyntax, textShellSyntax },
+  _internals: { normalizeChallenge, decodeSigned, parseNetwork, toAtomic, formatAtomic, assetMeta, urlShellSyntax, textShellSyntax, quoteUntrusted, acceptsDiff },
 };

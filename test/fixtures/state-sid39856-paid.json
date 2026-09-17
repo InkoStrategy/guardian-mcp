@@ -1,0 +1,67 @@
+{
+ "payment_id": "pay_7f4fdb8558292e47022ef612",
+ "created_at": 1789593959,
+ "expires_at": 1789594259,
+ "accepts": [
+  {
+   "index": 0,
+   "scheme": "exact",
+   "amount": "5000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "network": "eip155:196"
+  }
+ ],
+ "decoded_challenge": {
+  "amount": "5000",
+  "amountHuman": "0.005",
+  "decimals": 6,
+  "recipient": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
+  "expires": 0,
+  "supported": true,
+  "unsupported_reason": null
+ },
+ "candidates": [
+  {
+   "scheme": "exact",
+   "acceptsIndex": 0,
+   "chainId": "196",
+   "chainName": "X Layer",
+   "isMainnet": true,
+   "tokenSymbol": "USDT",
+   "amount": "5000",
+   "amountHuman": "0.005",
+   "decimals": 6,
+   "hasBalance": true,
+   "balanceStatus": "sufficient",
+   "requiredAmount": "0.005",
+   "shortfall": "0",
+   "recommended": true
+  }
+ ],
+ "known_params": {
+  "url": "https://guardian-mcp-rho.vercel.app/pay-safe"
+ },
+ "merchant_body": "{}",
+ "endpoint_url": "https://pagepulse.167-179-80-192.sslip.io/v1/a2mcp/url-change-check",
+ "raw_accepts": [
+  {
+   "amount": "5000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "extra": {
+    "name": "USD₮0",
+    "version": "1"
+   },
+   "maxTimeoutSeconds": 300,
+   "network": "eip155:196",
+   "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
+   "scheme": "exact"
+  }
+ ],
+ "resource": {
+  "description": "Deterministic SHA-256 change check for a public HTTPS URL",
+  "mimeType": "application/json",
+  "url": "http://pagepulse.167-179-80-192.sslip.io/v1/a2mcp/url-change-check"
+ },
+ "method": "POST",
+ "param_plan": []
+}

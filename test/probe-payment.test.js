@@ -52,6 +52,9 @@ test('probe-payment: the demo scenarios fire the specific rules', async () => {
   assert.ok((await run('fake-token')).includes('asset_lookalike'));
   assert.ok((await run('wrong-domain')).includes('eip712_domain_mismatch'));
   assert.ok((await run('field-injection')).includes('challenge_field_injection'));
+  const split = await run('header-body-split');
+  assert.ok(split.includes('challenge_header_body_mismatch'), split.join());
+  assert.ok(split.includes('payto_mismatch_listing'), split.join());
 });
 
 test('probe-payment: URL with shell syntax is DENY and never contacted', async () => {

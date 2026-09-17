@@ -254,3 +254,39 @@ test('HTTP: POST /verify-settlement verifies a receipt and rejects bad input', a
     handler.settlementOptions = saved;
   }
 });
+
+test('mcp and HTTP: check_quote checks a persisted Onchain OS quote and binds the verdict', async () => {
+  const quote = require('./fixtures/state-price-bait.json');
+  const expected = Object.assign({ endpoint: 'https://guardian-mcp-rho.vercel.app/demo/x402/price-bait' }, demo.LISTING);
+  await withMcp({ quick: quick() }, async (rpc) => {
+    const names = (await rpc('tools/list')).json.result.tools.map((t) => t.name);
+    assert.ok(names.includes('check_quote'));
+    const r = await rpc('tools/call', { name: 'check_quote', arguments: { quote, expected } });
+    assert.equal(r.json.result.isError, false);
+    const v = r.json.result.structuredContent;
+    assert.equal(v.verdict, 'DENY');
+    assert.ok(v.reasons.includes('amount_above_listing'));
+    assert.ok(v.reasons.includes('quote_expired'));
+    assert.equal(v.next_command, null);
+    assert.equal(v.binding.paymentId, 'pay_ab29f55e5a11a76c3d24640e');
+    const bad = await rpc('tools/call', { name: 'check_quote', arguments: {} });
+    assert.equal(bad.json.result.isError, true);
+  });
+  const handler = require('../api/index.js');
+  const saved = handler.quickOptions;
+  handler.quickOptions = quick();
+  const server = http.createServer((req, res) => handler(req, res));
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const base = 'http://127.0.0.1:' + server.address().port;
+  try {
+    const ok = await fetch(base + '/check-quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quote, sid: 39856 }) });
+    assert.equal(ok.status, 200);
+    const j = await ok.json();
+    assert.equal(j.details.quote.paymentId, 'pay_ab29f55e5a11a76c3d24640e');
+    const bad = await fetch(base + '/check-quote', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quote: { payment_id: 'nope' } }) });
+    assert.equal(bad.status, 400);
+  } finally {
+    server.close();
+    handler.quickOptions = saved;
+  }
+});

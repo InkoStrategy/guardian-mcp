@@ -6,7 +6,7 @@
  * JSON-RPC 2.0 over POST. initialize, ping, tools/list and tools/call. Notifications get 202.
  * Replies are JSON, or a single SSE "message" event when the client accepts text/event-stream.
  *
- * Free tools: check_payment, probe_payment, verify_settlement, check_address, check_domain,
+ * Free tools: check_payment, probe_payment, check_quote, verify_settlement, check_address, check_domain,
  * analyze_transaction, analyze_signature. Paid tool: guard (premium verdict, x402 exact on X Layer,
  * settled by the OKX facilitator). The paywall sits at tools/call, the way Onchain OS A2MCP clients
  * expect: an unpaid tools/call for guard returns HTTP 402 with PAYMENT-REQUIRED, and the client replays
@@ -61,6 +61,19 @@ const TOOLS = [
       expected: EXPECTED,
       context: CONTEXT,
     }, ['url']),
+    annotations: { readOnlyHint: true, openWorldHint: true },
+  },
+  {
+    name: 'check_quote',
+    title: 'Check an Onchain OS payment quote before paying',
+    description: 'Pay-Safe verdict bound to an Onchain OS paymentId. Pass the persisted state ~/.onchainos/payments/<paymentId>.json (what payment pay signs, without re-fetching the 402) or the JSON output of onchainos payment quote. Adds quote_inconsistent, challenge_header_body_mismatch and quote_expired to the check_payment rules. Returns next_command only on ALLOW, never with --yes, and a fingerprint of the signed entry. Free.',
+    inputSchema: obj('Quote to check.', {
+      quote: { type: ['object', 'string'], description: 'Persisted payment state or onchainos payment quote output' },
+      selectedIndex: int('Index you will pass to payment pay --selected-index (default: the CLI pick)'),
+      sid: int('OKX.AI service id: take price, token and endpoint from the latest trust scan when expected is omitted'),
+      expected: EXPECTED,
+      context: CONTEXT,
+    }, ['quote']),
     annotations: { readOnlyHint: true, openWorldHint: true },
   },
   {
@@ -165,6 +178,7 @@ function createMcpHandler(h) {
     switch (name) {
       case 'check_payment': return h.paysafe.checkPayment(args, base);
       case 'probe_payment': return h.probePayment.probePayment(args, Object.assign({}, base, opts.probe || {}));
+      case 'check_quote': return h.checkQuote(args, Object.assign({ trustScan: h.trustScan }, base));
       case 'verify_settlement': return h.verifySettlement({ txHash: args.txHash, payTo: args.payTo, amount: args.amount === undefined ? undefined : String(args.amount), asset: args.token || '0x779ded0c9e1022225f8e0630b35a9b54be713736', payer: args.payer, chainId: args.chainId || 196, fetchImpl: (opts.settlement || {}).fetchImpl, rpcUrls: (opts.settlement || {}).rpcUrls });
       case 'check_listing': {
         const sid = Number(args.sid);

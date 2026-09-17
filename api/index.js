@@ -18,6 +18,7 @@ const quick = require('../src/quick-checks');
 const x402 = require('../src/x402');
 const paysafe = require('../src/paysafe');
 const probePayment = require('../src/probe-payment');
+const { checkQuote } = require('../src/check-quote');
 const demoSellers = require('../src/demo-sellers');
 const paysafePage = require('../src/paysafe-page');
 const { createMcpHandler } = require('../src/mcp-server');
@@ -135,7 +136,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', mcp: 'POST /mcp (MCP Streamable HTTP: check_payment, probe_payment, verify_settlement, check_listing, check_address, check_domain, analyze_transaction, analyze_signature, guard [paid x402])', verifySettlement: 'POST /verify-settlement { txHash, payTo, amount, token?, payer?, chainId? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', mcp: 'POST /mcp (MCP Streamable HTTP: check_payment, probe_payment, verify_settlement, check_listing, check_address, check_domain, analyze_transaction, analyze_signature, check_quote, guard [paid x402])', checkQuote: 'POST /check-quote { quote: <~/.onchainos/payments/<paymentId>.json> | <onchainos payment quote output>, selectedIndex?, expected? | sid?, context? }', verifySettlement: 'POST /verify-settlement { txHash, payTo, amount, token?, payer?, chainId? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -143,6 +144,10 @@ function info(req) {
       : { protocol: 'x402', enabled: false, price: '0' },
     docs: 'https://github.com/' + (process.env.VERCEL_GIT_REPO_OWNER && process.env.VERCEL_GIT_REPO_SLUG ? process.env.VERCEL_GIT_REPO_OWNER + '/' + process.env.VERCEL_GIT_REPO_SLUG : 'your-org/guardian-mcp'),
   };
+}
+
+function loadTrustScan() {
+  try { return require('../docs/trust-scan.json'); } catch { return null; }
 }
 
 const mcpHandler = createMcpHandler({
@@ -156,7 +161,8 @@ const mcpHandler = createMcpHandler({
   verifySettlement: (p) => verifySettlement(p),
   premium,
   options: () => ({ quick: module.exports.quickOptions, probe: module.exports.probeOptions, premium: module.exports.premiumOptions, settlement: module.exports.settlementOptions }),
-  trustScan: () => { try { return require('../docs/trust-scan.json'); } catch { return null; } },
+  trustScan: () => loadTrustScan(),
+  checkQuote,
   recordStat: (kind, r) => {
     const verdict = r && r.payload && r.payload.result && r.payload.result.structuredContent && r.payload.result.structuredContent.verdict;
     stats.record(getStore(), { verdict: ['ALLOW', 'WARN', 'DENY'].includes(verdict) ? verdict : 'ALLOW', kind, codes: [], sessionId: null }).catch(() => {});
@@ -356,9 +362,9 @@ module.exports = async function handler(req, res) {
 
   const isSignature = path === '/analyze-signature' || path === '/api/analyze-signature';
   const isPremium = path === '/guard' || path === '/api/guard';
-  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : apiPath === '/check-payment' ? 'payment' : apiPath === '/probe-payment' ? 'probe' : null;
+  const quickKind = apiPath === '/check-address' ? 'address' : apiPath === '/check-domain' ? 'domain' : apiPath === '/check-payment' ? 'payment' : apiPath === '/probe-payment' ? 'probe' : apiPath === '/check-quote' ? 'quote' : null;
   if (!isSignature && !isPremium && !quickKind && !(path === '/' || path === '/analyze' || path === '/api' || path === '/api/index' || path === '/api/analyze')) {
-    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain, /check-payment, /probe-payment or /guard (premium)' });
+    return send(res, 404, { error: 'Not found. POST /analyze, /analyze-signature, /check-address, /check-domain, /check-payment, /probe-payment, /check-quote or /guard (premium)' });
   }
 
   if (quickKind) {
@@ -370,7 +376,7 @@ module.exports = async function handler(req, res) {
     }
     try {
       const deps = Object.assign({ reporter: reporterOf(req) }, module.exports.quickOptions || {});
-      const result = quickKind === 'address' ? await quick.checkAddress(body, deps) : quickKind === 'domain' ? await quick.checkDomain(body, deps) : quickKind === 'probe' ? await probePayment.probePayment(body, Object.assign({}, deps, module.exports.probeOptions || {})) : await paysafe.checkPayment(body, deps);
+      const result = quickKind === 'address' ? await quick.checkAddress(body, deps) : quickKind === 'domain' ? await quick.checkDomain(body, deps) : quickKind === 'probe' ? await probePayment.probePayment(body, Object.assign({}, deps, module.exports.probeOptions || {})) : quickKind === 'quote' ? await checkQuote(body, Object.assign({ trustScan: loadTrustScan }, deps)) : await paysafe.checkPayment(body, deps);
       return send(res, 200, result);
     } catch (err) {
       if (err && err.name === 'ValidationError') return send(res, err.status && err.status !== 400 ? err.status : 400, { error: err.message });

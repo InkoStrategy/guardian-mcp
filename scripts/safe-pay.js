@@ -6,46 +6,39 @@
  *
  *   node scripts/safe-pay.js --sid 33342 [--param scoutMode=best] [--max 0.5]
  *   node scripts/safe-pay.js --url https://seller.example/paid --fee 0.002 --token 0x779d… [--pay-to 0x…]
+ *   node scripts/safe-pay.js --sid 39856 --quote-first --param url=https://example.com
  *
  * 1. Listing   onchainos agent service-detail (endpoint, price, token, seller agent)
  * 2. Challenge one unpaid request to the endpoint (GET / POST / MCP tools/call), nothing signed
  * 3. Verdict   Guardian POST /check-payment against the listing and your cap
  * 4. Quote     onchainos payment quote, then verify the quote pays the same payee, amount and token
- *              that Guardian checked (the seller cannot swap the challenge between check and pay)
+ *              that Guardian checked, and check the persisted quote itself with POST /check-quote.
+ *              The verdict is bound to the paymentId in ~/.guardian/payments (see hooks/README.md).
  * 5. Pay       only with --pay; passes --yes to the wallet only when you pass --yes yourself.
- * 6. Settled   after payment, read the receipt on-chain and confirm the Transfer matches the checked payee, amount and token.
  *              Without --pay it prints the pay command without --yes, so the wallet still asks the owner.
+ * 6. Settled   after payment, read the receipt on-chain and confirm the Transfer matches the checked payee, amount and token.
+ *
+ * --quote-first skips steps 2 and 3: quote first, then check exactly the persisted entries payment pay signs.
  *
  * Options: --agent <your agent id for service-detail>  --method auto|GET|POST|MCP  --tool <mcp tool>
  *          --accept-warn  --guardian <url>  --local  --json
  * Exit codes: 0 ready or paid, 2 WARN not accepted, 3 DENY or quote mismatch, 1 error.
  */
 
-const { spawnSync } = require('node:child_process');
-const path = require('node:path');
 const { fetchChallenge, challengeOf } = require('../src/x402-probe');
 const { compareQuote } = require('../src/quote-guard');
+const cli = require('../src/onchainos-cli');
+const { checkAndBind } = require('./check-quote');
 
 const argv = process.argv.slice(2);
 const flag = (k) => argv.includes('--' + k);
 const opt = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 && i + 1 < argv.length ? argv[i + 1] : d; };
 const multi = (k) => argv.reduce((acc, a, i) => (a === '--' + k && i + 1 < argv.length ? acc.concat(argv[i + 1]) : acc), []);
 
-const ONCHAINOS = process.env.ONCHAINOS_BIN || (process.platform === 'win32' ? path.join(process.env.USERPROFILE || '', '.local', 'bin', 'onchainos.exe') : 'onchainos');
 const GUARDIAN = opt('guardian', process.env.GUARDIAN_URL || 'https://guardian-mcp-rho.vercel.app');
 const JSON_OUT = flag('json');
 
 function out(line) { if (!JSON_OUT) console.log(line); }
-
-/** Run the onchainos CLI without a shell; listing text is untrusted and never reaches a command line. */
-function onchainos(args) {
-  const r = spawnSync(ONCHAINOS, args, { encoding: 'utf8', maxBuffer: 32e6, windowsHide: true, shell: false });
-  const text = (r.stdout || '') + (r.stderr || '');
-  const i = text.indexOf('{');
-  let json = null;
-  try { json = JSON.parse(text.slice(i)); } catch { json = null; }
-  return { code: r.status, json, text };
-}
 
 function params() {
   const p = {};
@@ -63,24 +56,7 @@ async function listing() {
     if (!url) throw new Error('pass --sid <marketplace sid> or --url <endpoint>');
     return { source: 'flags', endpoint: url, feeAmount: opt('fee') !== undefined ? Number(opt('fee')) : undefined, feeToken: opt('token'), payTo: opt('pay-to') };
   }
-  let agent = opt('agent', process.env.AGENTIC_ID);
-  if (!agent) {
-    const mine = onchainos(['agent', 'get-my-agents']);
-    const acct = mine.json && Array.isArray(mine.json.data) ? mine.json.data[0] : null;
-    agent = acct && acct.agentList && acct.agentList[0] ? acct.agentList[0].agentId : null;
-    if (!agent) throw new Error('could not find your agent id; pass --agent <id>');
-  }
-  const d = onchainos(['agent', 'service-detail', '--sid', String(sid), '--agentic-id', String(agent)]);
-  const s = d.json && d.json.data;
-  if (!s || !s.endpoint) throw new Error('service-detail returned no endpoint for sid ' + sid + (s && s.serviceType ? ' (type ' + s.serviceType + ')' : ''));
-  let sellerWallet = null;
-  if (s.asp && s.asp.aspAgentId) {
-    const g = onchainos(['agent', 'get-agents', '--agent-ids', String(s.asp.aspAgentId)]);
-    const found = [];
-    (function walk(o) { if (Array.isArray(o)) o.forEach(walk); else if (o && typeof o === 'object') { if (String(o.agentId) === String(s.asp.aspAgentId) && o.agentWalletAddress) found.push(o.agentWalletAddress); Object.values(o).forEach(walk); } })(g.json && g.json.data);
-    sellerWallet = found[0] || null;
-  }
-  return { source: 'okx.ai', sid: s.sid, serviceName: s.serviceName, serviceType: s.serviceType, endpoint: s.endpoint, feeAmount: s.feeAmount, feeToken: s.feeToken, feeTokenSymbol: s.feeTokenSymbol, asp: s.asp || null, sellerWallet };
+  return cli.serviceListing(sid, opt('agent', process.env.AGENTIC_ID), out);
 }
 
 async function guardianCheck(body) {
@@ -91,138 +67,167 @@ async function guardianCheck(body) {
   return j;
 }
 
+function finish(report, code) {
+  if (code !== undefined) process.exitCode = code;
+  if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
+}
+
+function printVerdict(v, label) {
+  out(label + v.verdict + (v.reasons.length ? ' ' + v.reasons.join(', ') : '') + ' (risk ' + v.risk_score + ')');
+  out('             ' + v.summary);
+  for (const f of v.details.findings) out('             - ' + f.severity + ' ' + f.code + ': ' + f.message);
+  for (const r of v.recommendations) out('             > ' + r.action);
+}
+
+function quoteArgs(endpoint, via) {
+  const qargs = ['payment', 'quote', endpoint];
+  const mcpTool = via && via.startsWith('MCP tools/call ') ? via.slice('MCP tools/call '.length) : null;
+  if (opt('tool') || mcpTool) qargs.push('--tool', opt('tool') || mcpTool);
+  else if (via === 'POST' || String(opt('method', '')).toUpperCase() === 'POST') qargs.push('--method', 'POST');
+  for (const kv of multi('param')) qargs.push('--param', kv);
+  return qargs;
+}
+
 async function main() {
   const report = { steps: {} };
   const L = await listing();
   report.listing = L;
   out('1. Listing   ' + (L.serviceName ? L.serviceName + ' (sid ' + L.sid + ', ' + L.serviceType + ')' : L.endpoint));
-  if (L.source === 'okx.ai') out('             via onchainos agent service-detail --sid ' + Number(L.sid));
   if (L.feeAmount !== undefined) out('             price ' + L.feeAmount + ' ' + (L.feeTokenSymbol || L.feeToken || '') + (L.asp ? ', seller ' + L.asp.aspName + ' #' + L.asp.aspAgentId : ''));
 
   const expected = { endpoint: L.endpoint };
-  if (L.feeAmount !== undefined && !Number.isNaN(L.feeAmount)) expected.feeAmount = L.feeAmount;
+  if (L.feeAmount !== undefined && !Number.isNaN(Number(L.feeAmount))) expected.feeAmount = Number(L.feeAmount);
   if (L.feeToken) expected.feeToken = L.feeToken;
   if (L.payTo) expected.payTo = L.payTo;
   const context = {};
   if (opt('max')) context.max_amount = opt('max');
+  const quoteFirst = flag('quote-first');
 
-  // Never contact an endpoint whose URL is itself an attack; let Guardian explain why.
+  // Never contact an endpoint whose URL is itself an attack, and never hand it to the CLI.
   const paysafe = require('../src/paysafe');
   const urlHit = paysafe._internals.urlShellSyntax(L.endpoint);
-  let ch;
   if (urlHit) {
-    ch = { status: null, method: 'not contacted', header: null, body: null };
     report.steps.challenge = { skipped: 'endpoint URL carries shell syntax (' + urlHit.what + ')' };
-    out('2. Challenge not requested: the listed endpoint URL carries shell syntax (' + urlHit.what + ')');
-  } else {
-    ch = await fetchChallenge(L.endpoint, { method: opt('method', 'auto'), params: params(), tool: opt('tool') });
+    report.verdict = 'DENY';
+    report.reasons = ['endpoint_url_injection'];
+    out('2. ' + (quoteFirst ? 'Quote       not requested' : 'Challenge not requested') + ': the listed endpoint URL carries shell syntax (' + urlHit.what + ')');
+    out('3. Verdict   DENY endpoint_url_injection: do not call or pay this service, and never pass its URL to a shell.');
+    return finish(report, 3);
+  }
+
+  let chosen = null;
+  let v = null;
+  let paymentId = null;
+  let step = 4;
+
+  if (!quoteFirst) {
+    const ch = await fetchChallenge(L.endpoint, { method: opt('method', 'auto'), params: params(), tool: opt('tool') });
     if (ch.error) throw new Error('endpoint unreachable: ' + ch.error);
     report.steps.challenge = { method: ch.method, status: ch.status, found: Boolean(challengeOf(ch)) };
     out('2. Challenge ' + (challengeOf(ch) ? 'captured via ' + ch.method + ' (HTTP ' + ch.status + '), nothing signed' : 'none (HTTP ' + ch.status + ' via ' + ch.method + ')'));
-  }
-
-  const challenge = challengeOf(ch);
-  const body = challenge ? { paymentRequired: challenge, requestUrl: L.endpoint, expected, context } : null;
-  if (!body) {
-    if (urlHit) {
-      report.verdict = 'DENY';
-      report.reasons = ['endpoint_url_injection'];
-      out('3. Verdict   DENY endpoint_url_injection: do not call or pay this service, and never pass its URL to a shell.');
-      if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
-      process.exitCode = 3;
-      return;
+    const challenge = challengeOf(ch);
+    if (!challenge) {
+      report.verdict = null;
+      out('3. Verdict   no x402 challenge to check. Pass --param, --method or --tool so the endpoint asks for payment.');
+      return finish(report, 1);
     }
-    report.verdict = null;
-    out('3. Verdict   no x402 challenge to check. Pass --param, --method or --tool so the endpoint asks for payment.');
-    if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
-    process.exitCode = 1;
-    return;
+    v = await guardianCheck({ paymentRequired: challenge, requestUrl: L.endpoint, expected, context });
+    chosen = v.details.selected;
+    report.verdict = v.verdict;
+    report.reasons = v.reasons;
+    report.summary = v.summary;
+    report.recommendations = v.recommendations;
+    report.selected = { index: chosen.index, network: chosen.network, asset: chosen.asset, amount: chosen.amount, payTo: chosen.payTo };
+    printVerdict(v, '3. Verdict   ');
+    if (L.sellerWallet) {
+      const same = String(L.sellerWallet).toLowerCase() === String(chosen.payTo).toLowerCase();
+      report.sellerWalletMatch = same;
+      out('             payee ' + (same ? 'is' : 'is not') + ' the seller agent wallet ' + L.sellerWallet + (same ? '' : ' (common, informational)'));
+    }
+    if (v.verdict === 'DENY') return finish(report, 3);
+    if (v.verdict === 'WARN' && !flag('accept-warn')) {
+      out('   Stopped on WARN. Review the findings, then rerun with --accept-warn to continue.');
+      return finish(report, 2);
+    }
+
+    const qargs = quoteArgs(L.endpoint, String(ch.method || ''));
+    out('4. Quote     $ ' + cli.formatArgv(qargs));
+    const q = cli.run(qargs);
+    const cmp = compareQuote(q.json, { index: chosen.index, payTo: chosen.payTo, amount: chosen.amount, asset: chosen.asset, network: chosen.network });
+    report.steps.quote = cmp;
+    if (!cmp.ok && cmp.kind === 'unavailable') {
+      out('             unavailable, nothing to pay: ' + cmp.problems.join('; '));
+      return finish(report, 1);
+    }
+    if (!cmp.ok) {
+      out('             MISMATCH, do not pay: ' + cmp.problems.join('; '));
+      report.verdict = 'DENY';
+      report.reasons = (report.reasons || []).concat('quote_mismatch');
+      return finish(report, 3);
+    }
+    out('             matches the checked payee, amount and token. paymentId ' + cmp.paymentId + ', wallet balance ' + cmp.balanceStatus + (cmp.balanceStatus !== 'sufficient' && cmp.shortfall ? ' (short ' + cmp.shortfall + ')' : ''));
+    paymentId = cmp.paymentId;
+  } else {
+    const qargs = quoteArgs(L.endpoint, opt('tool') ? 'MCP tools/call ' + opt('tool') : String(opt('method', '')).toUpperCase());
+    out('2. Quote     $ ' + cli.formatArgv(qargs) + '   (never signs)');
+    const q = cli.run(qargs);
+    const d = q.json && q.json.ok !== false ? q.json.data : null;
+    if (!d || !d.paymentId) {
+      out('             unavailable, nothing to pay: ' + (q.json && q.json.error ? String(q.json.error).slice(0, 200) : q.text.slice(0, 200)));
+      return finish(report, 1);
+    }
+    paymentId = d.paymentId;
+    out('             paymentId ' + paymentId + ' persisted; payment pay signs it without re-fetching the 402');
+    step = 3;
   }
 
-  const v = await guardianCheck(body);
-  const chosen = v.details.selected;
-  report.verdict = v.verdict;
-  report.reasons = v.reasons;
-  report.summary = v.summary;
-  report.recommendations = v.recommendations;
-  report.selected = { index: chosen.index, network: chosen.network, asset: chosen.asset, amount: chosen.amount, payTo: chosen.payTo };
-  out('3. Verdict   ' + v.verdict + (v.reasons.length ? ' ' + v.reasons.join(', ') : '') + ' (risk ' + v.risk_score + ')');
-  out('             ' + v.summary);
-  for (const f of v.details.findings) out('             - ' + f.severity + ' ' + f.code + ': ' + f.message);
-  for (const r of v.recommendations) out('             > ' + r.action);
-  if (L.sellerWallet) {
-    const same = String(L.sellerWallet).toLowerCase() === String(chosen.payTo).toLowerCase();
-    report.sellerWalletMatch = same;
-    out('             payee ' + (same ? 'is' : 'is not') + ' the seller agent wallet ' + L.sellerWallet + (same ? '' : ' (common, informational)'));
-  }
-
-  if (v.verdict === 'DENY') { process.exitCode = 3; if (JSON_OUT) console.log(JSON.stringify(report, null, 2)); return; }
-  if (v.verdict === 'WARN' && !flag('accept-warn')) {
+  const bound = await checkAndBind({ paymentId, selectedIndex: chosen ? chosen.index : undefined, expected, context, guardian: GUARDIAN, local: flag('local'), log: out });
+  const qv = bound.result;
+  report.steps.checkQuote = { verdict: qv.verdict, reasons: qv.reasons, ledger: bound.ledgerFile, fingerprint: bound.entry.fingerprint };
+  printVerdict(qv, (step === 3 ? '3. Verdict   ' : '             quote check ') );
+  out('             bound to ' + paymentId + ' accepts[' + bound.entry.selectedIndex + '] in ' + bound.ledgerFile);
+  chosen = qv.details.selected;
+  report.verdict = qv.verdict === 'ALLOW' && v ? v.verdict : qv.verdict;
+  report.reasons = Array.from(new Set((v ? v.reasons : []).concat(qv.reasons)));
+  if (qv.verdict === 'DENY') return finish(report, 3);
+  if (qv.verdict === 'WARN' && !flag('accept-warn')) {
     out('   Stopped on WARN. Review the findings, then rerun with --accept-warn to continue.');
-    process.exitCode = 2;
-    if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
-    return;
+    return finish(report, 2);
   }
 
-  const qargs = ['payment', 'quote', L.endpoint];
-  // Quote over the same transport that produced the checked challenge.
-  const via = String(ch.method || '');
-  const mcpTool = via.startsWith('MCP tools/call ') ? via.slice('MCP tools/call '.length) : null;
-  if (opt('tool') || mcpTool) qargs.push('--tool', opt('tool') || mcpTool);
-  else if (via === 'POST' || String(opt('method', '')).toUpperCase() === 'POST') qargs.push('--method', 'POST');
-  for (const kv of multi('param')) qargs.push('--param', kv);
-  out('4. Quote     via onchainos payment quote' + (qargs.includes('--tool') ? ' --tool ' + qargs[qargs.indexOf('--tool') + 1] : qargs.includes('--method') ? ' --method POST' : '') + ' <checked endpoint>');
-  const q = onchainos(qargs);
-  const cmp = compareQuote(q.json, { index: chosen.index, payTo: chosen.payTo, amount: chosen.amount, asset: chosen.asset, network: chosen.network });
-  report.steps.quote = cmp;
-  if (!cmp.ok && cmp.kind === 'unavailable') {
-    out('             unavailable, nothing to pay: ' + cmp.problems.join('; '));
-    process.exitCode = 1;
-    if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
-    return;
-  }
-  if (!cmp.ok) {
-    out('             MISMATCH, do not pay: ' + cmp.problems.join('; '));
-    report.verdict = 'DENY';
-    report.reasons = (report.reasons || []).concat('quote_mismatch');
-    process.exitCode = 3;
-    if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
-    return;
-  }
-  out('             matches the checked payee, amount and token. paymentId ' + cmp.paymentId + ', wallet balance ' + cmp.balanceStatus + (cmp.balanceStatus !== 'sufficient' && cmp.shortfall ? ' (short ' + cmp.shortfall + ')' : ''));
-
-  const payArgs = ['payment', 'pay', '--payment-id', cmp.paymentId, '--selected-index', String(chosen.index)];
+  const payArgs = ['payment', 'pay', '--payment-id', paymentId, '--selected-index', String(chosen.index)];
+  for (const kv of multi('param')) payArgs.push('--param', kv);
   if (!flag('pay')) {
-    report.next = 'onchainos ' + payArgs.join(' ');
+    report.next = cli.formatArgv(payArgs);
     out('5. Pay       not requested. To pay exactly what was checked, run:');
     out('             ' + report.next);
-    out('             The wallet shows the payment for confirmation; add --yes only to approve it.');
-  } else {
-    for (const kv of multi('param')) payArgs.push('--param', kv);
-    if (flag('yes')) payArgs.push('--yes');
-    const p = onchainos(payArgs);
-    report.steps.pay = { exitCode: p.code, result: p.json || p.text.slice(0, 2000) };
-    const pd = p.json && p.json.data;
-    const receipt = pd && pd.decodedReceipt;
-    if (receipt && receipt.transaction) {
-      out('5. Pay       ' + (receipt.status || 'submitted') + ' via onchainos payment pay, tx ' + receipt.transaction);
-      if (pd.result !== undefined) out('             service result: ' + JSON.stringify(pd.result).slice(0, 220));
-      const { verifySettlement } = require('../src/settlement');
-      try {
-        const vs = await verifySettlement({ txHash: receipt.transaction, chainId: chosen.chainId || 196, payTo: chosen.payTo, amount: chosen.amount.atomic, asset: chosen.asset.address, payer: receipt.payer });
-        report.steps.settlement = vs;
-        out('6. Settled   ' + (vs.ok ? 'on-chain as checked: ' : 'NOT as checked: ') + (vs.ok ? chosen.amount.human + ' ' + (chosen.asset.symbol || '') + ' to ' + chosen.payTo + ' in block ' + vs.blockNumber : vs.problems.join('; ')));
-        if (!vs.ok) process.exitCode = 3;
-      } catch (err) {
-        out('6. Settled   could not verify on-chain yet: ' + err.message);
-      }
-    } else {
-      out('5. Pay       onchainos exit ' + p.code + (flag('yes') ? '' : ' (no --yes given, so the wallet asks for confirmation)'));
-      out('             ' + (p.json ? JSON.stringify(p.json).slice(0, 600) : p.text.slice(0, 600)));
-    }
-    if (p.code !== 0 && p.code !== 2) process.exitCode = 1;
+    out('             Without --yes the wallet only returns a confirmation prompt (exit 2) and pays nothing. The wallet owner adds --yes after reading the verdict.');
+    return finish(report);
   }
-  if (JSON_OUT) console.log(JSON.stringify(report, null, 2));
+  if (flag('yes')) payArgs.push('--yes');
+  out('5. Pay       $ ' + cli.formatArgv(payArgs));
+  const p = cli.run(payArgs);
+  report.steps.pay = { exitCode: p.code, result: p.json || p.text.slice(0, 2000) };
+  const pd = p.json && p.json.data;
+  const receipt = pd && pd.decodedReceipt;
+  if (receipt && receipt.transaction) {
+    out('             ' + (receipt.status || 'submitted') + ', tx ' + receipt.transaction);
+    if (pd.result !== undefined) out('             service result: ' + JSON.stringify(pd.result).slice(0, 220));
+    const { verifySettlement } = require('../src/settlement');
+    try {
+      const vs = await verifySettlement({ txHash: receipt.transaction, chainId: chosen.chainId || 196, payTo: chosen.payTo, amount: chosen.amount.atomic, asset: chosen.asset.address, payer: receipt.payer });
+      report.steps.settlement = vs;
+      out('6. Settled   ' + (vs.ok ? 'on-chain as checked: ' : 'NOT as checked: ') + (vs.ok ? chosen.amount.human + ' ' + (chosen.asset.symbol || '') + ' to ' + chosen.payTo + ' in block ' + vs.blockNumber : vs.problems.join('; ')));
+      if (!vs.ok) process.exitCode = 3;
+    } catch (err) {
+      out('6. Settled   could not verify on-chain yet: ' + err.message);
+    }
+  } else {
+    out('             onchainos exit ' + p.code + (flag('yes') ? '' : ' (no --yes given, so the wallet returned a confirmation prompt and paid nothing)'));
+    out('             ' + (p.json ? JSON.stringify(p.json).slice(0, 600) : p.text.slice(0, 600)));
+  }
+  if (p.code !== 0 && p.code !== 2) process.exitCode = 1;
+  return finish(report);
 }
 
 main().catch((e) => {

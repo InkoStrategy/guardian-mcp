@@ -24,7 +24,7 @@
 
 const dns = require('node:dns');
 const paysafe = require('./paysafe');
-const { fetchChallenge, challengeOf } = require('./x402-probe');
+const { fetchChallenge, challengeOf, x402In } = require('./x402-probe');
 const { getStore } = require('./store');
 
 const MAX_URL = 2048;
@@ -150,8 +150,10 @@ async function probePayment(input, deps) {
       details: { probe, findings: [], analyzedAt: new Date().toISOString() },
     };
   }
+  const bodyChallenge = ch.header ? x402In(ch.body) : null;
   const result = await paysafe.checkPayment({
     paymentRequired: challengeOf(ch),
+    bodyChallenge,
     requestUrl: v.raw,
     expected: input.expected,
     context: input.context,

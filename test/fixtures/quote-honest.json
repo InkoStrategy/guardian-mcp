@@ -1,0 +1,52 @@
+{
+ "ok": true,
+ "data": {
+  "accepts": [
+   {
+    "amount": "1000",
+    "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "index": 0,
+    "network": "eip155:196",
+    "scheme": "exact"
+   }
+  ],
+  "alternatives": [],
+  "candidates": [
+   {
+    "acceptsIndex": 0,
+    "amount": "1000",
+    "amountHuman": "0.001",
+    "availableAmount": "1.095",
+    "balanceStatus": "sufficient",
+    "chainId": "196",
+    "chainName": "X Layer",
+    "decimals": 6,
+    "depositAddress": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+    "hasBalance": true,
+    "isMainnet": true,
+    "recommended": true,
+    "requiredAmount": "0.001",
+    "scheme": "exact",
+    "shortfall": "0",
+    "tokenSymbol": "USDT"
+   }
+  ],
+  "decodedChallenge": {
+   "amount": "1000",
+   "amountHuman": "0.001",
+   "decimals": 6,
+   "expires": 0,
+   "recipient": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+   "supported": true,
+   "unsupported_reason": null
+  },
+  "knownParams": {},
+  "merchantBody": "{\"x402Version\":2,\"error\":\"Payment required\",\"resource\":{\"url\":\"https://guardian-mcp-rho.vercel.app/demo/x402/honest\",\"description\":\"Guardian Pay-Safe demo seller: Honest seller\",\"mimeType\":\"application/json\"},\"accepts\":[{\"scheme\":\"exact\",\"network\":\"eip155:196\",\"amount\":\"1000\",\"asset\":\"0x779ded0c9e1022225f8e0630b35a9b54be713736\",\"payTo\":\"0xe1c6f89df50fb68282d52e34d6001d65005ff67b\",\"maxTimeoutSeconds\":120,\"extra\":{\"name\":\"USD₮0\",\"version\":\"1\"}}]}",
+  "missingParams": [],
+  "needsConfirm": true,
+  "nextStep": "onchainos payment pay --payment-id pay_6219026516fffba4f41fac8d --selected-index <n> --yes",
+  "paramPlan": [],
+  "paymentId": "pay_6219026516fffba4f41fac8d",
+  "summary": "Will pay 0.001 USDT (exact, X Layer)"
+ }
+}

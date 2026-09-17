@@ -1,0 +1,65 @@
+{
+ "payment_id": "pay_ad5fac02b8034bc2a84f6a3b",
+ "created_at": 1789629919,
+ "expires_at": 1789630219,
+ "accepts": [
+  {
+   "index": 0,
+   "scheme": "exact",
+   "amount": "1000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "network": "eip155:196"
+  }
+ ],
+ "decoded_challenge": {
+  "amount": "1000",
+  "amountHuman": "0.001",
+  "decimals": 6,
+  "recipient": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+  "expires": 0,
+  "supported": true,
+  "unsupported_reason": null
+ },
+ "candidates": [
+  {
+   "scheme": "exact",
+   "acceptsIndex": 0,
+   "chainId": "196",
+   "chainName": "X Layer",
+   "isMainnet": true,
+   "tokenSymbol": "USDT",
+   "amount": "1000",
+   "amountHuman": "0.001",
+   "decimals": 6,
+   "hasBalance": true,
+   "balanceStatus": "sufficient",
+   "requiredAmount": "0.001",
+   "shortfall": "0",
+   "recommended": true
+  }
+ ],
+ "known_params": {},
+ "merchant_body": "{\"x402Version\":2,\"error\":\"Payment required\",\"resource\":{\"url\":\"https://guardian-mcp-rho.vercel.app/demo/x402/wrong-domain\",\"description\":\"Guardian Pay-Safe demo seller: Wrong EIP-712 domain\",\"mimeType\":\"application/json\"},\"accepts\":[{\"scheme\":\"exact\",\"network\":\"eip155:196\",\"amount\":\"1000\",\"asset\":\"0x779ded0c9e1022225f8e0630b35a9b54be713736\",\"payTo\":\"0xe1c6f89df50fb68282d52e34d6001d65005ff67b\",\"maxTimeoutSeconds\":120,\"extra\":{\"name\":\"USDT\",\"version\":\"1\"}}]}",
+ "endpoint_url": "https://guardian-mcp-rho.vercel.app/demo/x402/wrong-domain",
+ "raw_accepts": [
+  {
+   "amount": "1000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "extra": {
+    "name": "USDT",
+    "version": "1"
+   },
+   "maxTimeoutSeconds": 120,
+   "network": "eip155:196",
+   "payTo": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+   "scheme": "exact"
+  }
+ ],
+ "resource": {
+  "description": "Guardian Pay-Safe demo seller: Wrong EIP-712 domain",
+  "mimeType": "application/json",
+  "url": "https://guardian-mcp-rho.vercel.app/demo/x402/wrong-domain"
+ },
+ "method": "GET",
+ "param_plan": []
+}

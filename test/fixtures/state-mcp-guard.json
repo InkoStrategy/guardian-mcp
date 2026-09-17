@@ -1,0 +1,70 @@
+{
+ "payment_id": "pay_cc6cc66a4bed85fbc941930d",
+ "created_at": 1789629702,
+ "expires_at": 1789630002,
+ "accepts": [
+  {
+   "index": 0,
+   "scheme": "exact",
+   "amount": "99000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "network": "eip155:196"
+  }
+ ],
+ "decoded_challenge": {
+  "amount": "99000",
+  "amountHuman": "0.099",
+  "decimals": 6,
+  "recipient": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+  "expires": 0,
+  "supported": true,
+  "unsupported_reason": null
+ },
+ "candidates": [
+  {
+   "scheme": "exact",
+   "acceptsIndex": 0,
+   "chainId": "196",
+   "chainName": "X Layer",
+   "isMainnet": true,
+   "tokenSymbol": "USDT",
+   "amount": "99000",
+   "amountHuman": "0.099",
+   "decimals": 6,
+   "hasBalance": true,
+   "balanceStatus": "sufficient",
+   "requiredAmount": "0.099",
+   "shortfall": "0",
+   "recommended": true
+  }
+ ],
+ "known_params": {
+  "chainId": 1,
+  "data": "0x",
+  "to": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+ },
+ "merchant_body": "{\"jsonrpc\":\"2.0\",\"id\":3,\"error\":{\"code\":402,\"message\":\"Payment required\",\"data\":{\"x402Version\":2,\"error\":\"Payment required\",\"resource\":{\"url\":\"https://guardian-mcp-rho.vercel.app/mcp\",\"description\":\"GuardianMCP MCP server: paid guard tool (premium verdict) (1.6.0)\",\"mimeType\":\"application/json\"},\"accepts\":[{\"scheme\":\"exact\",\"network\":\"eip155:196\",\"amount\":\"99000\",\"asset\":\"0x779ded0c9e1022225f8e0630b35a9b54be713736\",\"payTo\":\"0xe1c6f89df50fb68282d52e34d6001d65005ff67b\",\"maxTimeoutSeconds\":300,\"extra\":{\"name\":\"USD₮0\",\"version\":\"1\"}}]}}}",
+ "endpoint_url": "https://guardian-mcp-rho.vercel.app/mcp",
+ "raw_accepts": [
+  {
+   "amount": "99000",
+   "asset": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "extra": {
+    "name": "USD₮0",
+    "version": "1"
+   },
+   "maxTimeoutSeconds": 300,
+   "network": "eip155:196",
+   "payTo": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+   "scheme": "exact"
+  }
+ ],
+ "resource": {
+  "description": "GuardianMCP MCP server: paid guard tool (premium verdict) (1.6.0)",
+  "mimeType": "application/json",
+  "url": "https://guardian-mcp-rho.vercel.app/mcp"
+ },
+ "method": "POST",
+ "param_plan": [],
+ "mcpTool": "guard"
+}
