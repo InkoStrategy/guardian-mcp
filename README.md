@@ -180,6 +180,7 @@ GuardianMCP работает как MCP-сервер (Streamable HTTP, без с
 | `probe_payment` | Запрос платного URL без оплаты и вердикт | бесплатно |
 | `verify_settlement` | Сверка оплаченной транзакции в сети | бесплатно |
 | `check_listing` | Результат скана OKX.AI по sid объявления | бесплатно |
+| `check_quote` | Вердикт по сохранённой котировке Onchain OS, привязанный к paymentId | бесплатно |
 | `check_address`, `check_domain` | Быстрые проверки адреса и домена | бесплатно |
 | `analyze_transaction`, `analyze_signature` | Проверка транзакции и подписи | бесплатно |
 | `guard` | Премиум-вердикт | 0.099 USD₮0 за вызов, x402 в X Layer |
@@ -190,6 +191,24 @@ GuardianMCP работает как MCP-сервер (Streamable HTTP, без с
 бесплатных и котировку платного.
 
 `POST /verify-settlement` `{ txHash, payTo, amount, token?, payer?, chainId? }`: та же сверка расчёта без MCP.
+
+### `POST /check-quote` (котировка Onchain OS)
+
+`onchainos payment quote` сохраняет котировку в `~/.onchainos/payments/<paymentId>.json`, а `onchainos payment pay --payment-id`
+подписывает именно этот файл и не запрашивает 402 повторно. Поэтому Guardian проверяет сам файл.
+
+Тело запроса: `{ quote, selectedIndex?, expected? | sid?, context? }`. `quote` — сохранённый файл или JSON-вывод `payment quote`.
+Сверх правил `/check-payment` добавлены:
+
+- `challenge_header_body_mismatch` (DENY): тело ответа 402 показывает другой платёж, чем тот, что подпишет кошелёк;
+- `quote_inconsistent` (DENY): сводка котировки расходится с подписываемой записью;
+- `quote_expired`, `quote_partial` (WARN).
+
+Ответ содержит `binding` с SHA-256 отпечатком подписываемой записи. `next_command` выдаётся только при ALLOW и никогда не содержит `--yes`.
+
+`node scripts/check-quote.js --payment-id pay_… --sid 39856` отправляет котировку (без id кошелька владельца, адреса пополнения и баланса)
+и записывает вердикт в `~/.guardian/payments`. Хук Claude Code `hooks/claude-code-pretooluse.js` блокирует `payment pay` без привязанного
+вердикта, при DENY или изменённой записи и спрашивает владельца при WARN и при `--yes`. Установка описана в `hooks/README.md`.
 
 ### `GET /threats/stats`, `GET /threats/{chainId}/{address}`, `GET /threats/domain/{host}`
 

@@ -48,6 +48,8 @@ What the scan found:
 | Commit (UTC date) | Feature |
 |---|---|
 | `0a622e9` 17 Sep | Real MCP server at `POST /mcp` (Streamable HTTP): free tools `check_payment`, `probe_payment`, `verify_settlement`, `check_listing`, `check_address`, `check_domain`, `analyze_transaction`, `analyze_signature`, plus the x402-paid `guard` tool (0.099 USD₮0 on X Layer, 402 at `tools/call`). Verified with OKX's own CLI: `onchainos payment quote` discovers all 9 tools, gets DENY results from the free tools and a payment quote for `guard` ([captures](demo-video/captures)). Public `POST /verify-settlement`. |
+| `601941b` 17 Sep | **Onchain OS payment gate.** `onchainos payment quote` saves each quote to `~/.onchainos/payments/<paymentId>.json`, and `payment pay --payment-id` signs from that file without fetching the 402 again. `POST /check-quote` and the MCP tool `check_quote` check that file and bind the verdict to the paymentId with a SHA-256 fingerprint of the signed entry. New rules: `challenge_header_body_mismatch`, `quote_inconsistent`, `quote_expired`, `quote_partial`. A Claude Code `PreToolUse` hook ([hooks/](hooks/README.md)) blocks `onchainos payment pay` when no verdict is bound, the entry changed or the verdict is DENY. It asks on WARN and on `--yes`, and blocks shell URLs, sign-only and raw-key payments. `safe-pay --quote-first` prints every CLI argv. |
+| `601941b` 17 Sep | **Found with the real CLI:** new demo seller `header-body-split`. Its 402 JSON body shows the listed wallet, but its `PAYMENT-REQUIRED` header pays another address. `onchainos payment quote` saved the header payee as the entry to sign, and its summary (`Will pay 0.001 USDT (exact, X Layer)`) does not name the payee. So an agent that reads the body is shown one payment while the wallet signs another. `/check-quote` returns DENY `challenge_header_body_mismatch` without knowing the payee, and the hook blocks the pay ([capture](demo-video/captures/check-quote-header-body-split.txt)). Re-probing 24 live marketplace challenges found 8 that send both copies and none that differ, so the rule adds no false DENYs there. |
 
 ## Built on 16 Sep 2026
 
@@ -66,8 +68,8 @@ transaction and signature firewall, shared threat registry, benchmark) is pre-ex
 | `2a1a94a` | Quote guard reads the payee from `decodedChallenge.recipient` (found on a third-party listing), quote over the capture transport, no `--yes` in printed commands |
 | `5fa5523` | On-chain settlement check (`src/settlement.js`, `scripts/verify-settlement.js`, step 6 of safe-pay); first real guarded payment settled as checked |
 
-Pay-Safe now has 36 payment rules and 43 new tests; the full suite has 127 passing (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
-Permit2 payloads, SSRF targets and every demo scenario.
+Pay-Safe now has 40 payment rules; the full suite has 160 passing tests (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
+Permit2 payloads, SSRF targets, every demo scenario and Onchain OS quotes recorded from the real CLI.
 
 ## A real payment through the guarded flow
 
@@ -85,9 +87,10 @@ through `scripts/safe-pay.js`: listing → unpaid challenge → Pay-Safe ALLOW �
 buyer agent ──► onchainos agent service-detail --sid N        listing: endpoint, price, token, seller
             ──► endpoint (unpaid GET / POST / MCP tools/call)   402 challenge, nothing signed
             ──► Guardian POST /check-payment                   ALLOW / WARN / DENY + evidence
-            ──► onchainos payment quote                        paymentId
+            ──► onchainos payment quote                        paymentId, saved to ~/.onchainos/payments
             ──► quote guard: same payee, amount, token, network as checked
-            ──► onchainos payment pay --payment-id …   the wallet asks the owner to confirm
+            ──► Guardian POST /check-quote                     checks the saved entry pay will sign, binds the verdict
+            ──► onchainos payment pay --payment-id …   hook: blocked unless a bound ALLOW; the wallet asks the owner
             ──► settlement check: the on-chain Transfer matches the checked payee, amount and token
 ```
 
@@ -95,6 +98,7 @@ buyer agent ──► onchainos agent service-detail --sid N        listing: end
 - **Onchain OS payments:** `payment quote` and `payment pay` on X Layer (`eip155:196`) in USD₮0.
   The wrapper never adds `--yes` on its own; moving funds stays with the wallet owner, who passes it explicitly.
 - **MCP server:** `https://guardian-mcp-rho.vercel.app/mcp` works with Onchain OS A2MCP clients: the paywall sits at `tools/call`, so tool discovery and free checks cost nothing and only `guard` returns an x402 challenge.
+- **Inside the payment command:** the Claude Code hook reads `onchainos payment pay` before it runs and checks it against the verdict bound to the saved quote ([hooks/README.md](hooks/README.md)).
 - **Agent skill:** `skills/guardian-mcp/SKILL.md` tells Onchain OS agents to call `/check-payment`
   before paying any 402 challenge.
 - **Listed service:** GuardianMCP is registered on OKX.AI as agent #13730.
@@ -125,6 +129,16 @@ With Onchain OS (read-only, nothing is signed):
 
 ```bash
 onchainos payment quote https://guardian-mcp-rho.vercel.app/mcp --tool check_listing --param sid=39876
+```
+
+Check what the wallet will actually sign (needs a logged-in Onchain OS CLI and this repository; nothing is signed). Expect DENY `challenge_header_body_mismatch`:
+
+```bash
+onchainos payment quote https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split
+```
+
+```bash
+node scripts/check-quote.js --payment-id <paymentId from the quote> --endpoint https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split --fee 0.001 --token 0x779ded0c9e1022225f8e0630b35a9b54be713736
 ```
 
 Add it to any MCP client, for example Claude Code:
@@ -169,14 +183,15 @@ DENY: `amount_above_listing`, `amount_above_user_cap`, `asset_mismatch_listing`,
 `asset_not_contract`, `payto_mismatch_listing`, `payto_poisoning`, `payto_zero_address`, `payto_is_asset`,
 `payment_domain_mismatch`, `endpoint_url_injection`, `challenge_field_injection`,
 `endpoint_phishing_pattern`, `accepted_mismatch`, `signed_recipient_mismatch`, `signed_amount_mismatch`,
-`signed_token_mismatch`, `signed_spender_not_x402_proxy`, `signed_network_mismatch`, plus the shared
+`signed_token_mismatch`, `signed_spender_not_x402_proxy`, `signed_network_mismatch`, `challenge_header_body_mismatch`,
+`quote_inconsistent`, plus the shared
 registry and ScamSniffer database hits on the payee.
 
 WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_listing`,
 `recurring_payment`, `permit2_approval_required`, `unknown_settlement_asset`, `unknown_payment_scheme`,
 `payment_network_unsupported`, `testnet_payment`, `multiple_payees`, `long_payment_timeout`,
 `resource_host_mismatch`, `insecure_payment_endpoint`, `signed_validity_too_long`, `signed_expired`,
-`signed_payer_mismatch`, `signature_does_not_recover`, `fresh_recipient`.
+`signed_payer_mismatch`, `signature_does_not_recover`, `quote_expired`, `quote_partial`, `fresh_recipient`.
 
 ## Limits
 
@@ -186,6 +201,8 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 - A listing does not publish the seller's payout wallet, and 11 of 25 challenges pay an address other
   than the seller's agent wallet. Payee checks therefore use `expected.payTo` when the buyer has it,
   plus poisoning, registry and on-chain checks.
+- The Claude Code hook is not installed automatically and covers Claude Code only. It stops confused or prompt-injected
+  agents; an agent that deliberately edits `~/.guardian` or the saved quote files can get around it.
 - `/probe-payment` resolves DNS and blocks private addresses before the request. A host that changes
   its DNS answer between that check and the request is not fully covered.
 

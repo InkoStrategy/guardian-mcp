@@ -34,17 +34,17 @@
    "amountHuman": "0.001",
    "decimals": 6,
    "expires": 0,
-   "recipient": "0xe1c6f89df50fb68282d52e34d6001d65005ff67b",
+   "recipient": "0x5b0c6a8d2e41f97b3c0d18e6a4f2b95c7d3e1a09",
    "supported": true,
    "unsupported_reason": null
   },
   "knownParams": {},
-  "merchantBody": "{\"x402Version\":2,\"error\":\"Payment required\",\"resource\":{\"url\":\"https://guardian-mcp-rho.vercel.app/demo/x402/wrong-domain\",\"description\":\"Guardian Pay-Safe demo seller: Wrong EIP-712 domain\",\"mimeType\":\"application/json\"},\"accepts\":[{\"scheme\":\"exact\",\"network\":\"eip155:196\",\"amount\":\"1000\",\"asset\":\"0x779ded0c9e1022225f8e0630b35a9b54be713736\",\"payTo\":\"0xe1c6f89df50fb68282d52e34d6001d65005ff67b\",\"maxTimeoutSeconds\":120,\"extra\":{\"name\":\"USDT\",\"version\":\"1\"}}]}",
+  "merchantBody": "{\"x402Version\":2,\"error\":\"Payment required\",\"resource\":{\"url\":\"https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split\",\"description\":\"Guardian Pay-Safe demo seller: Header and body disagree\",\"mimeType\":\"application/json\"},\"accepts\":[{\"scheme\":\"exact\",\"network\":\"eip155:196\",\"amount\":\"1000\",\"asset\":\"0x779ded0c9e1022225f8e0630b35a9b54be713736\",\"payTo\":\"0xe1c6f89df50fb68282d52e34d6001d65005ff67b\",\"maxTimeoutSeconds\":120,\"extra\":{\"name\":\"USD₮0\",\"version\":\"1\"}}]}",
   "missingParams": [],
   "needsConfirm": true,
-  "nextStep": "onchainos payment pay --payment-id pay_ad5fac02b8034bc2a84f6a3b --selected-index <n> --yes",
+  "nextStep": "onchainos payment pay --payment-id pay_3b5185721115b44340ba252b --selected-index <n> --yes",
   "paramPlan": [],
-  "paymentId": "pay_ad5fac02b8034bc2a84f6a3b",
+  "paymentId": "pay_3b5185721115b44340ba252b",
   "summary": "Will pay 0.001 USDT (exact, X Layer)"
  }
 }

@@ -123,3 +123,15 @@ test('quote-binding: CLI default index, fingerprint sensitivity and public state
   assert.equal(pub.owner_wallet, undefined);
   assert.deepEqual(pub.candidates, [{ amount: '1' }]);
 });
+
+test('check-quote: live header-body-split quote, the CLI persisted the header payee while the body shows the listing wallet', async () => {
+  const q = F('state-header-body-split');
+  assert.equal(q.raw_accepts[0].payTo.toLowerCase(), demo.SPLIT_PAY_TO);
+  assert.equal(JSON.parse(q.merchant_body).accepts[0].payTo, demo.DEMO_PAY_TO);
+  // OKX.AI listings carry price, token and endpoint but no payee, so the split alone must be enough to stop it.
+  const r = await checkQuote({ quote: q, expected: { feeAmount: 0.001, feeToken: demo.LISTING.feeToken, endpoint: BASE + 'header-body-split' } }, deps('2026-09-17T07:45:00Z'));
+  assert.equal(r.verdict, 'DENY');
+  assert.ok(r.reasons.includes('challenge_header_body_mismatch'));
+  assert.ok(!r.reasons.includes('payto_mismatch_listing'));
+  assert.equal(r.next_command, null);
+});
