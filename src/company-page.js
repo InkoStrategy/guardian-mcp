@@ -93,8 +93,8 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   document.getElementById('c1').textContent=String((latest.totals||{}).services||t.services||'—');
   document.getElementById('c2').textContent=chal?Math.round(flagged/chal*100)+'%':'—';
   document.getElementById('c3').textContent=String(t.deny==null?'—':t.deny);
-  // wrong-signing-domain count = distinct sellers with eip712_domain_mismatch in the base scan's WARN codes
-  var eip=(base.warnCodes&&base.warnCodes.eip712_domain_mismatch)||0;
+  // wrong-signing-domain count across ALL verdicts (the DENY attack listing carried it too)
+  var eip=base.eip712Count||(base.warnCodes&&base.warnCodes.eip712_domain_mismatch)||0;
   document.getElementById('c4').textContent=String(eip||'—');
   document.getElementById('costnote').textContent='From the '+base.date+' scan: '+chal+' of '+ (t.services||'—') +' paid services returned a challenge; '+flagged+' of those '+chal+' ('+(chal?Math.round(flagged/chal*100):0)+'%) drew a WARN or DENY, including '+(t.deny||0)+' outright attack listing. Re-scanned '+(latest?latest.date:base.date)+'.';
 }).catch(function(){});

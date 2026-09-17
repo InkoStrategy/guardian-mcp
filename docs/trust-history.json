@@ -35,7 +35,8 @@
     "fresh_recipient": 5,
     "endpoint_domain_suspicious": 2,
     "eip712_domain_mismatch": 4
-   }
+   },
+   "eip712Count": 5
   },
   {
    "date": "2026-09-17",
@@ -56,7 +57,8 @@
     "fresh_recipient": 4,
     "eip712_domain_mismatch": 7,
     "endpoint_domain_suspicious": 2
-   }
+   },
+   "eip712Count": 7
   }
  ]
 }

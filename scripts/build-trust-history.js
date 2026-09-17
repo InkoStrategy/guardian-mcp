@@ -23,7 +23,10 @@ function summarize(scan, date) {
   }));
   const warnCodes = {};
   for (const r of results) if (r.verdict === 'WARN') for (const c of r.reasons || []) warnCodes[c] = (warnCodes[c] || 0) + 1;
-  return { date, generatedAt: scan.generatedAt || null, totals: scan.totals || {}, denyCount: deny.length, deny, warnCodes };
+  // Count of challenges (any verdict) that declared a wrong EIP-712 signing domain — the DENY attack listing
+  // carried this too, so a WARN-only count under-reports it.
+  const eip712Count = results.filter((r) => r.verdict && (r.reasons || []).includes('eip712_domain_mismatch')).length;
+  return { date, generatedAt: scan.generatedAt || null, totals: scan.totals || {}, denyCount: deny.length, deny, warnCodes, eip712Count };
 }
 
 function hostOf(url) {
