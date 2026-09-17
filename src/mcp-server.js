@@ -185,8 +185,13 @@ function createMcpHandler(h) {
         if (!Number.isInteger(sid) || sid <= 0) { const e = new Error('sid must be a positive integer'); e.name = 'ValidationError'; throw e; }
         const scan = h.trustScan();
         const row = scan && Array.isArray(scan.results) ? scan.results.find((r) => Number(r.sid) === sid) : null;
-        if (!row) return { sid, found: false, scannedAt: scan ? scan.generatedAt : null, note: 'This sid was not among the paid A2MCP services in the latest scan.' };
-        return { sid, found: true, scannedAt: scan.generatedAt, service: row.service, seller: row.asp, sellerAgentId: row.aspAgentId, listed: row.listed, probe: row.probe, verdict: row.verdict || null, reasons: row.reasons || [], summary: row.summary || null, findings: row.findings || [] };
+        if (row) return { sid, found: true, scannedAt: scan.generatedAt, scanDate: scan.generatedAt ? String(scan.generatedAt).slice(0, 10) : null, current: true, service: row.service, seller: row.asp, sellerAgentId: row.aspAgentId, listed: row.listed, probe: row.probe, verdict: row.verdict || null, reasons: row.reasons || [], summary: row.summary || null, findings: row.findings || [] };
+        // Not in the latest scan: fall back to the most recent dated snapshot that saw this sid. A listing that
+        // was flagged and later removed from the marketplace (like the malicious sid 39876) stays checkable.
+        const listings = typeof h.trustListings === 'function' ? h.trustListings() : null;
+        const hist = listings ? listings[String(sid)] : null;
+        if (hist) return { sid, found: true, scannedAt: hist.scannedAt || null, scanDate: hist.scanDate || null, current: false, note: 'Not in the latest scan; this is the most recent dated snapshot that saw sid ' + sid + ' (' + (hist.scanDate || 'unknown date') + '). The listing may have changed or been removed since.', service: hist.service, seller: hist.asp, sellerAgentId: hist.aspAgentId, listed: hist.listed, probe: hist.probe, verdict: hist.verdict || null, reasons: hist.reasons || [], summary: hist.summary || null, findings: hist.findings || [] };
+        return { sid, found: false, scannedAt: scan ? scan.generatedAt : null, note: 'This sid was not among the paid A2MCP services in the latest scan or any dated snapshot.' };
       }
       case 'check_address': return h.quick.checkAddress(args, base);
       case 'check_domain': return h.quick.checkDomain(args, base);

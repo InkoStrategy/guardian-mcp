@@ -17,15 +17,20 @@ and "authorization signed" checks that the challenge matches the listing the age
 
 We scanned the live marketplace to see what that gap looks like in practice
 ([docs/trust-scan.md](docs/trust-scan.md)): every paid A2MCP service we could find was requested once
-without paying, and its challenge was checked against its own listing.
+without paying, and its challenge was checked against its own listing. The scan is dated and public — see
+the live dashboard at **[/trust](https://guardian-mcp-rho.vercel.app/trust)** and the history at `GET /trust-scans`.
 
-| Result | Services |
-|---|---|
-| Paid A2MCP services found | 62 |
-| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 |
-| ALLOW | 13 |
-| WARN | 11 |
-| DENY | 1 |
+| Result | 16 Sep 2026 | 17 Sep 2026 |
+|---|---|---|
+| Paid A2MCP services found | 62 | 67 |
+| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 | 30 |
+| ALLOW | 13 | 15 |
+| WARN | 11 | 15 |
+| DENY | 1 | 0 |
+
+The 16 Sep DENY was the malicious "Market Signal API" (sid 39876) below. By the 17 Sep re-scan it was gone
+from the marketplace; Guardian still returns its verdict by sid (`check_listing` falls back to the dated
+snapshot that last saw it), so the finding stays reproducible.
 
 What the scan found:
 

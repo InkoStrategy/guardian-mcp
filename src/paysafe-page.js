@@ -67,7 +67,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <div class="grid" id="scanKpi"></div>
 <ul class="f card" id="scanFindings" style="margin-top:12px"></ul>
 
-<p class="foot">MCP server: <span class="code">https://guardian-mcp-rho.vercel.app/mcp</span> (tools/list, check_payment, probe_payment, verify_settlement, check_listing, guard paid over x402) · API: <span class="code">POST /probe-payment</span> (URL in, verdict out) · <span class="code">POST /check-payment</span> (challenge in, verdict out) · <a href="/demo/x402">/demo/x402</a> · <a href="/trust-scan">/trust-scan</a> · <a href="/rules">/rules</a> · CLI for Onchain OS: <span class="code">node scripts/safe-pay.js --sid &lt;sid&gt;</span> · <a href="https://github.com/InkoStrategy/guardian-mcp">source</a></p>
+<p class="foot">MCP server: <span class="code">https://guardian-mcp-rho.vercel.app/mcp</span> (tools/list, check_payment, probe_payment, verify_settlement, check_listing, guard paid over x402) · API: <span class="code">POST /probe-payment</span> (URL in, verdict out) · <span class="code">POST /check-payment</span> (challenge in, verdict out) · <a href="/demo/x402">/demo/x402</a> · <a href="/trust">/trust</a> (marketplace scan) · <a href="/rules">/rules</a> · CLI for Onchain OS: <span class="code">node scripts/safe-pay.js --sid &lt;sid&gt;</span> · <a href="https://github.com/InkoStrategy/guardian-mcp">source</a></p>
 </div>
 <script>
 (function(){

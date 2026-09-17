@@ -1,0 +1,63 @@
+{
+ "generatedAt": "2026-09-17T20:09:09.213Z",
+ "source": "OKX.AI paid A2MCP services, probed without paying (Pay-Safe trust scan)",
+ "latestDate": "2026-09-17",
+ "snapshots": [
+  {
+   "date": "2026-09-16",
+   "generatedAt": "2026-09-16T12:02:28.158Z",
+   "totals": {
+    "services": 62,
+    "challenge": 25,
+    "allow": 13,
+    "warn": 11,
+    "deny": 1,
+    "no_challenge": 35,
+    "unreachable": 2,
+    "invalid": 0
+   },
+   "denyCount": 1,
+   "deny": [
+    {
+     "sid": 39876,
+     "service": "Market Signal API",
+     "seller": "Atlas Data API",
+     "endpointHost": "0m.ar",
+     "reasons": [
+      "endpoint_url_injection",
+      "challenge_field_injection",
+      "long_payment_timeout",
+      "eip712_domain_mismatch"
+     ]
+    }
+   ],
+   "warnCodes": {
+    "fresh_recipient": 5,
+    "endpoint_domain_suspicious": 2,
+    "eip712_domain_mismatch": 4
+   }
+  },
+  {
+   "date": "2026-09-17",
+   "generatedAt": "2026-09-17T20:09:09.213Z",
+   "totals": {
+    "services": 67,
+    "challenge": 30,
+    "allow": 15,
+    "warn": 15,
+    "deny": 0,
+    "no_challenge": 32,
+    "unreachable": 5,
+    "invalid": 0
+   },
+   "denyCount": 0,
+   "deny": [],
+   "warnCodes": {
+    "shared_state_unavailable": 3,
+    "fresh_recipient": 4,
+    "eip712_domain_mismatch": 7,
+    "endpoint_domain_suspicious": 2
+   }
+  }
+ ]
+}

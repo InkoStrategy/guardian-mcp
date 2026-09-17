@@ -21,6 +21,7 @@ const probePayment = require('../src/probe-payment');
 const { checkQuote } = require('../src/check-quote');
 const demoSellers = require('../src/demo-sellers');
 const paysafePage = require('../src/paysafe-page');
+const trustPage = require('../src/trust-page');
 const { createMcpHandler } = require('../src/mcp-server');
 const { verifySettlement } = require('../src/settlement');
 const crypto = require('crypto');
@@ -136,7 +137,7 @@ function info(req) {
     rules: RULES,
     signatureRules: SIGNATURE_RULES.map((r) => r.code),
     registry: { contracts: Object.values(registry.KNOWN_CONTRACTS).reduce((n, m) => n + Object.keys(m).length, 0), tokens: Object.values(registry.KNOWN_TOKENS).reduce((n, m) => n + Object.keys(m).length, 0) },
-    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', mcp: 'POST /mcp (MCP Streamable HTTP: check_payment, probe_payment, verify_settlement, check_listing, check_address, check_domain, analyze_transaction, analyze_signature, check_quote, guard [paid x402])', checkQuote: 'POST /check-quote { quote: <~/.onchainos/payments/<paymentId>.json> | <onchainos payment quote output>, selectedIndex?, expected? | sid?, context? }', verifySettlement: 'POST /verify-settlement { txHash, payTo, amount, token?, payer?, chainId? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
+    routes: { rules: 'GET /rules', trustedDomains: 'GET /trusted-domains', health: 'GET /health', analyze: 'POST /analyze', analyzeSignature: 'POST /analyze-signature', checkAddress: 'POST /check-address { address, chainId?, role? }', checkDomain: 'POST /check-domain { domain | url }', checkPayment: 'POST /check-payment { paymentRequired | payment, requestUrl?, selectedIndex?, paymentSignature?, expected?: { feeAmount, feeToken, endpoint, payTo }, context?: { known_addresses, max_amount, from } }', probePayment: 'POST /probe-payment { url, method?, params?, tool?, expected?, context?, selectedIndex? }', mcp: 'POST /mcp (MCP Streamable HTTP: check_payment, probe_payment, verify_settlement, check_listing, check_address, check_domain, analyze_transaction, analyze_signature, check_quote, guard [paid x402])', checkQuote: 'POST /check-quote { quote: <~/.onchainos/payments/<paymentId>.json> | <onchainos payment quote output>, selectedIndex?, expected? | sid?, context? }', verifySettlement: 'POST /verify-settlement { txHash, payTo, amount, token?, payer?, chainId? }', paySafePage: 'GET /pay-safe', demoSellers: 'GET /demo/x402', trustScan: 'GET /trust-scan', trustScans: 'GET /trust-scans (dated history)', trustPage: 'GET /trust', guard: 'POST /guard (premium)', threatStats: 'GET /threats/stats', threatLookup: 'GET /threats/{chainId}/{address}', threatDomain: 'GET /threats/domain/{host}', session: 'GET /session/{session_id}', stats: 'GET /stats', dashboard: 'GET /dashboard', feedback: 'POST /feedback { request_id?, verdict, correct, rule_codes[], comment? }' },
     pricing: { mode: pricing.cfg().mode, basic_analyze: 'free forever', basic_signature: 'free', premium: premium.status(), premium_layers: ['session_health', 'owner_alerts', 'differential_check', 'signature_analysis', 'shared_threat_intel'] },
     chains: supportedChainIds().map((id) => ({ chainId: id, name: chainName(id) })),
     payment: cfg.enabled
@@ -148,6 +149,12 @@ function info(req) {
 
 function loadTrustScan() {
   try { return require('../docs/trust-scan.json'); } catch { return null; }
+}
+function loadTrustHistory() {
+  try { return require('../docs/trust-history.json'); } catch { return null; }
+}
+function loadTrustListings() {
+  try { return require('../docs/trust-listings.json'); } catch { return null; }
 }
 
 const mcpHandler = createMcpHandler({
@@ -162,6 +169,7 @@ const mcpHandler = createMcpHandler({
   premium,
   options: () => ({ quick: module.exports.quickOptions, probe: module.exports.probeOptions, premium: module.exports.premiumOptions, settlement: module.exports.settlementOptions }),
   trustScan: () => loadTrustScan(),
+  trustListings: () => loadTrustListings(),
   checkQuote,
   recordStat: (kind, r) => {
     const verdict = r && r.payload && r.payload.result && r.payload.result.structuredContent && r.payload.result.structuredContent.verdict;
@@ -240,6 +248,18 @@ module.exports = async function handler(req, res) {
     } catch {
       return send(res, 404, { error: 'no trust scan published yet' });
     }
+  }
+  if (method === 'GET' && apiPath === '/trust-scans') {
+    const history = loadTrustHistory();
+    if (!history) return send(res, 404, { error: 'no trust history published yet' });
+    res.setHeader('cache-control', 'public, max-age=600');
+    return send(res, 200, history);
+  }
+  if (method === 'GET' && apiPath === '/trust') {
+    res.statusCode = 200;
+    res.setHeader('content-type', 'text/html; charset=utf-8');
+    res.setHeader('cache-control', 'public, max-age=300');
+    return res.end(trustPage.html());
   }
   if ((method === 'GET' || method === 'POST') && apiPath.startsWith('/demo/x402') && demoSellers.handle(req, res, apiPath)) return undefined;
   if (method === 'GET' && apiPath === '/dashboard') {

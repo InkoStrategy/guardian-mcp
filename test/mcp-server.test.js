@@ -193,13 +193,18 @@ test('mcp: paid guard tool answers 402 at tools/call, then settles a paid replay
   });
 });
 
-test('mcp: check_listing tool reads the published trust scan', async () => {
+test('mcp: check_listing tool reads the published trust scan, with a historical fallback', async () => {
   await withMcp({ quick: quick() }, async (rpc) => {
+    // sid 39876 (the malicious listing) was flagged on 16 Sep and later dropped off the marketplace; it must
+    // stay checkable via the dated-snapshot fallback even though it is not in the current scan.
     const hit = await rpc('tools/call', { name: 'check_listing', arguments: { sid: 39876 } });
-    assert.equal(hit.json.result.structuredContent.found, true);
-    assert.equal(hit.json.result.structuredContent.verdict, 'DENY');
-    assert.ok(hit.json.result.structuredContent.reasons.includes('endpoint_url_injection'));
-    const miss = await rpc('tools/call', { name: 'check_listing', arguments: { sid: 1 } });
+    const sc = hit.json.result.structuredContent;
+    assert.equal(sc.found, true);
+    assert.equal(sc.verdict, 'DENY');
+    assert.ok(sc.reasons.includes('endpoint_url_injection'));
+    // Either it is in the current scan (current:true) or it comes from a dated snapshot (current:false + a date).
+    if (sc.current === false) assert.match(sc.scanDate, /^\d{4}-\d{2}-\d{2}$/);
+    const miss = await rpc('tools/call', { name: 'check_listing', arguments: { sid: 99999999 } });
     assert.equal(miss.json.result.structuredContent.found, false);
     const bad = await rpc('tools/call', { name: 'check_listing', arguments: { sid: 'x' } });
     assert.equal(bad.json.result.isError, true);
