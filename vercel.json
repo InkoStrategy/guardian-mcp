@@ -9,6 +9,6 @@
     { "path": "/cron/seed", "schedule": "0 3 * * *" }
   ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
+    { "source": "/((?!demo-v61).*)", "destination": "/api/index" }
   ]
 }
