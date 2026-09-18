@@ -36,8 +36,8 @@
    "payTo": "0x62fCc335876A454B284FB2D8D3654eA0DdfD52Bf",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "17723": {
   "sid": 17723,
@@ -85,8 +85,8 @@
    "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "19874": {
   "sid": 19874,
@@ -134,8 +134,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "25864": {
   "sid": 25864,
@@ -174,8 +174,8 @@
    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "29539": {
   "sid": 29539,
@@ -189,7 +189,7 @@
    "symbol": "USDT"
   },
   "http": {
-   "method": "MCP tools/call",
+   "method": "MCP tools/call ctbz_draw_questions",
    "status": 402
   },
   "probe": "challenge",
@@ -214,8 +214,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-09-16",
-  "scannedAt": "2026-09-16T12:02:28.158Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "30379": {
   "sid": 30379,
@@ -254,8 +254,8 @@
    "payTo": "0xad2a2616Ac39A02E46427d9FFc08d45A32a54bfe",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "33200": {
   "sid": 33200,
@@ -294,8 +294,8 @@
    "payTo": "0xdD1F170dA5c654391cd88D45843F4B405C3a5241",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "33278": {
   "sid": 33278,
@@ -334,8 +334,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "33279": {
   "sid": 33279,
@@ -374,8 +374,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "33342": {
   "sid": 33342,
@@ -472,8 +472,8 @@
    "payTo": "0x7DB2bcAC1B61b5A9eB906b3c22c81200998fb8CC",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "34080": {
   "sid": 34080,
@@ -512,8 +512,8 @@
    "payTo": "0x6F95b756051A955DB66E92F438fBC16271E638e7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "34150": {
   "sid": 34150,
@@ -561,8 +561,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "34176": {
   "sid": 34176,
@@ -610,8 +610,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "34606": {
   "sid": 34606,
@@ -659,8 +659,106 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
+ },
+ "34608": {
+  "sid": 34608,
+  "service": "Inflation & Liquidity Signal",
+  "asp": "Bit Monk Macro",
+  "aspAgentId": "6069",
+  "endpoint": "https://inflation-signal.airblock2026.workers.dev/mcp",
+  "listed": {
+   "feeAmount": 0.01,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP tools/call scan_bottoms",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "eip712_domain_mismatch"
+  ],
+  "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0xB4CB…fbC6 for inflation-signal.airblock2026.workers.dev (accepts[0], exact). WARN: eip712_domain_mismatch.",
+  "findings": [
+   {
+    "code": "eip712_domain_mismatch",
+    "severity": "WARN",
+    "subject": null,
+    "message": "extra declares the EIP-712 domain name \"USDT₀\" version \"1\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "10000",
+    "human": "0.01",
+    "listed": "10000"
+   },
+   "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
+ },
+ "34609": {
+  "sid": 34609,
+  "service": "Seoul Apartment Signal",
+  "asp": "Bit Monk Seoul Apt",
+  "aspAgentId": "6070",
+  "endpoint": "https://seoul-apt-signal.airblock2026.workers.dev/mcp",
+  "listed": {
+   "feeAmount": 0.01,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP tools/call scan_bottoms",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "eip712_domain_mismatch"
+  ],
+  "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0xB4CB…fbC6 for seoul-apt-signal.airblock2026.workers.dev (accepts[0], exact). WARN: eip712_domain_mismatch.",
+  "findings": [
+   {
+    "code": "eip712_domain_mismatch",
+    "severity": "WARN",
+    "subject": null,
+    "message": "extra declares the EIP-712 domain name \"USDT₀\" version \"1\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "10000",
+    "human": "0.01",
+    "listed": "10000"
+   },
+   "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "35287": {
   "sid": 35287,
@@ -708,8 +806,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "35305": {
   "sid": 35305,
@@ -757,8 +855,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "35351": {
   "sid": 35351,
@@ -797,8 +895,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "35352": {
   "sid": 35352,
@@ -837,8 +935,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "36109": {
   "sid": 36109,
@@ -877,8 +975,8 @@
    "payTo": "0x4ABBAe03affF90F50d4F6B42b3E362f5228aD4C7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "36366": {
   "sid": 36366,
@@ -917,8 +1015,8 @@
    "payTo": "0x4ABBAe03affF90F50d4F6B42b3E362f5228aD4C7",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "38037": {
   "sid": 38037,
@@ -966,8 +1064,8 @@
    "payTo": "0xC8a8973Cf7FE41bDC9a85f70C279c9Bdc2EB8D0C",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "39139": {
   "sid": 39139,
@@ -1006,8 +1104,8 @@
    "payTo": "0xD4A80CddA4D12896Ea3Af9D210477c014758Aa9d",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "39343": {
   "sid": 39343,
@@ -1095,8 +1193,8 @@
    "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "39876": {
   "sid": 39876,
@@ -1205,8 +1303,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "39938": {
   "sid": 39938,
@@ -1245,8 +1343,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "40010": {
   "sid": 40010,
@@ -1294,8 +1392,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "40011": {
   "sid": 40011,
@@ -1343,8 +1441,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "40012": {
   "sid": 40012,
@@ -1392,8 +1490,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "40042": {
   "sid": 40042,
@@ -1432,8 +1530,8 @@
    "payTo": "0x7389cd0Ad753186Cb0EF81f43B5E0cB4FfC847fC",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  },
  "40665": {
   "sid": 40665,
@@ -1481,7 +1579,7 @@
    "payTo": "0xc71639F04EdF0B21040c4bebc5082fdDB2327512",
    "entries": 1
   },
-  "scanDate": "2026-09-17",
-  "scannedAt": "2026-09-17T20:41:20.476Z"
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T09:00:10.057Z"
  }
 }

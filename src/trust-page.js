@@ -45,6 +45,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <h1>OKX.AI trust scan</h1>
 <p class="lead">Every paid A2MCP service we can find on OKX.AI, requested once <strong>without paying</strong>. Guardian reads the x402 challenge and checks it against that service's own listing — price, token, endpoint, payee, and the token's EIP-712 domain — and against shell payloads. Verdict <span class="ALLOW">ALLOW</span> / <span class="WARN">WARN</span> / <span class="DENY">DENY</span>. Nothing is signed or paid.</p>
 <div id="hero" class="card deny-card" style="margin:14px 0 4px"><div style="font-size:17px;margin-bottom:4px"><span class="badge DENY">CAUGHT</span> A real malicious OKX.AI listing, flagged by Guardian.</div><div class="muted">Market Signal API (sid 39876, seller Atlas Data API) hid a shell payload on 0m.ar — DENY endpoint_url_injection, challenge_field_injection. It has since left marketplace discovery; the verdict below is re-derived live from the saved 16 Sep challenge.</div></div>
+<div id="livenow" class="muted" style="margin:8px 0 2px;font-size:13px"></div>
 <noscript><p class="muted">This dashboard loads its live figures with JavaScript. Latest scan: 67 paid OKX.AI services checked, 0 attacks in today's run; the one caught on 16 Sep (sid 39876) is above. Raw data: <a href="/trust-scan">/trust-scan</a>, <a href="/trust-scans">/trust-scans</a>.</p></noscript>
 <div id="asof" class="muted" style="margin:8px 0 18px"></div>
 
@@ -112,6 +113,15 @@ function checkSid(){
 document.getElementById('sidForm').addEventListener('submit',function(e){e.preventDefault();checkSid()});
 function kpi(v,k,cls){var c=el('div','card kpi');var vv=el('div','v'+(cls?' '+cls:''),String(v));c.appendChild(vv);c.appendChild(el('div','k',k));return c}
 
+// Live proof it works right now: probe a staged attacker demo seller and show the DENY with a timestamp.
+(function(){
+  var host=location.origin;
+  fetch('/probe-payment',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:host+'/demo/x402/header-body-split',expected:{feeAmount:0.001,feeToken:'0x779ded0c9e1022225f8e0630b35a9b54be713736',endpoint:host+'/demo/x402/header-body-split'}})})
+  .then(function(r){return r.json()}).then(function(j){
+    var e=$('livenow');if(!e)return;
+    if(j&&j.verdict){e.innerHTML='';var b=el('span','badge '+j.verdict,j.verdict);e.appendChild(b);e.appendChild(document.createTextNode(' live check just now ('+new Date().toISOString().slice(11,19)+' UTC): a staged attacker (header/body payee split) \\u2192 '+j.verdict+' '+(j.reasons||[]).slice(0,2).join(', ')+'. Try any seller on /pay-safe.'));}
+  }).catch(function(){});
+})();
 var LATEST_DENY_SIDS={};
 fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   var snaps=(h.snapshots||[]).slice();
