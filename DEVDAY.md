@@ -91,7 +91,7 @@ through `scripts/safe-pay.js`: listing → unpaid challenge → Pay-Safe ALLOW �
 ## Unedited agent runs (the hook, live)
 
 We pointed a headless Claude Code agent at the real Onchain OS CLI and recorded every step
-([demo-video/captures/agent-runs/](demo-video/captures/agent-runs)). The runs use a clean copy of the repo
+(live at **[/agent-runs](https://guardian-mcp-rho.vercel.app/agent-runs)**; raw transcripts in [demo-video/captures/agent-runs/](demo-video/captures/agent-runs)). The runs use a clean copy of the repo
 with no secrets, a tight per-scenario allow list, and the Guardian hook; `payment pay` is also a deny-rule
 backstop, and the demo sellers have no facilitator, so no funds can move. Nothing is edited.
 
