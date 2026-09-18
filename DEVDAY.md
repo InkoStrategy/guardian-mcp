@@ -53,7 +53,7 @@ What the scan found:
   pay-local` builds the domain from `extra.name` / `extra.version`, so signatures built from those challenges
   fail on-chain. One of the five is the attack listing above; the other four are regular sellers. This is an
   on-chain fact, not a table lookup: `node scripts/verify-eip712-domain.js` reads `DOMAIN_SEPARATOR()`
-  (selector `0x3644e515`) live from the token and shows every declared pair but the canonical one is rejected.
+  (selector `0x3644e515`) live from the token and shows every declared pair but the canonical one is rejected. The same read is a live endpoint: **[GET /verify-eip712-domain](https://guardian-mcp-rho.vercel.app/verify-eip712-domain)** returns the on-chain DOMAIN_SEPARATOR and which declared pair matches.
 - **Heuristics tuned on real data.** The first pass produced 3 false DENYs on honest sellers whose
   hosts contain "okx" or use cheap TLDs. Host patterns are now split by strength and weighed against
   the listing, and the rerun has one DENY: the real attack.
