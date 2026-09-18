@@ -1,0 +1,109 @@
+WEBVTT
+
+1
+00:00:00.800 --> 00:00:07.975
+A real AI agent, about to pay a listing on OKX.AI. Watch Guardian stop it before it signs.
+
+2
+00:00:08.800 --> 00:00:15.863
+GuardianMCP Pay-Safe — one call before every x402 payment on OKX.AI.
+
+3
+00:00:15.913 --> 00:00:24.531
+It runs inside OKX's own CLI — watch it ask Guardian about a real attack listing we caught on OKX.AI.
+
+4
+00:00:25.181 --> 00:00:30.655
+A buyer agent gets a 402 payment challenge — and it is written by the seller.
+
+5
+00:00:30.705 --> 00:00:37.830
+Today the agent trusts it blindly — nothing checks that challenge against the listing before it signs.
+
+6
+00:00:37.880 --> 00:00:42.510
+Guardian is that one check — and nothing is signed or paid to run it.
+
+7
+00:00:43.160 --> 00:00:52.582
+On the live Pay-Safe page, Guardian compares each challenge to the listing, to the payee you expect, and to the token’s EIP-712 domain.
+
+8
+00:00:52.632 --> 00:00:59.200
+The honest seller matches on every row: ALLOW. The rest are staged attacks.
+
+9
+00:00:59.850 --> 00:01:05.932
+Price bait asks a thousand times the listed price: DENY, amount above listing.
+
+10
+00:01:08.250 --> 00:01:15.006
+A poisoned payee copies the first and last characters of your wallet: DENY, payTo poisoning.
+
+11
+00:01:16.650 --> 00:01:24.359
+A challenge declaring an EIP-712 domain the token does not use would fail at settlement: WARN.
+
+12
+00:01:25.050 --> 00:01:34.861
+These aren't hypothetical: on 16 September we scanned 62 paid OKX.AI services, without paying any.
+
+13
+00:01:34.911 --> 00:01:43.160
+25 returned a challenge — 13 ALLOW, 11 WARN, and exactly one DENY: a real attack listing.
+
+14
+00:01:43.810 --> 00:01:51.931
+Guardian is a real MCP server at /mcp, and OKX's own CLI discovers all ten of its tools.
+
+15
+00:01:51.981 --> 00:01:57.760
+The nine free tools return a verdict; guard returns an x402 payment quote.
+
+16
+00:01:57.810 --> 00:02:12.819
+check_listing on sid 39876 — the attack listing we flagged on 16 September (since removed) — returns DENY: its endpoint hid a shell command, caught without ever contacting it.
+
+17
+00:02:13.469 --> 00:02:22.763
+The second new piece guards the payment itself: Onchain OS saves each quote to a file, and payment pay signs that exact file.
+
+18
+00:02:22.813 --> 00:02:31.535
+Here a seller's 402 body shows the listed wallet, but its header pays a different address — and the CLI saved the header.
+
+19
+00:02:31.585 --> 00:02:40.408
+Guardian checks the saved file and returns DENY, challenge_header_body_mismatch — without even knowing the listing’s payee.
+
+20
+00:02:40.458 --> 00:02:48.371
+The Claude Code hook then blocks payment pay. On 24 live challenges the rule fired zero false DENYs.
+
+21
+00:02:49.021 --> 00:02:59.009
+This isn't a script: we pointed a real headless AI agent at the live CLI. It quotes the seller and flags the payee mismatch itself.
+
+22
+00:02:59.059 --> 00:03:04.828
+It checks the quote with Guardian and gets DENY, challenge_header_body_mismatch.
+
+23
+00:03:04.878 --> 00:03:11.904
+Then it tries to pay anyway — and the Claude Code hook blocks it. The agent cannot pay the scam.
+
+24
+00:03:13.021 --> 00:03:23.091
+Guardian also lets good payments through: a real listing, sid 39856, passed ALLOW and the quote matched the check.
+
+25
+00:03:23.141 --> 00:03:35.640
+The owner approved it; 0.005 USD₮0 settled on X Layer, block 70825096, and an on-chain check confirms it matches.
+
+26
+00:03:37.021 --> 00:03:49.708
+Add Guardian to any MCP client in one line — ten tools, 41 payment rules, 172 passing tests, built 16 to 17 September.
+
+27
+00:03:49.758 --> 00:03:54.181
+One call before every x402 payment on OKX.AI.

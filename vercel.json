@@ -10,5 +10,8 @@
   ],
   "rewrites": [
     { "source": "/((?!demo-v61).*)", "destination": "/api/index" }
+  ],
+  "headers": [
+    { "source": "/demo-v61.en.vtt", "headers": [{ "key": "content-type", "value": "text/vtt; charset=utf-8" }] }
   ]
 }

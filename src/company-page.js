@@ -52,12 +52,24 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 
 <h2>Market &amp; moat</h2>
 <div class="grid two">
-  <div class="card"><h3>A market that is appearing now</h3><p>The paid-service side of OKX.AI grew from 62 to 67 discoverable services in a single day of our scans, each one a seller writing its own 402 challenge. Every one of those is a payment an agent will make with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.</p></div>
+  <div class="card"><h3>A market that is appearing now</h3><p id="growth">The paid-service side of OKX.AI is growing by the day, each service a seller writing its own 402 challenge. Every one is a payment an agent will make with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.</p></div>
   <div class="card"><h3>Why it is defensible</h3><p><strong>Not OKX itself:</strong> a neutral, cross-agent safety layer that also scans the marketplace is awkward for the platform to run against its own sellers. <strong>Not sellers fixing their own 402s:</strong> that removes honest mistakes, not malicious listings, and buyers still need to verify. <strong>Not a fork:</strong> the value is the shared threat registry (network effect), the dated public dataset of real attack shapes, and being wired into OKX's own CLI and the pay command — none of which a copy starts with.</p></div>
 </div>
 
 <h2>How this differs from wallet transaction-simulation</h2>
-<div class="card"><p>Tools like Blockaid, Blowfish, Wallet Guard / Harpie and ScamSniffer simulate a <em>signed EVM transaction</em> inside a wallet, or flag known-bad addresses and phishing sites. Guardian does something they don't: it checks the seller-written <span class="code">x402</span> <em>402 challenge</em> against the marketplace listing <strong>before the agent signs</strong>, inside OKX's own CLI and on the pay command itself — a pre-payment, agent-commerce category. (Guardian also reuses a classic EVM firewall + a ScamSniffer-seeded registry for the address/domain layer, so it is a superset, not a competitor, of that check.)</p></div>
+<div class="card"><p>Tools like Blockaid, Blowfish, Wallet Guard / Harpie and ScamSniffer simulate a <em>signed EVM transaction</em> inside a wallet, or flag known-bad addresses and phishing sites. Guardian checks the seller-written <span class="code">x402</span> <em>402 challenge</em> against the marketplace listing <strong>before the agent signs</strong>, inside OKX's own CLI and on the pay command — a pre-payment, agent-commerce category none of them cover.</p>
+<div style="overflow-x:auto;margin-top:12px"><table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="color:var(--muted);text-align:left"><th style="padding:6px 8px">&nbsp;</th><th style="padding:6px 8px">Checks <em>before</em> signing</th><th style="padding:6px 8px">x402-challenge aware</th><th style="padding:6px 8px">Compares to the listing</th><th style="padding:6px 8px">Cross-agent registry</th><th style="padding:6px 8px">Inside the pay command</th></tr></thead>
+<tbody>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px"><strong style="color:var(--ok)">GuardianMCP</strong></td><td style="padding:6px 8px;color:var(--ok)">yes</td><td style="padding:6px 8px;color:var(--ok)">yes</td><td style="padding:6px 8px;color:var(--ok)">yes</td><td style="padding:6px 8px;color:var(--ok)">yes</td><td style="padding:6px 8px;color:var(--ok)">yes</td></tr>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px">Blockaid / Blowfish</td><td style="padding:6px 8px">signed-tx sim</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td></tr>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px">Wallet Guard / Harpie</td><td style="padding:6px 8px">signed-tx sim</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td></tr>
+<tr style="border-top:1px solid var(--line)"><td style="padding:6px 8px">ScamSniffer</td><td style="padding:6px 8px;color:var(--muted)">address/domain lists</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px;color:var(--muted)">no</td><td style="padding:6px 8px">shared lists</td><td style="padding:6px 8px;color:var(--muted)">no</td></tr>
+</tbody></table></div>
+<p class="note" style="margin-top:8px">Guardian also reuses a classic EVM firewall + a ScamSniffer-seeded registry for the address/domain layer, so it is a superset of that check. The network effect is real and testable: our suite includes a case where agent A's DENY protects agent B via the shared registry.</p></div>
+
+<h2>Return on the fee</h2>
+<div class="card"><p>The premium check is <strong>0.099 USD₮0</strong>. A single prevented loss — a swapped payee draining one payment, or a wrong-domain payment that is charged but never settles — is worth many multiples of that. Priced against value, not compute: the fee is a rounding error next to one drained agent payment.</p></div>
 
 <h2>Unit economics &amp; honest traction</h2>
 <div class="grid two">
@@ -145,6 +157,9 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   var eip=base.eip712Count||(base.warnCodes&&base.warnCodes.eip712_domain_mismatch)||0;
   document.getElementById('c4').textContent=String(eip||'—');
   document.getElementById('costnote').textContent='From the '+base.date+' scan: '+chal+' of '+ (t.services||'—') +' paid services returned a challenge; '+flagged+' of those '+chal+' ('+(chal?Math.round(flagged/chal*100):0)+'%) drew a WARN or DENY, including '+(t.deny||0)+' outright attack listing. Latest re-scan '+(latest?latest.date:base.date)+' ('+((latest&&latest.totals&&latest.totals.services)||t.services)+' services).';
+  // Dynamic growth from the first vs latest snapshot (no hardcoded numbers).
+  var g=document.getElementById('growth');
+  if(g && snaps.length>=2){var f=snaps[0].totals||{},L=snaps[snaps.length-1].totals||{};if(f.services&&L.services)g.textContent='The paid-service side of OKX.AI grew from '+f.services+' ('+snaps[0].date+') to '+L.services+' ('+snaps[snaps.length-1].date+') discoverable services across our scans, each a seller writing its own 402 challenge with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.';}
   var rate=chal?Math.round(flagged/chal*100):0;
   document.getElementById('sizing').textContent='Illustrative, not a forecast (0 paid calls today): if 1,000 buyer agents each made 20 x402 payments a day, at the observed '+rate+'% flag rate that is about '+(20000*rate/100).toLocaleString()+' payments a day the current path never checks — one call each is the wedge.';
 }).catch(function(){});
