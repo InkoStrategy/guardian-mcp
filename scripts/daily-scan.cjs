@@ -97,11 +97,37 @@ function main() {
   if (PUSH) {
     const push = run('git', ['push', '-q', 'origin', 'HEAD']);
     if (push.code !== 0) { log('PUSH FAILED (commit is kept locally) :: ' + (push.err || push.out).slice(0, 300)); return 1; }
-    log('pushed — /trust will show ' + date + ' once Vercel redeploys');
-  } else {
-    log('committed locally only (pass --push to publish)');
+    log('pushed — waiting for Vercel to serve it');
+    return verifyPublished(t.services);
   }
+  log('committed locally only (pass --push to publish)');
   return 0;
 }
 
-process.exit(main());
+/**
+ * Pushing is not publishing: a deploy can succeed and still serve a stale bundle (Vercel's build cache
+ * rebuilt nothing when only docs/ changed, which silently served old scans for hours). So confirm the live
+ * site actually reports this run's numbers, and say so in the log when it does not.
+ */
+async function verifyPublished(expectedServices) {
+  const url = 'https://guardian-mcp-rho.vercel.app/trust-scan';
+  for (let i = 1; i <= 20; i++) {
+    await new Promise((r) => setTimeout(r, 30000));
+    try {
+      const res = await fetch(url, { headers: { 'cache-control': 'no-cache' } });
+      const j = await res.json();
+      const live = j && j.totals && j.totals.services;
+      if (live === expectedServices) { log('published: the live site reports ' + live + ' services'); return 0; }
+      if (i % 5 === 0) log('  still serving ' + live + ' (want ' + expectedServices + ') after ' + (i * 30) + 's');
+    } catch (e) { if (i % 5 === 0) log('  live check failed: ' + e.message); }
+  }
+  log('WARNING: pushed, but the live site still does not report ' + expectedServices +
+      ' services after 10 min. The commit is safe in git; check the Vercel deployment.');
+  return 0;
+}
+
+main2();
+async function main2() {
+  const code = main();
+  process.exit(code instanceof Promise ? await code : code);
+}
