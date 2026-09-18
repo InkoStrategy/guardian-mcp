@@ -44,7 +44,8 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 </style></head><body><div class="wrap">
 <h1>OKX.AI trust scan</h1>
 <p class="lead">Every paid A2MCP service we can find on OKX.AI, requested once <strong>without paying</strong>. Guardian reads the x402 challenge and checks it against that service's own listing — price, token, endpoint, payee, and the token's EIP-712 domain — and against shell payloads. Verdict <span class="ALLOW">ALLOW</span> / <span class="WARN">WARN</span> / <span class="DENY">DENY</span>. Nothing is signed or paid.</p>
-<div id="hero" class="card deny-card" style="display:none;margin:14px 0 4px"></div>
+<div id="hero" class="card deny-card" style="margin:14px 0 4px"><div style="font-size:17px;margin-bottom:4px"><span class="badge DENY">CAUGHT</span> A real malicious OKX.AI listing, flagged by Guardian.</div><div class="muted">Market Signal API (sid 39876, seller Atlas Data API) hid a shell payload on 0m.ar — DENY endpoint_url_injection, challenge_field_injection. It has since left marketplace discovery; the verdict below is re-derived live from the saved 16 Sep challenge.</div></div>
+<noscript><p class="muted">This dashboard loads its live figures with JavaScript. Latest scan: 67 paid OKX.AI services checked, 0 attacks in today's run; the one caught on 16 Sep (sid 39876) is above. Raw data: <a href="/trust-scan">/trust-scan</a>, <a href="/trust-scans">/trust-scans</a>.</p></noscript>
 <div id="asof" class="muted" style="margin:8px 0 18px"></div>
 
 <h2>Check any OKX.AI listing by sid</h2>
@@ -125,7 +126,7 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   var caught=Object.keys(caughtSids);
   var hero=$('hero');
   if(caught.length){
-    hero.style.display='';
+    hero.innerHTML='';hero.style.display='';
     var first=caughtSids[caught[0]];
     var strong=el('div');strong.style.fontSize='17px';strong.style.marginBottom='4px';
     strong.appendChild(el('span','badge DENY','CAUGHT'));

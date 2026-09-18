@@ -75,6 +75,19 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
   reference_diff: { template: "uniswap-swap", drift: [] }        // this call vs a known-good template
   shared_intel: { your_denies_shared: 3, protected_by_others: 12 } // the cross-agent registry, prioritised</pre></div>
 
+<h2>The premium tier is live — here is its real 402</h2>
+<p class="note">Not a mockup: the paid <span class="code">guard</span> tool returns a real x402 <span class="code">402</span> challenge over the MCP endpoint right now (nothing is paid to see it). Fetched live from <span class="code">/mcp</span>:</p>
+<div class="card"><pre id="guard402" style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--muted)">loading the live 402 challenge…</pre></div>
+
+<h2>Roadmap to first revenue</h2>
+<div class="card"><ul>
+  <li><strong>Now (live):</strong> free checks + the paid <span class="code">guard</span> 402, the OKX-native integration, the public trust scan, one settled on-chain payment.</li>
+  <li><strong>Next 2 weeks:</strong> first 5 design partners — buyer-agent developers on OKX.AI — running real payments through the hook; first paid <span class="code">guard</span> calls.</li>
+  <li><strong>Then:</strong> a hosted SLA tier for one agent framework or wallet; daily automated trust scan as a public good that drives inbound.</li>
+</ul>
+<p class="note" style="margin-top:10px"><strong>Unfair advantage:</strong> we are already inside OKX's own CLI flow and on the pay command, we hold a dated public dataset of real attack shapes, and every DENY compounds the shared registry — a mover after us starts from zero on all three.</p>
+<p class="note"><strong>Design partners &amp; contact:</strong> building an agent or wallet that makes x402 payments on OKX.AI? Be one of the first five — <a href="https://t.me/d_berlinskiy">@d_berlinskiy</a>.</p></div>
+
 <h2>Who it is for</h2>
 <div class="grid three">
   <div class="card"><h3>Buyer agents &amp; their operators</h3><p>The ones who lose the funds. One call — an Onchain OS skill, an MCP tool, or a Claude Code hook — before every x402 payment.</p></div>
@@ -109,6 +122,15 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <p class="foot">See it work: <a href="/pay-safe">/pay-safe</a> (try a payment) · <a href="/trust">/trust</a> (live marketplace scan) · <a href="https://github.com/InkoStrategy/guardian-mcp">source</a> · MCP server at <span class="code">/mcp</span>. GuardianMCP · OKX.AI agent #13730 (identity registered; marketplace listing under review) · Team LNO Alpha.</p>
 </div>
 <script>
+// Prove the premium tier is live: fetch the real x402 402 the guard tool returns (nothing is paid).
+fetch('/mcp',{method:'POST',headers:{'content-type':'application/json',accept:'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'guard',arguments:{to:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',data:'0x',chainId:1}}})})
+.then(function(r){return r.json()}).then(function(j){
+  var el=document.getElementById('guard402');if(!el)return;
+  var d=j&&j.error&&j.error.data;var a=d&&d.accepts&&d.accepts[0];
+  if(!a){el.textContent='guard is not accepting payments in this environment right now.';return}
+  el.textContent='HTTP 402 · x402 v'+(d.x402Version||2)+'\\n  scheme:  '+a.scheme+'\\n  network: '+a.network+' (X Layer)\\n  amount:  '+a.amount+' atomic ('+(Number(a.amount)/1e6)+' USD\\u20ae0)\\n  asset:   '+a.asset+'\\n  payTo:   '+a.payTo+'\\n  -> the client replays the same call with a PAYMENT-SIGNATURE, settled by the OKX facilitator (gasless).';
+}).catch(function(){var el=document.getElementById('guard402');if(el)el.textContent='could not reach /mcp just now.'});
+
 fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   var snaps=h.snapshots||[];
   var byDate={};snaps.forEach(function(s){byDate[s.date]=s});
