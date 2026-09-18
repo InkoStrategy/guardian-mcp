@@ -41,13 +41,30 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 
 <h2>The cost of the gap</h2>
 <div class="card"><div class="cost" id="cost">
-  <div class="stat"><div class="v" id="c1">—</div><div class="k">paid services scanned</div></div>
+  <div class="stat"><div class="v" id="c1">—</div><div class="k">paid services scanned (latest, 17 Sep)</div></div>
   <div class="stat"><div class="v warn" id="c2">—</div><div class="k">of checked challenges we flagged</div></div>
   <div class="stat"><div class="v deny" id="c3">—</div><div class="k">outright attack listing (16 Sep)</div></div>
   <div class="stat"><div class="v warn" id="c4">—</div><div class="k">declared a wrong signing domain</div></div>
 </div>
 <p class="note" id="costnote" style="margin-top:10px"></p></div>
 <p class="note">Each unguarded payment is an uncapped loss: a swapped payee sends funds to an attacker, a wrong EIP-712 domain means the buyer pays and the call still fails at settlement, and a shell payload in a listing turns a naive buyer agent into remote code execution. The check costs nothing to run and nothing is signed to run it.</p>
+<p class="note" id="sizing"></p>
+
+<h2>Market &amp; moat</h2>
+<div class="grid two">
+  <div class="card"><h3>A market that is appearing now</h3><p>The paid-service side of OKX.AI grew from 62 to 67 discoverable services in a single day of our scans, each one a seller writing its own 402 challenge. Every one of those is a payment an agent will make with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.</p></div>
+  <div class="card"><h3>Why it is defensible</h3><p><strong>Not OKX itself:</strong> a neutral, cross-agent safety layer that also scans the marketplace is awkward for the platform to run against its own sellers. <strong>Not sellers fixing their own 402s:</strong> that removes honest mistakes, not malicious listings, and buyers still need to verify. <strong>Not a fork:</strong> the value is the shared threat registry (network effect), the dated public dataset of real attack shapes, and being wired into OKX's own CLI and the pay command — none of which a copy starts with.</p></div>
+</div>
+
+<h2>What the premium buys (free preview)</h2>
+<p class="note">The free tools return a single stateless verdict. The paid <span class="code">guard</span> tool adds the things an operator running many payments needs. A sample of what a guard response carries, so the value is visible with no paid call:</p>
+<div class="card"><pre style="margin:0;white-space:pre-wrap;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--muted)">guard verdict (illustrative shape)
+  verdict: ALLOW
+  session:  { id: task-42, actions_this_task: 6, value_moved: "0.31 USDT",
+              velocity: "ok", first_suspicious_at: null }        // session health across the whole task
+  owner_alert: null                                              // fires the owner on a compromise pattern
+  reference_diff: { template: "uniswap-swap", drift: [] }        // this call vs a known-good template
+  shared_intel: { your_denies_shared: 3, protected_by_others: 12 } // the cross-agent registry, prioritised</pre></div>
 
 <h2>Who it is for</h2>
 <div class="grid three">
@@ -96,7 +113,9 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   // wrong-signing-domain count across ALL verdicts (the DENY attack listing carried it too)
   var eip=base.eip712Count||(base.warnCodes&&base.warnCodes.eip712_domain_mismatch)||0;
   document.getElementById('c4').textContent=String(eip||'—');
-  document.getElementById('costnote').textContent='From the '+base.date+' scan: '+chal+' of '+ (t.services||'—') +' paid services returned a challenge; '+flagged+' of those '+chal+' ('+(chal?Math.round(flagged/chal*100):0)+'%) drew a WARN or DENY, including '+(t.deny||0)+' outright attack listing. Re-scanned '+(latest?latest.date:base.date)+'.';
+  document.getElementById('costnote').textContent='From the '+base.date+' scan: '+chal+' of '+ (t.services||'—') +' paid services returned a challenge; '+flagged+' of those '+chal+' ('+(chal?Math.round(flagged/chal*100):0)+'%) drew a WARN or DENY, including '+(t.deny||0)+' outright attack listing. Latest re-scan '+(latest?latest.date:base.date)+' ('+((latest&&latest.totals&&latest.totals.services)||t.services)+' services).';
+  var rate=chal?Math.round(flagged/chal*100):0;
+  document.getElementById('sizing').textContent='Illustrative, not a forecast (0 paid calls today): if 1,000 buyer agents each made 20 x402 payments a day, at the observed '+rate+'% flag rate that is about '+(20000*rate/100).toLocaleString()+' payments a day the current path never checks — one call each is the wedge.';
 }).catch(function(){});
 </script></body></html>`;
 }

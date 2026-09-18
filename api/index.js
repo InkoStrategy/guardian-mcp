@@ -283,18 +283,24 @@ module.exports = async function handler(req, res) {
   if (method === 'GET' && (apiPath === '/stats' || apiPath === '/admin/stats')) {
     const internal = apiPath === '/admin/stats';
     if (internal && !isAdmin(req)) return send(res, 401, { ok: false, error: 'admin token required (X-Admin-Token)' });
-    try {
-      const store = getStore();
-      const snap = await stats.snapshot(store, { internal, ruleCodes: internal ? Array.from(RULE_CODES) : [] });
-      if (internal) {
-        snap.recent_feedback = await feedback.recent(store, 50);
-        snap.pricing = await pricing.resolve(store, process.env);
-      }
-      res.setHeader('cache-control', internal ? 'no-store' : 'public, max-age=60');
-      return send(res, 200, Object.assign({ ok: true }, snap));
-    } catch (err) {
-      return send(res, 503, { ok: false, error: 'stats unavailable: ' + err.message });
+    // The shared store can time out on a cold start; retry once, then degrade to a 200 rather than a 503 so
+    // the public dashboard always resolves on the first hit.
+    let lastErr;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const store = getStore();
+        const snap = await stats.snapshot(store, { internal, ruleCodes: internal ? Array.from(RULE_CODES) : [] });
+        if (internal) {
+          snap.recent_feedback = await feedback.recent(store, 50);
+          snap.pricing = await pricing.resolve(store, process.env);
+        }
+        res.setHeader('cache-control', internal ? 'no-store' : 'public, max-age=60');
+        return send(res, 200, Object.assign({ ok: true }, snap));
+      } catch (err) { lastErr = err; }
     }
+    if (internal) return send(res, 503, { ok: false, error: 'stats unavailable: ' + lastErr.message });
+    res.setHeader('cache-control', 'public, max-age=10');
+    return send(res, 200, { ok: true, degraded: true, note: 'shared store did not answer in time; counters will fill on a warm request', total_checks: null });
   }
   if (method === 'GET' && apiPath === '/admin/premium') {
     if (!isAdmin(req)) return send(res, 401, { ok: false, error: 'admin token required (X-Admin-Token)' });

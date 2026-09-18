@@ -22,9 +22,9 @@
       "steps": [
         { "cmd": "onchainos payment quote .../demo/x402/honest", "out": "Will pay 0.001 USDT (exact, X Layer)." },
         { "cmd": "node scripts/check-quote.js --payment-id pay_28fe68… --fee 0.001 --token 0x779d… --pay-to 0xe1c6…", "out": "Verdict ALLOW (risk 0). Next: onchainos payment pay … (without --yes the wallet only confirms and pays nothing)." },
-        { "cmd": "onchainos payment pay --payment-id pay_28fe68… --selected-index 0 --yes", "out": "Held — the pay does not execute; the final approval stays with the wallet owner." }
+        { "cmd": "onchainos payment pay --payment-id pay_28fe68… --selected-index 0 --yes", "out": "Not executed — in this locked-down harness the pay is refused by the sandbox, so no funds move." }
       ],
-      "conclusion": "Guardian lets a good payment through without taking the final decision away from the owner."
+      "conclusion": "Guardian's part is the clean ALLOW verdict; the pay itself never runs here, and the final --yes still belongs to the wallet owner."
     },
     {
       "id": "guardian-malicious-listing-39876",

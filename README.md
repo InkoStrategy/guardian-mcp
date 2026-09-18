@@ -1,5 +1,10 @@
 # Guardian MCP
 
+**OKX Dev Day 2026 — Build a Company / Best Remote Demo.** Judge doc: [DEVDAY.md](DEVDAY.md) · Demo video (v6, 3:48): https://youtu.be/s8KSV2YMlyE
+Live: [/agent-runs](https://guardian-mcp-rho.vercel.app/agent-runs) (a real agent's scam pay blocked) · [/trust](https://guardian-mcp-rho.vercel.app/trust) (marketplace scan) · [/company](https://guardian-mcp-rho.vercel.app/company) · [/pay-safe](https://guardian-mcp-rho.vercel.app/pay-safe) · [/mcp](https://guardian-mcp-rho.vercel.app/mcp)
+
+---
+
 Система контроля целостности AI‑агента для on‑chain действий. Принимает транзакцию (`to` + `data`) или запрос
 на подпись и, опционально, контекст агента. Возвращает вердикт **ALLOW / WARN / DENY**, причины, риск‑скор 0–100,
 однострочное объяснение на человеческом языке, рекомендации и, где возможно, готовую безопасную замену

@@ -1,9 +1,16 @@
 # GuardianMCP Pay-Safe — OKX Dev Day 2026
 
-**Team:** LNO Alpha (remote) · **Track:** Build a Company · **Live:** https://guardian-mcp-rho.vercel.app/pay-safe
+**Team:** LNO Alpha (remote) · **Track:** Build a Company / Best Remote Demo
+
+**Judges start here:**
+[**/agent-runs**](https://guardian-mcp-rho.vercel.app/agent-runs) (watch a real agent's scam payment get blocked) ·
+[**/trust**](https://guardian-mcp-rho.vercel.app/trust) (live OKX.AI marketplace scan) ·
+[**/company**](https://guardian-mcp-rho.vercel.app/company) (the business) ·
+[**/pay-safe**](https://guardian-mcp-rho.vercel.app/pay-safe) (try it) ·
+[**/mcp**](https://guardian-mcp-rho.vercel.app/mcp) (MCP server)
+
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
-**Demo video (3:22):** https://youtu.be/s8KSV2YMlyE
-**MCP server:** https://guardian-mcp-rho.vercel.app/mcp
+**Demo video (v6, 3:48):** https://youtu.be/s8KSV2YMlyE _(uploading the v6 cut with the live-agent scene; the rendered file ships in the repo)_
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
 > what the OKX.AI listing promised (price, token, endpoint), with the payee the buyer expects, and with the
@@ -23,14 +30,15 @@ the live dashboard at **[/trust](https://guardian-mcp-rho.vercel.app/trust)** an
 | Result | 16 Sep 2026 | 17 Sep 2026 |
 |---|---|---|
 | Paid A2MCP services found | 62 | 67 |
-| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 | 30 |
-| ALLOW | 13 | 15 |
-| WARN | 11 | 15 |
+| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 | 29 |
+| ALLOW | 13 | 16 |
+| WARN | 11 | 13 |
 | DENY | 1 | 0 |
 
-The 16 Sep DENY was the malicious "Market Signal API" (sid 39876) below. By the 17 Sep re-scan it was gone
-from the marketplace; Guardian still returns its verdict by sid (`check_listing` falls back to the dated
-snapshot that last saw it), so the finding stays reproducible.
+(Live figures: `GET /trust-scans`.) The 16 Sep DENY was the malicious "Market Signal API" (sid 39876) below.
+By the 17 Sep re-scan it had dropped out of marketplace **discovery** (`agent service-match`); the listing
+record still resolves by explicit sid via `agent service-detail`, and Guardian still returns its verdict
+(`check_listing` falls back to the dated snapshot that last saw it), so the finding stays reproducible.
 
 What the scan found:
 
@@ -54,7 +62,7 @@ What the scan found:
 
 | Commit (UTC date) | Feature |
 |---|---|
-| `0a622e9` 17 Sep | Real MCP server at `POST /mcp` (Streamable HTTP): free tools `check_payment`, `probe_payment`, `verify_settlement`, `check_listing`, `check_address`, `check_domain`, `analyze_transaction`, `analyze_signature`, plus the x402-paid `guard` tool (0.099 USD₮0 on X Layer, 402 at `tools/call`). Verified with OKX's own CLI: `onchainos payment quote` discovers every tool, gets DENY results from the free tools and a payment quote for `guard` ([captures](demo-video/captures)). Public `POST /verify-settlement`. |
+| `0a622e9` 17 Sep | Real MCP server at `POST /mcp` (Streamable HTTP): free tools `check_payment`, `probe_payment`, `verify_settlement`, `check_listing`, `check_address`, `check_domain`, `analyze_transaction`, `analyze_signature`, plus the x402-paid `guard` tool (0.099 USD₮0 on X Layer, 402 at `tools/call`). Verified with OKX's own CLI: `onchainos payment quote` discovers every tool, gets DENY results from the free tools and a payment quote for `guard` ([captures](demo-video/captures)). Public `POST /verify-settlement`. (`check_quote` was added the same window at `601941b`, for **10 tools** total — what the live `tools/list` returns today.) |
 | `601941b`, `4b63a9f` · 17 Sep | **Onchain OS payment gate.** `onchainos payment quote` saves each quote to `~/.onchainos/payments/<paymentId>.json`, and `payment pay --payment-id` signs from that file without fetching the 402 again. `POST /check-quote` and the MCP tool `check_quote` check that file and bind the verdict to the paymentId with a SHA-256 fingerprint of the signed entry. New rules: `challenge_header_body_mismatch`, `quote_inconsistent`, `quote_expired`, `quote_partial`. A Claude Code `PreToolUse` hook ([hooks/](hooks/README.md)) blocks `onchainos payment pay` when no verdict is bound, the entry or index changed, the verdict is DENY, or the verdict came from a Guardian the owner does not trust. It asks on WARN, on `--yes`, and when the quote passed with no marketplace listing to compare; and it blocks shell URLs (including quote-break payloads), sign-only and raw-key payments. `safe-pay --quote-first` prints every CLI argv. |
 | `601941b`, `eaacaa8` · 17 Sep | **Found with the real CLI:** new demo seller `header-body-split`. Its 402 JSON body shows the listed wallet, but its `PAYMENT-REQUIRED` header pays another address. `onchainos payment quote` saved the header payee as the entry to sign, and its summary (`Will pay 0.001 USDT (exact, X Layer)`) does not name the payee. So an agent that reads the body is shown one payment while the wallet signs another. `/check-quote` returns DENY `challenge_header_body_mismatch` without knowing the payee, and the hook blocks the pay ([capture](demo-video/captures/check-quote-header-body-split.txt)). Re-probing 24 live marketplace challenges found 8 that send both copies and none that differ, so the rule adds no false DENYs there. |
 
@@ -75,7 +83,7 @@ transaction and signature firewall, shared threat registry, benchmark) is pre-ex
 | `2a1a94a` | Quote guard reads the payee from `decodedChallenge.recipient` (found on a third-party listing), quote over the capture transport, no `--yes` in printed commands |
 | `5fa5523` | On-chain settlement check (`src/settlement.js`, `scripts/verify-settlement.js`, step 6 of safe-pay); first real guarded payment settled as checked |
 
-Pay-Safe now has 41 payment rules; the full suite has 170 passing tests (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
+Pay-Safe now has 41 payment rules; the full suite has 172 passing tests (`npm test`), including local HTTP and MCP servers, signed EIP-3009 payloads,
 Permit2 payloads, SSRF targets, every demo scenario, Onchain OS quotes recorded from the real CLI, and the payment-gate hook's bypass and binding cases.
 
 ## A real payment through the guarded flow
@@ -100,8 +108,10 @@ backstop, and the demo sellers have no facilitator, so no funds can move. Nothin
   runs `onchainos payment pay … --yes` the **Guardian hook blocks it** — "GuardianMCP: DENY
   challenge_header_body_mismatch". The agent then reports the payment was blocked, correctly.
 - **Honest seller** ([transcript](demo-video/captures/agent-runs/guardian-honest-seller.md)): `check-quote`
-  returns **ALLOW (risk 0)**, and the `--yes` pay is still **held for the owner's approval** — Guardian lets
-  good payments through without taking the final decision away from the wallet owner.
+  returns **ALLOW (risk 0)** and prints the exact pay command **without `--yes`** ("the wallet only returns a
+  confirmation prompt and pays nothing"). In this locked-down harness the pay itself is then refused by the
+  sandbox, so no funds move — Guardian's part here is the clean ALLOW verdict, and the final `--yes` still
+  belongs to the wallet owner.
 - **Malicious listing sid 39876** ([transcript](demo-video/captures/agent-runs/guardian-malicious-listing-39876.md)):
   the agent reads the listing, recognises the endpoint is a `id | base64 | curl … /rce/…` shell-injection
   payload, treats the listing text as untrusted data rather than an instruction, and **refuses** — the
@@ -242,7 +252,7 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 ## Status and honest notes
 
 - **Numbers.** "41 payment rules" is the Pay-Safe payment layer; the full `GET /rules` catalogue across all
-  layers (transaction, signature, payment, registry, session) is 94. 170 tests pass (`npm test`).
+  layers (transaction, signature, payment, registry, session) is 94. 172 tests pass (`npm test`).
 - **OKX.AI listing.** Agent identity **#13730 is registered**; the marketplace *service listing* is still
   under review by OKX, so it is not "approved". The integration is live regardless — through the
   CLI-discoverable MCP server (`onchainos payment quote …/mcp`) and the guarded Onchain OS pay flow.
@@ -267,12 +277,18 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 - `/probe-payment` resolves DNS and blocks private addresses before the request. A host that changes
   its DNS answer between that check and the request is not fully covered.
 
-## Demo video outline (2–4 min)
+## Demo video (v6, 3:48)
 
-1. The gap: an agent pays whatever a 402 says. Show the attack listing's endpoint from the scan.
-2. `/pay-safe`: honest seller ALLOW, price bait DENY, poisoned payee DENY, wrong EIP-712 domain WARN,
-   shell payload DENY without contact.
-3. Real marketplace: the trust scan section, 62 services, the malicious listing, 5 unsettleable sellers.
-4. Onchain OS: `node scripts/safe-pay.js --sid 39876` stops before contact, `--sid 33342` stops on
-   WARN, the Radar endpoint passes and prints the exact `payment pay` command after the quote guard.
-5. Close: one call before every x402 payment on OKX.AI.
+The cut, scene by scene (script in [demo-video/narration.json](demo-video/narration.json), machine-generated):
+
+1. **Title** — one call before every x402 payment on OKX.AI; it runs inside OKX's own CLI.
+2. **The gap** — an agent trusts whatever the 402 says; nothing checks it against the listing before it signs.
+3. **`/pay-safe`, honest seller** — ALLOW; the comparison rows resolve green.
+4–6. **The staged attacks** — price bait DENY, poisoned payee DENY, wrong EIP-712 domain WARN.
+7. **The real marketplace** — the 16 Sep trust scan: 62 services, exactly one DENY.
+8. **MCP server** — OKX's own CLI discovers the 10 tools; `check_listing` on sid 39876 returns DENY.
+9. **The payment gate** — the header/body split; `/check-quote` DENY; the Claude Code hook blocks the pay.
+10. **The live agent (S9B)** — an unedited headless agent quotes, gets DENY, tries to pay — and the hook
+    blocks it: "the agent cannot pay the scam."
+11. **A real settled payment** — 0.005 USD₮0 on X Layer, verified on-chain.
+12. **Close** — add it in one line; 10 tools, 41 rules, 172 tests.
