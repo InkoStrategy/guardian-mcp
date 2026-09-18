@@ -37,7 +37,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "17723": {
   "sid": 17723,
@@ -86,7 +86,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "19874": {
   "sid": 19874,
@@ -135,7 +135,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "25864": {
   "sid": 25864,
@@ -175,7 +175,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "29539": {
   "sid": 29539,
@@ -215,7 +215,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "30379": {
   "sid": 30379,
@@ -255,7 +255,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "33200": {
   "sid": 33200,
@@ -295,7 +295,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "33278": {
   "sid": 33278,
@@ -335,7 +335,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "33279": {
   "sid": 33279,
@@ -375,7 +375,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "33342": {
   "sid": 33342,
@@ -473,7 +473,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "34080": {
   "sid": 34080,
@@ -513,7 +513,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "34150": {
   "sid": 34150,
@@ -562,7 +562,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "34176": {
   "sid": 34176,
@@ -611,7 +611,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "34606": {
   "sid": 34606,
@@ -660,35 +660,35 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
- "34608": {
-  "sid": 34608,
-  "service": "Inflation & Liquidity Signal",
-  "asp": "Bit Monk Macro",
-  "aspAgentId": "6069",
-  "endpoint": "https://inflation-signal.airblock2026.workers.dev/mcp",
+ "34716": {
+  "sid": 34716,
+  "service": "Sniffer Alpha Feed",
+  "asp": "Sniffer",
+  "aspAgentId": "6149",
+  "endpoint": "https://sniffer-alpha.duckdns.org/sniff",
   "listed": {
-   "feeAmount": 0.01,
+   "feeAmount": 0.39,
    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
    "symbol": "USDT"
   },
   "http": {
-   "method": "MCP tools/call scan_bottoms",
+   "method": "GET",
    "status": 402
   },
   "probe": "challenge",
   "verdict": "WARN",
   "reasons": [
-   "eip712_domain_mismatch"
+   "fresh_recipient"
   ],
-  "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0xB4CB…fbC6 for inflation-signal.airblock2026.workers.dev (accepts[0], exact). WARN: eip712_domain_mismatch.",
+  "summary": "Payment of 0.39 USDT0 (390000) on xlayer to 0x94D5…686C for sniffer-alpha.duckdns.org (accepts[0], exact). WARN: fresh_recipient.",
   "findings": [
    {
-    "code": "eip712_domain_mismatch",
+    "code": "fresh_recipient",
     "severity": "WARN",
-    "subject": null,
-    "message": "extra declares the EIP-712 domain name \"USDT₀\" version \"1\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
+    "subject": "payTo",
+    "message": "0x94D53c7814Be8D40f9196551bC598DDce47F686C has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
    }
   ],
   "challenge": {
@@ -701,45 +701,36 @@
     "canonical": true
    },
    "amount": {
-    "atomic": "10000",
-    "human": "0.01",
-    "listed": "10000"
+    "atomic": "390000",
+    "human": "0.39",
+    "listed": "390000"
    },
-   "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
+   "payTo": "0x94D53c7814Be8D40f9196551bC598DDce47F686C",
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
- "34609": {
-  "sid": 34609,
-  "service": "Seoul Apartment Signal",
-  "asp": "Bit Monk Seoul Apt",
-  "aspAgentId": "6070",
-  "endpoint": "https://seoul-apt-signal.airblock2026.workers.dev/mcp",
+ "34742": {
+  "sid": 34742,
+  "service": "Blockchain Trend Content",
+  "asp": "Sigma Node",
+  "aspAgentId": "6169",
+  "endpoint": "https://agent.sigmanode.ai/v1/trend-reports",
   "listed": {
-   "feeAmount": 0.01,
+   "feeAmount": 1,
    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
    "symbol": "USDT"
   },
   "http": {
-   "method": "MCP tools/call scan_bottoms",
+   "method": "POST",
    "status": 402
   },
   "probe": "challenge",
-  "verdict": "WARN",
-  "reasons": [
-   "eip712_domain_mismatch"
-  ],
-  "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0xB4CB…fbC6 for seoul-apt-signal.airblock2026.workers.dev (accepts[0], exact). WARN: eip712_domain_mismatch.",
-  "findings": [
-   {
-    "code": "eip712_domain_mismatch",
-    "severity": "WARN",
-    "subject": null,
-    "message": "extra declares the EIP-712 domain name \"USDT₀\" version \"1\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
-   }
-  ],
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 1 USDT0 (1000000) on xlayer to 0x2505…7D2b for agent.sigmanode.ai (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
   "challenge": {
    "network": "eip155:196",
    "scheme": "exact",
@@ -750,15 +741,15 @@
     "canonical": true
    },
    "amount": {
-    "atomic": "10000",
-    "human": "0.01",
-    "listed": "10000"
+    "atomic": "1000000",
+    "human": "1",
+    "listed": "1000000"
    },
-   "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
+   "payTo": "0x25050D4DBe36097D0473c396c424B4B5D4FA7D2b",
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "35287": {
   "sid": 35287,
@@ -807,7 +798,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "35305": {
   "sid": 35305,
@@ -856,7 +847,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "35351": {
   "sid": 35351,
@@ -896,7 +887,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "35352": {
   "sid": 35352,
@@ -936,7 +927,87 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "35435": {
+  "sid": 35435,
+  "service": "Korea Defense Chain Analysis",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/chain/defense",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "35436": {
+  "sid": 35436,
+  "service": "Korea Power Chain Analysis",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/chain/power",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "36109": {
   "sid": 36109,
@@ -976,7 +1047,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "36366": {
   "sid": 36366,
@@ -1016,7 +1087,167 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "36392": {
+  "sid": 36392,
+  "service": "玄学智慧投研",
+  "asp": "玄学交易师 · StarTrade",
+  "aspAgentId": "7514",
+  "endpoint": "https://x402.0xq.uk/agent1",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xfcA3…3b1a for x402.0xq.uk (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "36394": {
+  "sid": 36394,
+  "service": "交易洞察分析",
+  "asp": "玄学交易师 · StarTrade",
+  "aspAgentId": "7514",
+  "endpoint": "https://gushen.0xq.uk/agent3",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xfcA3…3b1a for gushen.0xq.uk (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "36978": {
+  "sid": 36978,
+  "service": "Candlestick Star",
+  "asp": "玄学交易师 · StarTrade",
+  "aspAgentId": "7514",
+  "endpoint": "https://x402.0xq.uk/agent5",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xfcA3…3b1a for x402.0xq.uk (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "36980": {
+  "sid": 36980,
+  "service": "Crypto analysis team",
+  "asp": "玄学交易师 · StarTrade",
+  "aspAgentId": "7514",
+  "endpoint": "https://x402.0xq.uk/agent7",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xfcA3…3b1a for x402.0xq.uk (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "38037": {
   "sid": 38037,
@@ -1065,7 +1296,47 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
+ },
+ "38405": {
+  "sid": 38405,
+  "service": "Japan Market Ledger",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/japan",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-18",
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "39139": {
   "sid": 39139,
@@ -1105,7 +1376,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "39343": {
   "sid": 39343,
@@ -1194,7 +1465,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "39876": {
   "sid": 39876,
@@ -1304,7 +1575,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "39938": {
   "sid": 39938,
@@ -1344,7 +1615,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "40010": {
   "sid": 40010,
@@ -1393,7 +1664,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "40011": {
   "sid": 40011,
@@ -1442,7 +1713,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "40012": {
   "sid": 40012,
@@ -1491,7 +1762,7 @@
    "entries": 1
   },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  },
  "40042": {
   "sid": 40042,
@@ -1530,8 +1801,8 @@
    "payTo": "0x7389cd0Ad753186Cb0EF81f43B5E0cB4FfC847fC",
    "entries": 1
   },
-  "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scanDate": "2026-09-17",
+  "scannedAt": "2026-09-17T20:41:20.476Z"
  },
  "40665": {
   "sid": 40665,
@@ -1579,7 +1850,56 @@
    "payTo": "0xc71639F04EdF0B21040c4bebc5082fdDB2327512",
    "entries": 1
   },
+  "scanDate": "2026-09-17",
+  "scannedAt": "2026-09-17T20:41:20.476Z"
+ },
+ "40780": {
+  "sid": 40780,
+  "service": "Entropy Signal API",
+  "asp": "EntropicAPI",
+  "aspAgentId": "13777",
+  "endpoint": "https://api.entropicapi.com/signal",
+  "listed": {
+   "feeAmount": 0.02,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "fresh_recipient"
+  ],
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x19f0…f9ED for api.entropicapi.com (accepts[0], exact). WARN: fresh_recipient.",
+  "findings": [
+   {
+    "code": "fresh_recipient",
+    "severity": "WARN",
+    "subject": "payTo",
+    "message": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "20000",
+    "human": "0.02",
+    "listed": "20000"
+   },
+   "payTo": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED",
+   "entries": 1
+  },
   "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T09:00:10.057Z"
+  "scannedAt": "2026-09-18T20:04:51.091Z"
  }
 }

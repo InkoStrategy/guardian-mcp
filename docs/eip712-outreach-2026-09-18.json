@@ -4,25 +4,23 @@
     "name": "USD₮0",
     "version": "1"
   },
-  "count": 9,
+  "count": 7,
   "sellers": [
-    "Bit Monk",
     "Bit Monk Commodities",
+    "Bit Monk",
     "Bit Monk Kospi",
     "Bit Monk US Stock",
-    "Bit Monk Seoul Apt",
-    "Bit Monk Macro",
     "RoseIntel",
     "TOKENGUARD",
     "DAOLENS"
   ],
   "services": [
     {
-      "sid": 19874,
-      "service": "Crypto Top / Bottom, Signal",
-      "seller": "Bit Monk",
-      "agentId": "3894",
-      "endpoint": "https://coin-signal.airblock2026.workers.dev/mcp",
+      "sid": 34606,
+      "service": "Commodity Top & Bottom Signal",
+      "seller": "Bit Monk Commodities",
+      "agentId": "6067",
+      "endpoint": "https://commodity-signal.airblock2026.workers.dev/mcp",
       "fee": 0.01,
       "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
       "declared": {
@@ -31,11 +29,11 @@
       }
     },
     {
-      "sid": 34606,
-      "service": "Commodity Top & Bottom Signal",
-      "seller": "Bit Monk Commodities",
-      "agentId": "6067",
-      "endpoint": "https://commodity-signal.airblock2026.workers.dev/mcp",
+      "sid": 19874,
+      "service": "Crypto Top / Bottom, Signal",
+      "seller": "Bit Monk",
+      "agentId": "3894",
+      "endpoint": "https://coin-signal.airblock2026.workers.dev/mcp",
       "fee": 0.01,
       "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
       "declared": {
@@ -62,32 +60,6 @@
       "seller": "Bit Monk US Stock",
       "agentId": "5815",
       "endpoint": "https://stock-signal-us.airblock2026.workers.dev/mcp",
-      "fee": 0.01,
-      "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
-      "declared": {
-        "name": "USDT₀",
-        "version": "1"
-      }
-    },
-    {
-      "sid": 34609,
-      "service": "Seoul Apartment Signal",
-      "seller": "Bit Monk Seoul Apt",
-      "agentId": "6070",
-      "endpoint": "https://seoul-apt-signal.airblock2026.workers.dev/mcp",
-      "fee": 0.01,
-      "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
-      "declared": {
-        "name": "USDT₀",
-        "version": "1"
-      }
-    },
-    {
-      "sid": 34608,
-      "service": "Inflation & Liquidity Signal",
-      "seller": "Bit Monk Macro",
-      "agentId": "6069",
-      "endpoint": "https://inflation-signal.airblock2026.workers.dev/mcp",
       "fee": 0.01,
       "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
       "declared": {
