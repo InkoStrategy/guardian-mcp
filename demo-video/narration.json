@@ -1,6 +1,15 @@
 {
  "scenes": [
   {
+   "id": "S0",
+   "sentences": [
+    {
+     "display": "A real AI agent, about to pay a listing on OKX.AI. Watch Guardian stop it before it signs.",
+     "speech": "A real A I agent, about to pay a listing on O K X dot A I. Watch Guardian stop it, before it signs."
+    }
+   ]
+  },
+  {
    "id": "S1",
    "sentences": [
     {
@@ -155,8 +164,8 @@
    "id": "S12",
    "sentences": [
     {
-     "display": "Add Guardian to any MCP client in one line — ten tools, 41 payment rules, 170 passing tests, built 16 to 17 September.",
-     "speech": "Add Guardian to any M C P client in one line. Ten tools, forty one payment rules, one hundred seventy passing tests. Built September sixteenth to seventeenth."
+     "display": "Add Guardian to any MCP client in one line — ten tools, 41 payment rules, 172 passing tests, built 16 to 17 September.",
+     "speech": "Add Guardian to any M C P client in one line. Ten tools, forty one payment rules, one hundred seventy two passing tests. Built September sixteenth to seventeenth."
     },
     {
      "display": "One call before every x402 payment on OKX.AI.",

@@ -29,6 +29,7 @@ function buildPlan() {
   const narration = JSON.parse(fs.readFileSync(path.join(ROOT, 'narration.json'), 'utf8'));
   const meta = JSON.parse(fs.readFileSync(path.join(BUILD, 'frames', 'meta.json'), 'utf8'));
   const visuals = {
+    S0: { type: 'terminal', blocks: 'coldopen', cues: [0], header: 'A real AI agent · about to pay a scam on OKX.AI', min: 8 },
     S1: { type: 'slide', img: 'slide-S1.jpg' },
     S2: { type: 'slide', img: 'slide-S2.jpg' },
     S3: { type: 'page', key: 'honest', button: 'Honest seller', clickCue: 1, leadHighlights: { cue: 0, fractions: [0.0, 0.42, 0.68] } },
@@ -90,6 +91,11 @@ function buildPlan() {
     goodpay: [
       { label: 'real listing sid 39856: ALLOW, quote matches, owner-approved payment', cmd: 'node scripts/safe-pay.js --sid 39856 --agent 13761 --max 0.01 --method POST --pay --yes', lines: readCapture('safepay-paid.txt'), weight: 0.6, fontSize: 21 },
       { label: 'settlement verified on X Layer', cmd: 'node scripts/verify-settlement.js --tx 0xd0dab0bb...3070d --pay-to 0xc462...9d60 --amount 5000', lines: readCapture('settlement.txt'), weight: 0.4, highlight: 'as checked' },
+    ],
+    // Cold open: a real agent's pay hitting the hook, shown before the title.
+    coldopen: [
+      { label: 'a real headless AI agent, about to pay a scam listing', cmd: 'onchainos payment pay --payment-id pay_3e11b4... --selected-index 0 --yes',
+        lines: ['deny -- GuardianMCP: DENY challenge_header_body_mismatch, fresh_recipient', 'the seller shows one wallet in the body and pays another in the header', 'agent: the payment was blocked, and correctly so.'], weight: 1 },
     ],
     // The unedited headless agent run (demo-video/captures/agent-runs/guardian-header-body-split.md).
     agentrun: [
