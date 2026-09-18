@@ -122,6 +122,23 @@
    ]
   },
   {
+   "id": "S9B",
+   "sentences": [
+    {
+     "display": "This isn't a script: we pointed a real headless AI agent at the live CLI. It quotes the seller and flags the payee mismatch itself.",
+     "speech": "This is not a script. We pointed a real headless A I agent at the live C L I. It quotes the seller, and flags the payee mismatch itself."
+    },
+    {
+     "display": "It checks the quote with Guardian and gets DENY, challenge_header_body_mismatch.",
+     "speech": "It checks the quote with Guardian, and gets deny. Challenge header body mismatch."
+    },
+    {
+     "display": "Then it tries to pay anyway — and the Claude Code hook blocks it. The agent cannot pay the scam.",
+     "speech": "Then it tries to pay anyway. And the Claude Code hook blocks it. The agent cannot pay the scam."
+    }
+   ]
+  },
+  {
    "id": "S10",
    "sentences": [
     {

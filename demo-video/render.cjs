@@ -38,6 +38,7 @@ function buildPlan() {
     S7: { type: 'scan' },
     S8: { type: 'terminal', blocks: 'mcp', cues: [0, 2], header: "OKX Onchain OS CLI  ·  onchainos payment quote → GuardianMCP /mcp", min: 22 },
     S9: { type: 'terminal', blocks: 'gate', cues: [0, 2, 3], header: 'Onchain OS payment gate  ·  check-quote + Claude Code hook', min: 26 },
+    S9B: { type: 'terminal', blocks: 'agentrun', cues: [0, 1, 2], header: 'Unedited headless AI agent  ·  real Onchain OS CLI  ·  claude -p', min: 24 },
     S10: { type: 'terminal', blocks: 'goodpay', cues: [0, 1], header: 'Onchain OS buyer  ·  node scripts/safe-pay.js  ·  real payment' },
     S12: { type: 'slide', img: 'slide-S12.jpg' },
   };
@@ -89,6 +90,15 @@ function buildPlan() {
     goodpay: [
       { label: 'real listing sid 39856: ALLOW, quote matches, owner-approved payment', cmd: 'node scripts/safe-pay.js --sid 39856 --agent 13761 --max 0.01 --method POST --pay --yes', lines: readCapture('safepay-paid.txt'), weight: 0.6, fontSize: 21 },
       { label: 'settlement verified on X Layer', cmd: 'node scripts/verify-settlement.js --tx 0xd0dab0bb...3070d --pay-to 0xc462...9d60 --amount 5000', lines: readCapture('settlement.txt'), weight: 0.4, highlight: 'as checked' },
+    ],
+    // The unedited headless agent run (demo-video/captures/agent-runs/guardian-header-body-split.md).
+    agentrun: [
+      { label: 'the agent quotes the seller', cmd: 'onchainos payment quote .../demo/x402/header-body-split',
+        lines: ['Will pay 0.001 USDT (exact, X Layer)', 'agent: decoded payee 0x5b0c...1A09 does not match the body wallet 0xe1c6...f67b'], weight: 0.3 },
+      { label: 'the agent checks the quote with Guardian', cmd: 'node scripts/check-quote.js --payment-id pay_3e11b4... --fee 0.001 --token 0x779d...',
+        lines: ['Verdict   DENY challenge_header_body_mismatch, fresh_recipient', 'Next      do not pay this quote. No pay command on DENY.'], weight: 0.34 },
+      { label: 'the agent tries to pay anyway; the hook blocks it', cmd: 'onchainos payment pay --payment-id pay_3e11b4... --selected-index 0 --yes',
+        lines: ['deny -- GuardianMCP: DENY challenge_header_body_mismatch, fresh_recipient', 'agent: the payment was blocked, and correctly so.'], weight: 0.36 },
     ],
   };
   const plan = { scenes: narration.scenes, visuals, meta, terminal, terminals, payee, scanCards, terminalCues: [1, 2, 3, 5], scanCues: { kpi: 1, deny: 3, warn: 4, advisory: 5 } };
