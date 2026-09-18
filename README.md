@@ -1,6 +1,6 @@
 # Guardian MCP
 
-**OKX Dev Day 2026 — Build a Company / Best Remote Demo.** Judge doc: [DEVDAY.md](DEVDAY.md) · Demo video (v6, 3:48): https://youtu.be/s8KSV2YMlyE
+**OKX Dev Day 2026 — Build a Company / Best Remote Demo.** Judge doc: [DEVDAY.md](DEVDAY.md) · Demo video (v6.1, 3:56): https://youtu.be/s8KSV2YMlyE
 Live: [/agent-runs](https://guardian-mcp-rho.vercel.app/agent-runs) (a real agent's scam pay blocked) · [/trust](https://guardian-mcp-rho.vercel.app/trust) (marketplace scan) · [/company](https://guardian-mcp-rho.vercel.app/company) · [/pay-safe](https://guardian-mcp-rho.vercel.app/pay-safe) · [/mcp](https://guardian-mcp-rho.vercel.app/mcp)
 
 ---

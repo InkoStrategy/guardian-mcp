@@ -10,7 +10,7 @@
 [**/mcp**](https://guardian-mcp-rho.vercel.app/mcp) (MCP server)
 
 **Repository:** https://github.com/InkoStrategy/guardian-mcp · **OKX.AI agent:** GuardianMCP #13730
-**Demo video (v6, 3:48):** https://youtu.be/s8KSV2YMlyE _(uploading the v6 cut with the live-agent scene; the rendered file ships in the repo)_
+**Demo video (v6.1, 3:56):** https://youtu.be/s8KSV2YMlyE _(uploading the v6 cut with the live-agent scene; the rendered file ships in the repo)_
 
 > Pay-Safe checks an x402 payment **before** an agent pays it. It compares the seller's 402 challenge with
 > what the OKX.AI listing promised (price, token, endpoint), with the payee the buyer expects, and with the
@@ -277,7 +277,7 @@ WARN: `eip712_domain_mismatch`, `endpoint_domain_suspicious`, `upto_cap_above_li
 - `/probe-payment` resolves DNS and blocks private addresses before the request. A host that changes
   its DNS answer between that check and the request is not fully covered.
 
-## Demo video (v6, 3:48)
+## Demo video (v6.1, 3:56)
 
 The cut, scene by scene (script in [demo-video/narration.json](demo-video/narration.json), machine-generated):
 
