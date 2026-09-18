@@ -1,0 +1,9 @@
+2026-09-18T20:01:34.646Z --- daily scan start (dry run) ---
+2026-09-18T20:03:29.852Z scan ok: 80 services, 38 challenges, 24 allow / 14 warn / 0 deny
+2026-09-18T20:03:29.852Z dry run — stopping before any write
+2026-09-18T20:03:46.857Z --- daily scan start ---
+2026-09-18T20:04:51.113Z scan ok: 80 services, 38 challenges, 24 allow / 14 warn / 0 deny
+2026-09-18T20:04:51.115Z refreshed docs/trust-scans/2026-09-18.json
+2026-09-18T20:04:51.281Z eip712 outreach list refreshed for 2026-09-18
+2026-09-18T20:04:51.531Z committed: docs/eip712-outreach-2026-09-18.json, docs/trust-history.json, docs/trust-listings.json, docs/trust-scan.json, docs/trust-scan.md, docs/trust-scans/2026-09-18.json
+2026-09-18T20:04:51.533Z committed locally only (pass --push to publish)

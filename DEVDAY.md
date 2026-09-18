@@ -27,13 +27,18 @@ We scanned the live marketplace to see what that gap looks like in practice
 without paying, and its challenge was checked against its own listing. The scan is dated and public — see
 the live dashboard at **[/trust](https://guardian-mcp-rho.vercel.app/trust)** and the history at `GET /trust-scans`.
 
-| Result | 16 Sep 2026 | 17 Sep 2026 |
-|---|---|---|
-| Paid A2MCP services found | 62 | 67 |
-| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 | 29 |
-| ALLOW | 13 | 16 |
-| WARN | 11 | 13 |
-| DENY | 1 | 0 |
+| Result | 16 Sep 2026 | 17 Sep 2026 | 18 Sep 2026 |
+|---|---|---|---|
+| Paid A2MCP services found | 62 | 67 | 80 |
+| Returned an x402 challenge (HTTP, POST or MCP `tools/call`) | 25 | 29 | 38 |
+| ALLOW | 13 | 16 | 24 |
+| WARN | 11 | 13 | 14 |
+| DENY | 1 | 0 | 0 |
+
+The scan now runs itself: `scripts/daily-scan.cjs` re-scans the marketplace every day, writes a new dated
+snapshot, rebuilds the history and refuses to record a run that looks broken (an expired CLI login would
+otherwise publish a near-empty scan). So the table above keeps growing on its own — check `GET /trust-scans`
+for every day since 16 September, not just the three shown here.
 
 (Live figures: `GET /trust-scans`.) The 16 Sep DENY was the malicious "Market Signal API" (sid 39876) below.
 By the 17 Sep re-scan it had dropped out of marketplace **discovery** (`agent service-match`); the listing
