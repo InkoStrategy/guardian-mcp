@@ -34,6 +34,8 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 </style></head><body><div class="wrap">
 <h1>Unedited agent runs</h1>
 <p class="lead" id="note"></p>
+<video controls preload="metadata" src="/demo-v61.webm" style="width:100%;border:1px solid var(--line);border-radius:12px;background:#000;margin:6px 0 18px"><track kind="subtitles" srclang="en" label="English" src="/demo-v61.en.srt" default></video>
+<p class="lead" style="margin-top:-10px">The full 3:54 demo (opens on the live agent's pay being blocked). The three runs below are the raw transcripts behind it.</p>
 <div id="runs"></div>
 <p class="foot">These are the raw runs behind scene S9B of the <a href="/pay-safe">demo</a>. Full transcripts (.md + stream-json .jsonl) are in the repo. See also the live <a href="/trust">marketplace scan</a> and the <a href="/company">company case</a>.</p>
 </div>

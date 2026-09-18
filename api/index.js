@@ -174,8 +174,13 @@ const mcpHandler = createMcpHandler({
   trustListings: () => loadTrustListings(),
   checkQuote,
   recordStat: (kind, r) => {
-    const verdict = r && r.payload && r.payload.result && r.payload.result.structuredContent && r.payload.result.structuredContent.verdict;
-    stats.record(getStore(), { verdict: ['ALLOW', 'WARN', 'DENY'].includes(verdict) ? verdict : 'ALLOW', kind, codes: [], sessionId: null }).catch(() => {});
+    const sc = r && r.payload && r.payload.result && r.payload.result.structuredContent;
+    const verdict = sc && sc.verdict;
+    // Carry the rule codes from the MCP-surface call (the path OKX's CLI uses) into the shared stats, so the
+    // rule-code breakdown on /stats and /dashboard reflects it. Skip the record when there is no verdict.
+    if (!['ALLOW', 'WARN', 'DENY'].includes(verdict)) return;
+    const codes = Array.isArray(sc.reasons) ? sc.reasons.filter((c) => typeof c === 'string').slice(0, 24) : [];
+    stats.record(getStore(), { verdict, kind, codes, sessionId: null }).catch(() => {});
   },
 });
 

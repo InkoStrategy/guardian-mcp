@@ -42,9 +42,9 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <h2>The cost of the gap</h2>
 <div class="card"><div class="cost" id="cost">
   <div class="stat"><div class="v" id="c1">—</div><div class="k">paid services scanned (latest, 17 Sep)</div></div>
-  <div class="stat"><div class="v warn" id="c2">—</div><div class="k">of checked challenges we flagged</div></div>
+  <div class="stat"><div class="v warn" id="c2">—</div><div class="k">of checked challenges flagged (16 Sep)</div></div>
   <div class="stat"><div class="v deny" id="c3">—</div><div class="k">outright attack listing (16 Sep)</div></div>
-  <div class="stat"><div class="v warn" id="c4">—</div><div class="k">declared a wrong signing domain</div></div>
+  <div class="stat"><div class="v warn" id="c4">—</div><div class="k">wrong signing domain (16 Sep)</div></div>
 </div>
 <p class="note" id="costnote" style="margin-top:10px"></p></div>
 <p class="note">Each unguarded payment is an uncapped loss: a swapped payee sends funds to an attacker, a wrong EIP-712 domain means the buyer pays and the call still fails at settlement, and a shell payload in a listing turns a naive buyer agent into remote code execution. The check costs nothing to run and nothing is signed to run it.</p>
@@ -54,6 +54,15 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 <div class="grid two">
   <div class="card"><h3>A market that is appearing now</h3><p>The paid-service side of OKX.AI grew from 62 to 67 discoverable services in a single day of our scans, each one a seller writing its own 402 challenge. Every one of those is a payment an agent will make with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.</p></div>
   <div class="card"><h3>Why it is defensible</h3><p><strong>Not OKX itself:</strong> a neutral, cross-agent safety layer that also scans the marketplace is awkward for the platform to run against its own sellers. <strong>Not sellers fixing their own 402s:</strong> that removes honest mistakes, not malicious listings, and buyers still need to verify. <strong>Not a fork:</strong> the value is the shared threat registry (network effect), the dated public dataset of real attack shapes, and being wired into OKX's own CLI and the pay command — none of which a copy starts with.</p></div>
+</div>
+
+<h2>How this differs from wallet transaction-simulation</h2>
+<div class="card"><p>Tools like Blockaid, Blowfish, Wallet Guard / Harpie and ScamSniffer simulate a <em>signed EVM transaction</em> inside a wallet, or flag known-bad addresses and phishing sites. Guardian does something they don't: it checks the seller-written <span class="code">x402</span> <em>402 challenge</em> against the marketplace listing <strong>before the agent signs</strong>, inside OKX's own CLI and on the pay command itself — a pre-payment, agent-commerce category. (Guardian also reuses a classic EVM firewall + a ScamSniffer-seeded registry for the address/domain layer, so it is a superset, not a competitor, of that check.)</p></div>
+
+<h2>Unit economics &amp; honest traction</h2>
+<div class="grid two">
+  <div class="card"><h3>Margins</h3><p>Cost to serve a check is a Vercel function call plus an RPC read — effectively zero. The premium <span class="code">guard</span> call is 0.099 USD₮0, so gross margin is ~100%; the business is distribution and trust, not compute.</p></div>
+  <div class="card"><h3>Where we actually are</h3><p>Honestly: <strong>0 paid calls, 0 external users</strong> today. The call counters on <a href="/stats">/stats</a> are our own tests plus a ScamSniffer-seeded registry (~2,530 drainer addresses, ~339k phishing domains), not adoption. What is real and live: the product, the OKX-native integration, the public marketplace scan, and one settled on-chain payment. The next milestone is the first five design partners running real payments.</p></div>
 </div>
 
 <h2>What the premium buys (free preview)</h2>
