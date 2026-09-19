@@ -7,7 +7,6 @@
   },
   "build": {
     "env": {
-      "_comment": "The dated scan snapshots under docs/ are require()d by api/index.js and bundled at build time. With the build cache on, a commit that only changes docs/ redeployed the PREVIOUS bundle, so /trust-scan and /trust-scans served stale data while the repo was current. This project builds in ~3s, so never cache.",
       "VERCEL_FORCE_NO_BUILD_CACHE": "1"
     }
   },

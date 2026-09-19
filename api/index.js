@@ -153,6 +153,12 @@ function info(req) {
 function loadTrustScan() {
   try { return require('../docs/trust-scan.json'); } catch { return null; }
 }
+/**
+ * The dated scan snapshots are require()d, so they are bundled at BUILD time, not read per request.
+ * That means a commit which only touches docs/ must still produce a fresh bundle — with Vercel's build
+ * cache on it redeployed the previous one and served stale scans while the repo was current. Hence
+ * VERCEL_FORCE_NO_BUILD_CACHE in vercel.json (keep it: the build takes ~3s anyway).
+ */
 function loadTrustHistory() {
   try { return require('../docs/trust-history.json'); } catch { return null; }
 }
