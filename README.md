@@ -1,19 +1,54 @@
-# Guardian MCP
+# Guardian MCP — Pay-Safe
 
-**OKX Dev Day 2026 — Build a Company / Best Remote Demo.** Judge doc: [DEVDAY.md](DEVDAY.md) · Demo (3:56): https://guardian-mcp-rho.vercel.app/demo (self-hosted) · https://youtu.be/hsvqdNWk5C4
-Live: [/agent-runs](https://guardian-mcp-rho.vercel.app/agent-runs) (a real agent's scam pay blocked) · [/trust](https://guardian-mcp-rho.vercel.app/trust) (marketplace scan) · [/company](https://guardian-mcp-rho.vercel.app/company) · [/pay-safe](https://guardian-mcp-rho.vercel.app/pay-safe) · [/mcp](https://guardian-mcp-rho.vercel.app/mcp)
+**An agent that checks other agents' payments before they get signed.**
+Ten free tools, one paid. It runs inside OKX's own CLI, on the pay command itself.
+
+## See it work — one line, nothing to install
+
+```bash
+curl -s -X POST https://guardian-mcp-rho.vercel.app/probe-payment \
+  -H "content-type: application/json" \
+  -d '{"url":"https://guardian-mcp-rho.vercel.app/demo/x402/header-body-split"}'
+```
+
+```
+DENY  challenge_header_body_mismatch
+```
+
+That seller's 402 body names the wallet from its marketplace listing. Its `PAYMENT-REQUIRED`
+header names a different one. The OKX CLI signs the header, and its confirmation line never
+prints a payee — so the agent is shown one payment while the wallet signs another.
+
+## And one that is live on the marketplace right now
+
+```
+USD₮0    what the token contract on X Layer actually uses
+USDT₀    what seven paid OKX.AI services declare in their 402
+```
+
+You cannot see the difference: `₮` is U+20AE, `₀` is a subscript zero. A signature built from the
+declared domain never verifies on-chain, so those payments cannot settle. Read the contract's
+own answer: **[/verify-eip712-domain](https://guardian-mcp-rho.vercel.app/verify-eip712-domain)**
+
+## Links
+
+| | |
+|---|---|
+| Watch a real agent get blocked | [/agent-runs](https://guardian-mcp-rho.vercel.app/agent-runs) |
+| Daily scan of every paid OKX.AI service | [/trust](https://guardian-mcp-rho.vercel.app/trust) |
+| Try a check yourself | [/pay-safe](https://guardian-mcp-rho.vercel.app/pay-safe) |
+| The MCP server (10 tools) | [/mcp](https://guardian-mcp-rho.vercel.app/mcp) |
+| Demo video, 3:56 | [/demo](https://guardian-mcp-rho.vercel.app/demo) · [YouTube](https://youtu.be/hsvqdNWk5C4) |
+| For OKX Dev Day judges | [DEVDAY.md](DEVDAY.md) |
+| The business case | [/company](https://guardian-mcp-rho.vercel.app/company) |
 
 ---
 
-Система контроля целостности AI‑агента для on‑chain действий. Принимает транзакцию (`to` + `data`) или запрос
-на подпись и, опционально, контекст агента. Возвращает вердикт **ALLOW / WARN / DENY**, причины, риск‑скор 0–100,
-однострочное объяснение на человеческом языке, рекомендации и, где возможно, готовую безопасную замену
-транзакции. Готов к публикации как A2MCP‑сервис на OKX.AI, поддерживает платежи x402 (по умолчанию выключены,
-сервис бесплатный).
+## Подробности
 
-Репозиторий: https://github.com/InkoStrategy/guardian-mcp. Каждый push в `main` автоматически деплоится в production.
-
-English overview for OKX Dev Day judges: [DEVDAY.md](DEVDAY.md). Live Pay-Safe demo: https://guardian-mcp-rho.vercel.app/pay-safe
+Всё, что ниже — детали реализации. Принимает транзакцию (`to` + `data`) или запрос на подпись, возвращает
+**ALLOW / WARN / DENY** с причинами, риск-скором 0–100 и, где возможно, безопасной заменой транзакции.
+Каждый push в `main` автоматически уходит в production.
 
 Семнадцать слоёв защиты, все детерминированные, без внешних API (только RPC и общее хранилище):
 
