@@ -15,7 +15,7 @@
     { "path": "/cron/seed", "schedule": "0 3 * * *" }
   ],
   "rewrites": [
-    { "source": "/((?!demo-v61).*)", "destination": "/api/index" }
+    { "source": "/((?!demo-v61|demo-short).*)", "destination": "/api/index" }
   ],
   "headers": [
     { "source": "/demo-v61.en.vtt", "headers": [{ "key": "content-type", "value": "text/vtt; charset=utf-8" }] }
