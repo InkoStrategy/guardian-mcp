@@ -7,3 +7,17 @@
 2026-09-18T20:04:51.281Z eip712 outreach list refreshed for 2026-09-18
 2026-09-18T20:04:51.531Z committed: docs/eip712-outreach-2026-09-18.json, docs/trust-history.json, docs/trust-listings.json, docs/trust-scan.json, docs/trust-scan.md, docs/trust-scans/2026-09-18.json
 2026-09-18T20:04:51.533Z committed locally only (pass --push to publish)
+2026-09-19T08:00:01.967Z --- daily scan start ---
+2026-09-19T08:01:44.252Z scan ok: 76 services, 38 challenges, 25 allow / 13 warn / 0 deny
+2026-09-19T08:01:44.255Z wrote docs/trust-scans/2026-09-19.json
+2026-09-19T08:01:44.428Z eip712 outreach list refreshed for 2026-09-19
+2026-09-19T08:01:44.713Z committed: docs/eip712-outreach-2026-09-19.json, docs/trust-history.json, docs/trust-listings.json, docs/trust-scan.json, docs/trust-scan.md, docs/trust-scans/2026-09-19.json
+2026-09-19T08:01:47.706Z pushed — waiting for Vercel to serve it
+2026-09-19T08:02:18.231Z published: the live site reports 76 services
+2026-09-20T08:00:01.362Z --- daily scan start ---
+2026-09-20T08:01:31.352Z scan ok: 70 services, 40 challenges, 26 allow / 14 warn / 0 deny
+2026-09-20T08:01:31.356Z wrote docs/trust-scans/2026-09-20.json
+2026-09-20T08:01:31.573Z eip712 outreach list refreshed for 2026-09-20
+2026-09-20T08:01:31.936Z committed: docs/eip712-outreach-2026-09-20.json, docs/trust-history.json, docs/trust-listings.json, docs/trust-scan.json, docs/trust-scan.md, docs/trust-scans/2026-09-20.json
+2026-09-20T08:01:34.834Z pushed — waiting for Vercel to serve it
+2026-09-20T08:02:05.367Z published: the live site reports 70 services
