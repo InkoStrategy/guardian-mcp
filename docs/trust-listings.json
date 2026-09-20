@@ -36,8 +36,8 @@
    "payTo": "0x62fCc335876A454B284FB2D8D3654eA0DdfD52Bf",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "17723": {
   "sid": 17723,
@@ -85,8 +85,8 @@
    "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "19874": {
   "sid": 19874,
@@ -134,8 +134,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "25864": {
   "sid": 25864,
@@ -174,8 +174,8 @@
    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "29539": {
   "sid": 29539,
@@ -214,8 +214,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "30379": {
   "sid": 30379,
@@ -294,8 +294,8 @@
    "payTo": "0xdD1F170dA5c654391cd88D45843F4B405C3a5241",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "33278": {
   "sid": 33278,
@@ -334,8 +334,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "33279": {
   "sid": 33279,
@@ -374,8 +374,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "33342": {
   "sid": 33342,
@@ -472,8 +472,88 @@
    "payTo": "0x7DB2bcAC1B61b5A9eB906b3c22c81200998fb8CC",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
+ },
+ "33714": {
+  "sid": 33714,
+  "service": "Asia Session Regime Report",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/report",
+  "listed": {
+   "feeAmount": 0.03,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.03 USDT0 (30000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "30000",
+    "human": "0.03",
+    "listed": "30000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
+ },
+ "33715": {
+  "sid": 33715,
+  "service": "Asia Session Premium Intel",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/report/premium",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34080": {
   "sid": 34080,
@@ -512,8 +592,8 @@
    "payTo": "0x6F95b756051A955DB66E92F438fBC16271E638e7",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34150": {
   "sid": 34150,
@@ -561,8 +641,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34176": {
   "sid": 34176,
@@ -610,8 +690,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-18",
-  "scannedAt": "2026-09-18T20:04:51.091Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34606": {
   "sid": 34606,
@@ -659,8 +739,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34716": {
   "sid": 34716,
@@ -708,8 +788,8 @@
    "payTo": "0x94D53c7814Be8D40f9196551bC598DDce47F686C",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34742": {
   "sid": 34742,
@@ -748,8 +828,8 @@
    "payTo": "0x25050D4DBe36097D0473c396c424B4B5D4FA7D2b",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "34920": {
   "sid": 34920,
@@ -788,8 +868,8 @@
    "payTo": "0x72db032c0dFB6E7502e16A73fabdab31712dc706",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "35287": {
   "sid": 35287,
@@ -837,8 +917,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "35305": {
   "sid": 35305,
@@ -886,8 +966,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "35351": {
   "sid": 35351,
@@ -966,8 +1046,48 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
+ },
+ "35434": {
+  "sid": 35434,
+  "service": "Korea Semiconductor Chain",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/chain/semis",
+  "listed": {
+   "feeAmount": 0.1,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "100000",
+    "human": "0.1",
+    "listed": "100000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "35435": {
   "sid": 35435,
@@ -1006,8 +1126,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "35436": {
   "sid": 35436,
@@ -1046,8 +1166,48 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
+ },
+ "35437": {
+  "sid": 35437,
+  "service": "Korea Equity Chain Bundle",
+  "asp": "Asia Pulse",
+  "aspAgentId": "5537",
+  "endpoint": "https://asia-pulse.com/okx/chain",
+  "listed": {
+   "feeAmount": 0.2,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.2 USDT0 (200000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "200000",
+    "human": "0.2",
+    "listed": "200000"
+   },
+   "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+   "entries": 1
+  },
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "36109": {
   "sid": 36109,
@@ -1166,8 +1326,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "36394": {
   "sid": 36394,
@@ -1206,8 +1366,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "36978": {
   "sid": 36978,
@@ -1246,8 +1406,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "36980": {
   "sid": 36980,
@@ -1286,8 +1446,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "38037": {
   "sid": 38037,
@@ -1335,8 +1495,8 @@
    "payTo": "0xC8a8973Cf7FE41bDC9a85f70C279c9Bdc2EB8D0C",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "38405": {
   "sid": 38405,
@@ -1375,8 +1535,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "39139": {
   "sid": 39139,
@@ -1415,8 +1575,48 @@
    "payTo": "0xD4A80CddA4D12896Ea3Af9D210477c014758Aa9d",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
+ },
+ "39175": {
+  "sid": 39175,
+  "service": "Transaction Policy Gate",
+  "asp": "DecisionGate",
+  "aspAgentId": "10819",
+  "endpoint": "https://tx.decisiongate.shop/v1/mcp",
+  "listed": {
+   "feeAmount": 0.02,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP tools/call transaction_policy_gate",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x606F…087E for tx.decisiongate.shop (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "20000",
+    "human": "0.02",
+    "listed": "20000"
+   },
+   "payTo": "0x606F8b94b06BfdE50c55d3989D026a60A3aB087E",
+   "entries": 1
+  },
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "39343": {
   "sid": 39343,
@@ -1504,8 +1704,8 @@
    "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "39876": {
   "sid": 39876,
@@ -1614,8 +1814,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "39938": {
   "sid": 39938,
@@ -1654,8 +1854,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "40010": {
   "sid": 40010,
@@ -1703,8 +1903,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "40011": {
   "sid": 40011,
@@ -1752,8 +1952,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "40012": {
   "sid": 40012,
@@ -1801,8 +2001,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  },
  "40042": {
   "sid": 40042,
@@ -1939,7 +2139,7 @@
    "payTo": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-09-20",
+  "scannedAt": "2026-09-20T08:01:31.329Z"
  }
 }
