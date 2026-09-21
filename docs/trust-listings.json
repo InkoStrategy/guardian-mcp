@@ -85,8 +85,8 @@
    "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "19874": {
   "sid": 19874,
@@ -134,8 +134,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "25864": {
   "sid": 25864,
@@ -174,8 +174,8 @@
    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "29539": {
   "sid": 29539,
@@ -214,8 +214,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "30379": {
   "sid": 30379,
@@ -257,6 +257,46 @@
   "scanDate": "2026-09-19",
   "scannedAt": "2026-09-19T08:01:44.235Z"
  },
+ "33188": {
+  "sid": 33188,
+  "service": "DeFi Yield Quality",
+  "asp": "Saena Signal Ops",
+  "aspAgentId": "4370",
+  "endpoint": "https://paper.sae.best/defi-yield-quality",
+  "listed": {
+   "feeAmount": 0.08,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.08 USDT0 (80000) on xlayer to 0x4524…76b9 for paper.sae.best (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "80000",
+    "human": "0.08",
+    "listed": "80000"
+   },
+   "payTo": "0x4524340d66c723ed266D3d3302ba2EB4c79476b9",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
  "33200": {
   "sid": 33200,
   "service": "Meme 交易情报扫描",
@@ -294,8 +334,8 @@
    "payTo": "0xdD1F170dA5c654391cd88D45843F4B405C3a5241",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "33278": {
   "sid": 33278,
@@ -334,8 +374,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "33279": {
   "sid": 33279,
@@ -374,8 +414,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "33342": {
   "sid": 33342,
@@ -472,8 +512,8 @@
    "payTo": "0x7DB2bcAC1B61b5A9eB906b3c22c81200998fb8CC",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "33714": {
   "sid": 33714,
@@ -592,8 +632,8 @@
    "payTo": "0x6F95b756051A955DB66E92F438fBC16271E638e7",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "34150": {
   "sid": 34150,
@@ -739,8 +779,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "34716": {
   "sid": 34716,
@@ -788,8 +828,8 @@
    "payTo": "0x94D53c7814Be8D40f9196551bC598DDce47F686C",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "34742": {
   "sid": 34742,
@@ -868,8 +908,128 @@
    "payTo": "0x72db032c0dFB6E7502e16A73fabdab31712dc706",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "35242": {
+  "sid": 35242,
+  "service": "Market Regime Pulse",
+  "asp": "Saena Signal Ops",
+  "aspAgentId": "4370",
+  "endpoint": "https://paper.sae.best/regime-pulse",
+  "listed": {
+   "feeAmount": 0.05,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x4524…76b9 for paper.sae.best (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "50000",
+    "human": "0.05",
+    "listed": "50000"
+   },
+   "payTo": "0x4524340d66c723ed266D3d3302ba2EB4c79476b9",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "35244": {
+  "sid": 35244,
+  "service": "Market Heat Scan",
+  "asp": "Saena Signal Ops",
+  "aspAgentId": "4370",
+  "endpoint": "https://paper.sae.best/market-heat",
+  "listed": {
+   "feeAmount": 0.03,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.03 USDT0 (30000) on xlayer to 0x4524…76b9 for paper.sae.best (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "30000",
+    "human": "0.03",
+    "listed": "30000"
+   },
+   "payTo": "0x4524340d66c723ed266D3d3302ba2EB4c79476b9",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "35257": {
+  "sid": 35257,
+  "service": "Market Pulse Snapshot",
+  "asp": "Saena Signal Ops",
+  "aspAgentId": "4370",
+  "endpoint": "https://paper.sae.best/market-pulse",
+  "listed": {
+   "feeAmount": 0.05,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x4524…76b9 for paper.sae.best (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "50000",
+    "human": "0.05",
+    "listed": "50000"
+   },
+   "payTo": "0x4524340d66c723ed266D3d3302ba2EB4c79476b9",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "35287": {
   "sid": 35287,
@@ -966,8 +1126,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "35351": {
   "sid": 35351,
@@ -1046,8 +1206,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "35434": {
   "sid": 35434,
@@ -1326,8 +1486,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "36394": {
   "sid": 36394,
@@ -1366,8 +1526,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "36978": {
   "sid": 36978,
@@ -1406,8 +1566,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "36980": {
   "sid": 36980,
@@ -1446,8 +1606,8 @@
    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "38037": {
   "sid": 38037,
@@ -1495,8 +1655,8 @@
    "payTo": "0xC8a8973Cf7FE41bDC9a85f70C279c9Bdc2EB8D0C",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "38405": {
   "sid": 38405,
@@ -1575,8 +1735,8 @@
    "payTo": "0xD4A80CddA4D12896Ea3Af9D210477c014758Aa9d",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "39175": {
   "sid": 39175,
@@ -1667,6 +1827,126 @@
   "scanDate": "2026-09-16",
   "scannedAt": "2026-09-16T12:02:28.158Z"
  },
+ "39831": {
+  "sid": 39831,
+  "service": "TradeDesk 标准版·季",
+  "asp": "缠论趋势指标 · TradeDesk",
+  "aspAgentId": "11167",
+  "endpoint": "https://api-ai.online/okxai/std/quarterly",
+  "listed": {
+   "feeAmount": 168,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 168 USDT0 (168000000) on xlayer to 0xa8d5…3939 for api-ai.online (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "168000000",
+    "human": "168",
+    "listed": "168000000"
+   },
+   "payTo": "0xa8d5cBD517fC74Df2B75121f49ce74a5240b3939",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "39832": {
+  "sid": 39832,
+  "service": "TradeDesk 标准版·年",
+  "asp": "缠论趋势指标 · TradeDesk",
+  "aspAgentId": "11167",
+  "endpoint": "https://api-ai.online/okxai/std/yearly",
+  "listed": {
+   "feeAmount": 568,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 568 USDT0 (568000000) on xlayer to 0xa8d5…3939 for api-ai.online (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "568000000",
+    "human": "568",
+    "listed": "568000000"
+   },
+   "payTo": "0xa8d5cBD517fC74Df2B75121f49ce74a5240b3939",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "39833": {
+  "sid": 39833,
+  "service": "TradeDesk 标准版·永久",
+  "asp": "缠论趋势指标 · TradeDesk",
+  "aspAgentId": "11167",
+  "endpoint": "https://api-ai.online/okxai/std/lifetime",
+  "listed": {
+   "feeAmount": 1688,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 1688 USDT0 (1688000000) on xlayer to 0xa8d5…3939 for api-ai.online (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1688000000",
+    "human": "1688",
+    "listed": "1688000000"
+   },
+   "payTo": "0xa8d5cBD517fC74Df2B75121f49ce74a5240b3939",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
  "39856": {
   "sid": 39856,
   "service": "URL Change Check API",
@@ -1704,8 +1984,8 @@
    "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "39876": {
   "sid": 39876,
@@ -1814,8 +2094,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "39938": {
   "sid": 39938,
@@ -1854,8 +2134,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "40010": {
   "sid": 40010,
@@ -1903,8 +2183,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "40011": {
   "sid": 40011,
@@ -1952,8 +2232,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "40012": {
   "sid": 40012,
@@ -2001,8 +2281,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "40042": {
   "sid": 40042,
@@ -2043,6 +2323,46 @@
   },
   "scanDate": "2026-09-17",
   "scannedAt": "2026-09-17T20:41:20.476Z"
+ },
+ "40448": {
+  "sid": 40448,
+  "service": "X Layer Alpha Scan",
+  "asp": "Saena Signal Ops",
+  "aspAgentId": "4370",
+  "endpoint": "https://paper.sae.best/xlayer-radar",
+  "listed": {
+   "feeAmount": 0.03,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.03 USDT0 (30000) on xlayer to 0x4524…76b9 for paper.sae.best (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "30000",
+    "human": "0.03",
+    "listed": "30000"
+   },
+   "payTo": "0x4524340d66c723ed266D3d3302ba2EB4c79476b9",
+   "entries": 1
+  },
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  },
  "40665": {
   "sid": 40665,
@@ -2139,7 +2459,7 @@
    "payTo": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-21",
+  "scannedAt": "2026-09-21T08:01:34.164Z"
  }
 }
