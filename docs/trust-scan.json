@@ -1,15 +1,15 @@
 {
- "generatedAt": "2026-09-23T07:32:07.884Z",
+ "generatedAt": "2026-09-23T08:01:28.238Z",
  "source": "OKX.AI marketplace (onchainos agent service-match), paid A2MCP services",
  "method": "One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.",
  "totals": {
   "services": 56,
-  "challenge": 29,
-  "allow": 18,
+  "challenge": 28,
+  "allow": 17,
   "warn": 11,
   "deny": 0,
-  "no_challenge": 25,
-  "unreachable": 2,
+  "no_challenge": 24,
+  "unreachable": 4,
   "invalid": 0
  },
  "reasons": {
@@ -160,53 +160,6 @@
    }
   },
   {
-   "sid": 40010,
-   "service": "Company Research",
-   "asp": "OkieCat",
-   "aspAgentId": "11265",
-   "endpoint": "https://api.okiecat.cc/v1/services/company-research",
-   "listed": {
-    "feeAmount": 0.05,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "POST",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0x7347860D9F0e917e4523021Df909C0D1c5D41826 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "50000",
-     "human": "0.05",
-     "listed": "50000"
-    },
-    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
-    "entries": 1
-   }
-  },
-  {
    "sid": 40012,
    "service": "Smart Money",
    "asp": "OkieCat",
@@ -248,6 +201,53 @@
      "atomic": "30000",
      "human": "0.03",
      "listed": "30000"
+    },
+    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
+    "entries": 1
+   }
+  },
+  {
+   "sid": 40010,
+   "service": "Company Research",
+   "asp": "OkieCat",
+   "aspAgentId": "11265",
+   "endpoint": "https://api.okiecat.cc/v1/services/company-research",
+   "listed": {
+    "feeAmount": 0.05,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "POST",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "WARN",
+   "reasons": [
+    "fresh_recipient"
+   ],
+   "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
+   "findings": [
+    {
+     "code": "fresh_recipient",
+     "severity": "WARN",
+     "subject": "payTo",
+     "message": "0x7347860D9F0e917e4523021Df909C0D1c5D41826 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+    }
+   ],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "50000",
+     "human": "0.05",
+     "listed": "50000"
     },
     "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
     "entries": 1
@@ -574,24 +574,24 @@
    }
   },
   {
-   "sid": 38405,
-   "service": "Japan Market Ledger",
-   "asp": "Asia Pulse",
-   "aspAgentId": "5537",
-   "endpoint": "https://asia-pulse.com/okx/japan",
+   "sid": 25864,
+   "service": "MoonFinder 市场信号扫描",
+   "asp": "MoonFinder",
+   "aspAgentId": "3598",
+   "endpoint": "https://opav.work/moonfinder-mcp/mcp",
    "listed": {
-    "feeAmount": 0.1,
+    "feeAmount": 0.01,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
-    "method": "GET",
+    "method": "MCP tools/call scan_market",
     "status": 402
    },
    "probe": "challenge",
    "verdict": "ALLOW",
    "reasons": [],
-   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x40CE…E2b7 for opav.work (accepts[0], exact). No risk rules triggered.",
    "findings": [],
    "challenge": {
     "network": "eip155:196",
@@ -603,20 +603,20 @@
      "canonical": true
     },
     "amount": {
-     "atomic": "100000",
-     "human": "0.1",
-     "listed": "100000"
+     "atomic": "10000",
+     "human": "0.01",
+     "listed": "10000"
     },
-    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
     "entries": 1
    }
   },
   {
-   "sid": 27360,
-   "service": "Stablecoin Market Overview",
+   "sid": 27361,
+   "service": "Stablecoin Market Trend",
    "asp": "Barker Yield Agent",
    "aspAgentId": "2012",
-   "endpoint": "https://mcp.barker.money/barker_market_overview",
+   "endpoint": "https://mcp.barker.money/barker_market_trend",
    "listed": {
     "feeAmount": 0.001,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -650,11 +650,11 @@
    }
   },
   {
-   "sid": 27361,
-   "service": "Stablecoin Market Trend",
+   "sid": 27360,
+   "service": "Stablecoin Market Overview",
    "asp": "Barker Yield Agent",
    "aspAgentId": "2012",
-   "endpoint": "https://mcp.barker.money/barker_market_trend",
+   "endpoint": "https://mcp.barker.money/barker_market_overview",
    "listed": {
     "feeAmount": 0.001,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -722,44 +722,6 @@
      "listed": "500000"
     },
     "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 25864,
-   "service": "MoonFinder 市场信号扫描",
-   "asp": "MoonFinder",
-   "aspAgentId": "3598",
-   "endpoint": "https://opav.work/moonfinder-mcp/mcp",
-   "listed": {
-    "feeAmount": 0.01,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "MCP tools/call scan_market",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "ALLOW",
-   "reasons": [],
-   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x40CE…E2b7 for opav.work (accepts[0], exact). No risk rules triggered.",
-   "findings": [],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "10000",
-     "human": "0.01",
-     "listed": "10000"
-    },
-    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
     "entries": 1
    }
   },
@@ -1193,7 +1155,7 @@
     "symbol": "USDT"
    },
    "http": {
-    "method": "MCP initialize",
+    "method": "POST",
     "status": 402
    },
    "probe": "challenge",
@@ -1305,20 +1267,6 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 40014,
-   "service": "Token Risk Analysis",
-   "asp": "NEXARA Token Risk Engine",
-   "aspAgentId": "11275",
-   "endpoint": "https://token-risk-engine.onrender.com/v1/risk-scan",
-   "listed": {
-    "feeAmount": 1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "probe": "unreachable",
-   "detail": "timeout"
-  },
-  {
    "sid": 16633,
    "service": "Wallet Reputation",
    "asp": "XAgent",
@@ -1351,6 +1299,37 @@
     "status": 400
    },
    "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 34718,
+   "service": "Sniffer Deep Report",
+   "asp": "Sniffer",
+   "aspAgentId": "6149",
+   "endpoint": "https://sniffer-alpha.duckdns.org/report",
+   "listed": {
+    "feeAmount": 1.99,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 400
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 40014,
+   "service": "Token Risk Analysis",
+   "asp": "NEXARA Token Risk Engine",
+   "aspAgentId": "11275",
+   "endpoint": "https://token-risk-engine.onrender.com/v1/risk-scan",
+   "listed": {
+    "feeAmount": 1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "probe": "unreachable",
+   "detail": "timeout"
   },
   {
    "sid": 17126,
@@ -1547,11 +1526,8 @@
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
-   "http": {
-    "method": "GET",
-    "status": 404
-   },
-   "probe": "no_payment_challenge"
+   "probe": "unreachable",
+   "detail": "timeout"
   },
   {
    "sid": 33550,
@@ -1567,23 +1543,6 @@
    "http": {
     "method": "GET",
     "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 34985,
-   "service": "EVM Transaction Guardrail",
-   "asp": "WethAsp",
-   "aspAgentId": "6351",
-   "endpoint": "https://weth-asp-api.onrender.com/analyze-transaction",
-   "listed": {
-    "feeAmount": 1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 404
    },
    "probe": "no_payment_challenge"
   },
@@ -1654,6 +1613,20 @@
     "status": 405
    },
    "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 34985,
+   "service": "EVM Transaction Guardrail",
+   "asp": "WethAsp",
+   "aspAgentId": "6351",
+   "endpoint": "https://weth-asp-api.onrender.com/analyze-transaction",
+   "listed": {
+    "feeAmount": 1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "probe": "unreachable",
+   "detail": "timeout"
   },
   {
    "sid": 3055,
