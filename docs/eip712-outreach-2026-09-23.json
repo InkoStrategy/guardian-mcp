@@ -1,0 +1,68 @@
+{
+  "date": "2026-09-23",
+  "correct": {
+    "name": "USD₮0",
+    "version": "1"
+  },
+  "count": 4,
+  "sellers": [
+    "Bit Monk",
+    "RoseIntel",
+    "Facticity AI",
+    "DAOLENS"
+  ],
+  "services": [
+    {
+      "sid": 19874,
+      "service": "Crypto Top / Bottom, Signal",
+      "seller": "Bit Monk",
+      "agentId": "3894",
+      "endpoint": "https://coin-signal.airblock2026.workers.dev/mcp",
+      "fee": 0.01,
+      "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
+      "declared": {
+        "name": "USDT₀",
+        "version": "1"
+      }
+    },
+    {
+      "sid": 17723,
+      "service": "RoseIntel Evidence API",
+      "seller": "RoseIntel",
+      "agentId": "3575",
+      "endpoint": "https://roseintel-evidence-api.vercel.app/mcp",
+      "fee": 0.5,
+      "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
+      "declared": {
+        "name": "USD₮0",
+        "version": "2"
+      }
+    },
+    {
+      "sid": 17911,
+      "service": "Recent Market Insights Feed",
+      "seller": "Facticity AI",
+      "agentId": "3581",
+      "endpoint": "https://api.facticity.ai/asp/recent-insights",
+      "fee": 0.02,
+      "payTo": "0x606A5D639A4D767EBD11B6BD3A9e6a5C1dBA6574",
+      "declared": {
+        "name": "USDT0",
+        "version": "2"
+      }
+    },
+    {
+      "sid": 35305,
+      "service": "DAO Treasury Infographic Pack",
+      "seller": "DAOLENS",
+      "agentId": "6608",
+      "endpoint": "https://daolens.shadrakbessanh.me/api/v1/report",
+      "fee": 0.01,
+      "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
+      "declared": {
+        "name": "USDT",
+        "version": "1"
+      }
+    }
+  ]
+}

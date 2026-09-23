@@ -85,8 +85,57 @@
    "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "17911": {
+  "sid": 17911,
+  "service": "Recent Market Insights Feed",
+  "asp": "Facticity AI",
+  "aspAgentId": "3581",
+  "endpoint": "https://api.facticity.ai/asp/recent-insights",
+  "listed": {
+   "feeAmount": 0.02,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "POST",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "eip712_domain_mismatch"
+  ],
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x606A…6574 for api.facticity.ai (accepts[0], exact). WARN: eip712_domain_mismatch.",
+  "findings": [
+   {
+    "code": "eip712_domain_mismatch",
+    "severity": "WARN",
+    "subject": null,
+    "message": "extra declares the EIP-712 domain name \"USDT0\" version \"2\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "20000",
+    "human": "0.02",
+    "listed": "20000"
+   },
+   "payTo": "0x606A5D639A4D767EBD11B6BD3A9e6a5C1dBA6574",
+   "entries": 1
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "19874": {
   "sid": 19874,
@@ -134,8 +183,8 @@
    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "25864": {
   "sid": 25864,
@@ -174,8 +223,168 @@
    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "27359": {
+  "sid": 27359,
+  "service": "Stablecoin Yield Radar",
+  "asp": "Barker Yield Agent",
+  "aspAgentId": "2012",
+  "endpoint": "https://mcp.barker.money/barker_defi_vaults",
+  "listed": {
+   "feeAmount": 0.001,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0x83F1…4c9f for mcp.barker.money (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1000",
+    "human": "0.001",
+    "listed": "1000"
+   },
+   "payTo": "0x83F15f5bEa445109E255ab82622fbdFECd1E4c9f",
+   "entries": 6
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "27360": {
+  "sid": 27360,
+  "service": "Stablecoin Market Overview",
+  "asp": "Barker Yield Agent",
+  "aspAgentId": "2012",
+  "endpoint": "https://mcp.barker.money/barker_market_overview",
+  "listed": {
+   "feeAmount": 0.001,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0x83F1…4c9f for mcp.barker.money (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1000",
+    "human": "0.001",
+    "listed": "1000"
+   },
+   "payTo": "0x83F15f5bEa445109E255ab82622fbdFECd1E4c9f",
+   "entries": 6
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "27361": {
+  "sid": 27361,
+  "service": "Stablecoin Market Trend",
+  "asp": "Barker Yield Agent",
+  "aspAgentId": "2012",
+  "endpoint": "https://mcp.barker.money/barker_market_trend",
+  "listed": {
+   "feeAmount": 0.001,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0x83F1…4c9f for mcp.barker.money (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1000",
+    "human": "0.001",
+    "listed": "1000"
+   },
+   "payTo": "0x83F15f5bEa445109E255ab82622fbdFECd1E4c9f",
+   "entries": 6
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "27362": {
+  "sid": 27362,
+  "service": "Barker Yield Advisor",
+  "asp": "Barker Yield Agent",
+  "aspAgentId": "2012",
+  "endpoint": "https://mcp.barker.money/barker_yield_advisor",
+  "listed": {
+   "feeAmount": 0.03,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.03 USDT0 (30000) on xlayer to 0x83F1…4c9f for mcp.barker.money (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "30000",
+    "human": "0.03",
+    "listed": "30000"
+   },
+   "payTo": "0x83F15f5bEa445109E255ab82622fbdFECd1E4c9f",
+   "entries": 6
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "29539": {
   "sid": 29539,
@@ -214,8 +423,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "30379": {
   "sid": 30379,
@@ -334,8 +543,8 @@
    "payTo": "0xdD1F170dA5c654391cd88D45843F4B405C3a5241",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "33278": {
   "sid": 33278,
@@ -374,8 +583,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "33279": {
   "sid": 33279,
@@ -512,8 +721,8 @@
    "payTo": "0x7DB2bcAC1B61b5A9eB906b3c22c81200998fb8CC",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "33714": {
   "sid": 33714,
@@ -632,8 +841,8 @@
    "payTo": "0x6F95b756051A955DB66E92F438fBC16271E638e7",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "34150": {
   "sid": 34150,
@@ -828,8 +1037,8 @@
    "payTo": "0x94D53c7814Be8D40f9196551bC598DDce47F686C",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "34742": {
   "sid": 34742,
@@ -1126,8 +1335,8 @@
    "payTo": "0x89680DaFEC8210A9DF1D6F3F3300fDcAB369BaFb",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "35351": {
   "sid": 35351,
@@ -1206,8 +1415,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "35434": {
   "sid": 35434,
@@ -1286,8 +1495,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "35436": {
   "sid": 35436,
@@ -1326,8 +1535,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "35437": {
   "sid": 35437,
@@ -1655,8 +1864,8 @@
    "payTo": "0xC8a8973Cf7FE41bDC9a85f70C279c9Bdc2EB8D0C",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "38405": {
   "sid": 38405,
@@ -1695,8 +1904,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-09-20",
-  "scannedAt": "2026-09-20T08:01:31.329Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "39139": {
   "sid": 39139,
@@ -1735,8 +1944,8 @@
    "payTo": "0xD4A80CddA4D12896Ea3Af9D210477c014758Aa9d",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "39175": {
   "sid": 39175,
@@ -1984,8 +2193,8 @@
    "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "39876": {
   "sid": 39876,
@@ -2094,8 +2303,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "39938": {
   "sid": 39938,
@@ -2134,8 +2343,8 @@
    "payTo": "0x4eA3891cc7861a422Caeaaa01A60cd26951f48d0",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "40010": {
   "sid": 40010,
@@ -2183,8 +2392,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "40011": {
   "sid": 40011,
@@ -2232,8 +2441,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "40012": {
   "sid": 40012,
@@ -2281,8 +2490,8 @@
    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
    "entries": 1
   },
-  "scanDate": "2026-09-21",
-  "scannedAt": "2026-09-21T08:01:34.164Z"
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  },
  "40042": {
   "sid": 40042,
@@ -2461,5 +2670,94 @@
   },
   "scanDate": "2026-09-21",
   "scannedAt": "2026-09-21T08:01:34.164Z"
+ },
+ "40790": {
+  "sid": 40790,
+  "service": "Deliverable audit court",
+  "asp": "Piepowder",
+  "aspAgentId": "13790",
+  "endpoint": "https://piepowder.vercel.app/api/audit",
+  "listed": {
+   "feeAmount": 0.01,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "fresh_recipient"
+  ],
+  "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x340c…286B for piepowder.vercel.app (accepts[0], exact). WARN: fresh_recipient.",
+  "findings": [
+   {
+    "code": "fresh_recipient",
+    "severity": "WARN",
+    "subject": "payTo",
+    "message": "0x340c1F8d16B427c8f364607E013c4c117b9a286B has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "10000",
+    "human": "0.01",
+    "listed": "10000"
+   },
+   "payTo": "0x340c1F8d16B427c8f364607E013c4c117b9a286B",
+   "entries": 1
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
+ },
+ "40832": {
+  "sid": 40832,
+  "service": "TxPreflight Onchain Tx Guard",
+  "asp": "TxPreflight Onchain Guard",
+  "aspAgentId": "13841",
+  "endpoint": "https://sangjiege.online/perp-risk/v1/tx-preflight",
+  "listed": {
+   "feeAmount": 0.04,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "MCP initialize",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.04 USDT0 (40000) on xlayer to 0x0Dc0…3dd1 for sangjiege.online (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "40000",
+    "human": "0.04",
+    "listed": "40000"
+   },
+   "payTo": "0x0Dc003349b43FCdE1eA9680DB2CA4dDF35653dd1",
+   "entries": 1
+  },
+  "scanDate": "2026-09-23",
+  "scannedAt": "2026-09-23T07:32:07.884Z"
  }
 }
