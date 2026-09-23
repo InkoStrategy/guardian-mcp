@@ -52,7 +52,7 @@ a{color:var(--acc);text-decoration:none}a:hover{text-decoration:underline}
 
 <h2>Market &amp; moat</h2>
 <div class="grid two">
-  <div class="card"><h3>A market that is appearing now</h3><p id="growth">The paid-service side of OKX.AI is growing by the day, each service a seller writing its own 402 challenge. Every one is a payment an agent will make with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.</p></div>
+  <div class="card"><h3>A market that is forming now</h3><p id="growth">The paid-service side of OKX.AI turns over constantly — listings appear and vanish from week to week, and every new one is a seller writing its own 402 challenge by hand. Each is a payment an agent will make with no independent check. Churn is the point: a market this young keeps producing fresh, untested payment surfaces faster than anyone audits them, and the safety layer does not exist yet.</p></div>
   <div class="card"><h3>Why it is defensible</h3><p><strong>Not OKX itself:</strong> a neutral, cross-agent safety layer that also scans the marketplace is awkward for the platform to run against its own sellers. <strong>Not sellers fixing their own 402s:</strong> that removes honest mistakes, not malicious listings, and buyers still need to verify. <strong>Not a fork:</strong> the value is the shared threat registry (network effect), the dated public dataset of real attack shapes, and being wired into OKX's own CLI and the pay command — none of which a copy starts with.</p></div>
 </div>
 
@@ -159,7 +159,18 @@ fetch('/trust-scans').then(function(r){return r.json()}).then(function(h){
   document.getElementById('costnote').textContent='From the '+base.date+' scan: '+chal+' of '+ (t.services||'—') +' paid services returned a challenge; '+flagged+' of those '+chal+' ('+(chal?Math.round(flagged/chal*100):0)+'%) drew a WARN or DENY, including '+(t.deny||0)+' outright attack listing. Latest re-scan '+(latest?latest.date:base.date)+' ('+((latest&&latest.totals&&latest.totals.services)||t.services)+' services).';
   // Dynamic growth from the first vs latest snapshot (no hardcoded numbers).
   var g=document.getElementById('growth');
-  if(g && snaps.length>=2){var f=snaps[0].totals||{},L=snaps[snaps.length-1].totals||{};if(f.services&&L.services)g.textContent='The paid-service side of OKX.AI grew from '+f.services+' ('+snaps[0].date+') to '+L.services+' ('+snaps[snaps.length-1].date+') discoverable services across our scans, each a seller writing its own 402 challenge with no independent check. As agent-to-agent commerce on X Layer scales, the number of unchecked payments scales with it — and the safety layer does not exist yet.';}
+  // Report the real shape of the data: this market churns, it does not climb a line. Claiming growth
+  // while our own dated snapshots show a dip is the fastest way to lose a reader who checks.
+  if(g && snaps.length>=2){
+    var counts=snaps.map(function(s){return (s.totals||{}).services||0}).filter(function(n){return n>0});
+    if(counts.length>=2){
+      var lo=Math.min.apply(null,counts), hi=Math.max.apply(null,counts);
+      g.textContent='Across '+counts.length+' daily scans between '+snaps[0].date+' and '+snaps[snaps.length-1].date+
+        ', the number of discoverable paid services moved between '+lo+' and '+hi+' — listings appear and vanish from week to week. '+
+        'Every one of them is a seller hand-writing its own 402 challenge, and every one is a payment an agent will make with no independent check. '+
+        'The churn is the point: a market this young keeps producing fresh, untested payment surfaces faster than anyone audits them.';
+    }
+  }
   var rate=chal?Math.round(flagged/chal*100):0;
   document.getElementById('sizing').textContent='Illustrative, not a forecast (0 paid calls today): if 1,000 buyer agents each made 20 x402 payments a day, at the observed '+rate+'% flag rate that is about '+(20000*rate/100).toLocaleString()+' payments a day the current path never checks — one call each is the wedge.';
 }).catch(function(){});

@@ -18,7 +18,9 @@ const path = require('node:path');
 const { fetchChallenge, challengeOf } = require('../src/x402-probe');
 
 const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
-const LIMIT = Number(arg('limit', 80));
+// 80 was a ceiling, not a measurement: the 18 Sep scan returned exactly 80 because that was the cap,
+// which made the following days look like a decline. Keep this comfortably above the real catalogue.
+const LIMIT = Number(arg('limit', 250));
 const GUARDIAN = arg('guardian', 'https://guardian-mcp-rho.vercel.app');
 const LOCAL = process.argv.includes('--local');
 const CONCURRENCY = Math.max(1, Number(arg('concurrency', 2)));

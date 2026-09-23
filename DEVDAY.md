@@ -40,6 +40,12 @@ snapshot, rebuilds the history and refuses to record a run that looks broken (an
 otherwise publish a near-empty scan). So the table above keeps growing on its own — check `GET /trust-scans`
 for every day since 16 September, not just the three shown here.
 
+Two honest caveats about these numbers. The 18 September figure of 80 hit the scanner's own `--limit 80`
+ceiling, so the real catalogue was at least that large; the limit is now 250 and later scans are true counts.
+And the catalogue does not climb steadily — it churns, moving between 56 and 80 discoverable paid services
+across the daily scans, as listings appear and vanish. That churn is the problem Pay-Safe addresses: every
+new listing is a seller hand-writing a fresh 402 challenge that nothing has checked.
+
 (Live figures: `GET /trust-scans`.) The 16 Sep DENY was the malicious "Market Signal API" (sid 39876) below.
 By the 17 Sep re-scan it had dropped out of marketplace **discovery** (`agent service-match`); the listing
 record still resolves by explicit sid via `agent service-detail`, and Guardian still returns its verdict
