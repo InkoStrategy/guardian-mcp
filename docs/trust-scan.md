@@ -1,16 +1,16 @@
 # OKX.AI Pay-Safe trust scan
 
-Generated 2026-10-07T08:01:26.856Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
+Generated 2026-10-08T08:01:34.089Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
 
 | Metric | Count |
 |---|---|
-| services | 64 |
-| challenge | 21 |
-| allow | 12 |
+| services | 63 |
+| challenge | 20 |
+| allow | 11 |
 | warn | 9 |
 | deny | 0 |
-| no_challenge | 38 |
-| unreachable | 5 |
+| no_challenge | 39 |
+| unreachable | 4 |
 | invalid | 0 |
 
 ## Reasons
@@ -47,11 +47,10 @@ Generated 2026-10-07T08:01:26.856Z. One unpaid request per endpoint to capture t
 | WARN | RoseIntel Evidence API (sid 17723) | 0.5 USDT | 0.5 USDT0 on eip155:196 | eip712_domain_mismatch |
 | WARN | 查询经济日历 (sid 40802) | 0.02 USDT | 0.02 USDT0 on eip155:196 | long_payment_timeout |
 | WARN | Recent Market Insights Feed (sid 17911) | 0.02 USDT | 0.02 USDT0 on eip155:196 | eip712_domain_mismatch |
-| ALLOW | Japan Market Ledger (sid 38405) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | MoonFinder 市场信号扫描 (sid 25864) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
-| ALLOW | 美股市场研究 (sid 39937) | 0.5 USDT | 0.5 USDT0 on eip155:196 |  |
-| ALLOW | 加密与 Meme 市场研究 (sid 39938) | 0.5 USDT | 0.5 USDT0 on eip155:196 |  |
+| ALLOW | Japan Market Ledger (sid 38405) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Korea Defense Chain Analysis (sid 35435) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | Korea Power Chain Analysis (sid 35436) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Token Approval Checker (sid 41195) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | Meme 交易情报扫描 (sid 33200) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | 钱包签名风险提醒 (sid 35352) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
@@ -66,10 +65,10 @@ Generated 2026-10-07T08:01:26.856Z. One unpaid request per endpoint to capture t
 | no_payment_challenge | Drawdown Analysis (sid 41264) | 0.01 USDT | — |  |
 | no_payment_challenge | Supplied Shock Stress Analysis (sid 41271) | 0.01 USDT | — |  |
 | unreachable | Token Risk Analysis (sid 40014) | 1 USDT | — | timeout |
-| no_payment_challenge | Token Security Scan (sid 16632) | 0.03 USDT | — |  |
 | no_payment_challenge | Wallet Reputation (sid 16633) | 0.01 USDT | — |  |
-| no_payment_challenge | Sniffer Risk Check (sid 34717) | 0.1 USDT | — |  |
+| no_payment_challenge | Token Security Scan (sid 16632) | 0.03 USDT | — |  |
 | no_payment_challenge | Sniffer Deep Report (sid 34718) | 1.99 USDT | — |  |
+| no_payment_challenge | Sniffer Risk Check (sid 34717) | 0.1 USDT | — |  |
 | no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
 | no_payment_challenge | RWA Research Report (sid 40671) | 0.25 USDT | — |  |
 | unreachable | Crypto Calendar 加密日历 (sid 38009) | 0.03 USDT | — | fetch failed |
@@ -81,13 +80,14 @@ Generated 2026-10-07T08:01:26.856Z. One unpaid request per endpoint to capture t
 | no_payment_challenge | Claim Fact-Check Service (sid 17905) | 0.1 USDT | — |  |
 | unreachable | Wallet Risk Allowance Audit (sid 34986) | 1 USDT | — | timeout |
 | no_payment_challenge | API Response Regression Diff (sid 41231) | 0.01 USDT | — |  |
-| no_payment_challenge | Health Check (sid 3053) | 0.000001 USDT | — |  |
 | no_payment_challenge | Service List (sid 3054) | 0.000001 USDT | — |  |
+| no_payment_challenge | Health Check (sid 3053) | 0.000001 USDT | — |  |
 | no_payment_challenge | Structured Data Chart (sid 41247) | 0.01 USDT | — |  |
 | no_payment_challenge | OHLCV Data Gap Check (sid 41189) | 0.01 USDT | — |  |
 | no_payment_challenge | EIP-712 Typed Data Explainer (sid 41196) | 0.01 USDT | — |  |
 | no_payment_challenge | Check Yield (sid 33550) | 0.1 USDT | — |  |
 | no_payment_challenge | AI饮食运动助手 (sid 30754) | 0.01 USDT | — |  |
+| no_payment_challenge | EVM Transaction Guardrail (sid 34985) | 1 USDT | — |  |
 | no_payment_challenge | 美股AI半导体5分钟信号日报 (sid 39799) | 2.98 USDT | — |  |
 | no_payment_challenge | Bubble Image (sid 3055) | 0.5 USDT | — |  |
 | no_payment_challenge | Candlestick Chart Image (sid 41191) | 0.01 USDT | — |  |
@@ -98,7 +98,6 @@ Generated 2026-10-07T08:01:26.856Z. One unpaid request per endpoint to capture t
 | no_payment_challenge | Image Batch Convert Resize (sid 41242) | 0.01 USDT | — |  |
 | no_payment_challenge | Near Duplicate Image Finder (sid 41245) | 0.01 USDT | — |  |
 | no_payment_challenge | Social Preview Validator (sid 41209) | 0.01 USDT | — |  |
-| unreachable | EVM Transaction Guardrail (sid 34985) | 1 USDT | — | timeout |
 | no_payment_challenge | X Layer Contract Risk Scanner (sid 39842) | 0.05 USDT | — |  |
 | no_payment_challenge | X Layer Proof Verifier (sid 41109) | 0.01 USDT | — |  |
 | no_payment_challenge | Asset Identifier (sid 40673) | 0.08 USDT | — |  |
