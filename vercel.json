@@ -11,12 +11,39 @@
     }
   },
   "crons": [
-    { "path": "/cron/seed", "schedule": "0 3 * * *" }
+    {
+      "path": "/cron/seed",
+      "schedule": "0 3 * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/((?!demo-v61|demo-short).*)", "destination": "/api/index" }
+    {
+      "source": "/((?!demo-v61|demo-short|deck).*)",
+      "destination": "/api/index"
+    }
   ],
   "headers": [
-    { "source": "/demo-v61.en.vtt", "headers": [{ "key": "content-type", "value": "text/vtt; charset=utf-8" }] }
+    {
+      "source": "/demo-v61.en.vtt",
+      "headers": [
+        {
+          "key": "content-type",
+          "value": "text/vtt; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/deck.pdf",
+      "headers": [
+        {
+          "key": "content-type",
+          "value": "application/pdf"
+        },
+        {
+          "key": "content-disposition",
+          "value": "inline; filename=\"GuardianMCP-PaySafe-LNO-Alpha.pdf\""
+        }
+      ]
+    }
   ]
 }
