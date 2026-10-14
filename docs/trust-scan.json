@@ -1,20 +1,20 @@
 {
- "generatedAt": "2026-10-13T08:01:35.856Z",
+ "generatedAt": "2026-10-14T16:08:24.326Z",
  "source": "OKX.AI marketplace (onchainos agent service-match), paid A2MCP services",
  "method": "One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.",
  "totals": {
-  "services": 78,
+  "services": 81,
   "challenge": 32,
-  "allow": 10,
-  "warn": 22,
+  "allow": 13,
+  "warn": 19,
   "deny": 0,
-  "no_challenge": 42,
-  "unreachable": 4,
+  "no_challenge": 46,
+  "unreachable": 3,
   "invalid": 0
  },
  "reasons": {
-  "fresh_recipient": 17,
-  "eip712_domain_mismatch": 3,
+  "fresh_recipient": 15,
+  "eip712_domain_mismatch": 2,
   "endpoint_domain_suspicious": 1,
   "long_payment_timeout": 1
  },
@@ -161,147 +161,6 @@
    }
   },
   {
-   "sid": 40011,
-   "service": "Market News",
-   "asp": "OkieCat",
-   "aspAgentId": "11265",
-   "endpoint": "https://api.okiecat.cc/v1/services/market-news",
-   "listed": {
-    "feeAmount": 0.02,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "POST",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0x7347860D9F0e917e4523021Df909C0D1c5D41826 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "20000",
-     "human": "0.02",
-     "listed": "20000"
-    },
-    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 40780,
-   "service": "Entropy Signal API",
-   "asp": "EntropicAPI",
-   "aspAgentId": "13777",
-   "endpoint": "https://api.entropicapi.com/signal",
-   "listed": {
-    "feeAmount": 0.02,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x19f0…f9ED for api.entropicapi.com (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "20000",
-     "human": "0.02",
-     "listed": "20000"
-    },
-    "payTo": "0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 19874,
-   "service": "Crypto Top / Bottom, Signal",
-   "asp": "Bit Monk",
-   "aspAgentId": "3894",
-   "endpoint": "https://coin-signal.airblock2026.workers.dev/mcp",
-   "listed": {
-    "feeAmount": 0.01,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "MCP tools/call scan_bottoms",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "eip712_domain_mismatch"
-   ],
-   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0xB4CB…fbC6 for coin-signal.airblock2026.workers.dev (accepts[0], exact). WARN: eip712_domain_mismatch.",
-   "findings": [
-    {
-     "code": "eip712_domain_mismatch",
-     "severity": "WARN",
-     "subject": null,
-     "message": "extra declares the EIP-712 domain name \"USDT₀\" version \"1\", but the USDT0 contract on xlayer uses name \"USD₮0\" version \"1\" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "10000",
-     "human": "0.01",
-     "listed": "10000"
-    },
-    "payTo": "0xB4CB25019c18c7F1663150e249AEEABcaB67fbC6",
-    "entries": 1
-   }
-  },
-  {
    "sid": 4347,
    "service": "Otto DeFi Analytics",
    "asp": "Otto AI",
@@ -396,100 +255,6 @@
    }
   },
   {
-   "sid": 40010,
-   "service": "Company Research",
-   "asp": "OkieCat",
-   "aspAgentId": "11265",
-   "endpoint": "https://api.okiecat.cc/v1/services/company-research",
-   "listed": {
-    "feeAmount": 0.05,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "POST",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0x7347860D9F0e917e4523021Df909C0D1c5D41826 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "50000",
-     "human": "0.05",
-     "listed": "50000"
-    },
-    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 40012,
-   "service": "Smart Money",
-   "asp": "OkieCat",
-   "aspAgentId": "11265",
-   "endpoint": "https://api.okiecat.cc/v1/services/smart-money",
-   "listed": {
-    "feeAmount": 0.03,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "POST",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.03 USDT0 (30000) on xlayer to 0x7347…1826 for api.okiecat.cc (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0x7347860D9F0e917e4523021Df909C0D1c5D41826 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "30000",
-     "human": "0.03",
-     "listed": "30000"
-    },
-    "payTo": "0x7347860D9F0e917e4523021Df909C0D1c5D41826",
-    "entries": 1
-   }
-  },
-  {
    "sid": 4343,
    "service": "Otto Crypto News",
    "asp": "Otto AI",
@@ -578,6 +343,53 @@
      "atomic": "1000",
      "human": "0.001",
      "listed": "1000"
+    },
+    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+    "entries": 6
+   }
+  },
+  {
+   "sid": 4336,
+   "service": "Otto KOL Sentiment",
+   "asp": "Otto AI",
+   "aspAgentId": "2118",
+   "endpoint": "https://xlayer.ottoai.services/kol-sentiment",
+   "listed": {
+    "feeAmount": 0.003,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "WARN",
+   "reasons": [
+    "fresh_recipient"
+   ],
+   "summary": "Payment of 0.003 USDT0 (3000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
+   "findings": [
+    {
+     "code": "fresh_recipient",
+     "severity": "WARN",
+     "subject": "payTo",
+     "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+    }
+   ],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "3000",
+     "human": "0.003",
+     "listed": "3000"
     },
     "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
     "entries": 6
@@ -725,18 +537,18 @@
    }
   },
   {
-   "sid": 41535,
-   "service": "Email Trust Preflight",
-   "asp": "MailTrust",
-   "aspAgentId": "14717",
-   "endpoint": "https://api--mailtrust-api--td8vvjrz2btz.code.run/v1/email/preflight",
+   "sid": 4354,
+   "service": "Otto Portfolio Balances",
+   "asp": "Otto AI",
+   "aspAgentId": "2118",
+   "endpoint": "https://xlayer.ottoai.services/portfolio",
    "listed": {
-    "feeAmount": 0.005,
+    "feeAmount": 0.001,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
-    "method": "POST",
+    "method": "GET",
     "status": 402
    },
    "probe": "challenge",
@@ -744,13 +556,13 @@
    "reasons": [
     "fresh_recipient"
    ],
-   "summary": "Payment of 0.005 USDT0 (5000) on xlayer to 0x0760…FFF0 for api--mailtrust-api--td8vvjrz2btz.code.run (accepts[0], exact). WARN: fresh_recipient.",
+   "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
    "findings": [
     {
      "code": "fresh_recipient",
      "severity": "WARN",
      "subject": "payTo",
-     "message": "0x07600b3B3d5f3CA0d8E37302c2b97c001dB5FFF0 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+     "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
     }
    ],
    "challenge": {
@@ -763,12 +575,106 @@
      "canonical": true
     },
     "amount": {
-     "atomic": "5000",
-     "human": "0.005",
-     "listed": "5000"
+     "atomic": "1000",
+     "human": "0.001",
+     "listed": "1000"
     },
-    "payTo": "0x07600b3B3d5f3CA0d8E37302c2b97c001dB5FFF0",
-    "entries": 1
+    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+    "entries": 6
+   }
+  },
+  {
+   "sid": 4360,
+   "service": "Otto Yield Farming Active",
+   "asp": "Otto AI",
+   "aspAgentId": "2118",
+   "endpoint": "https://xlayer.ottoai.services/yield-farming-active",
+   "listed": {
+    "feeAmount": 0.001,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "WARN",
+   "reasons": [
+    "fresh_recipient"
+   ],
+   "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
+   "findings": [
+    {
+     "code": "fresh_recipient",
+     "severity": "WARN",
+     "subject": "payTo",
+     "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+    }
+   ],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "1000",
+     "human": "0.001",
+     "listed": "1000"
+    },
+    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+    "entries": 6
+   }
+  },
+  {
+   "sid": 4361,
+   "service": "Otto Yield Farming History",
+   "asp": "Otto AI",
+   "aspAgentId": "2118",
+   "endpoint": "https://xlayer.ottoai.services/yield-farming-historical",
+   "listed": {
+    "feeAmount": 0.001,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "WARN",
+   "reasons": [
+    "fresh_recipient"
+   ],
+   "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
+   "findings": [
+    {
+     "code": "fresh_recipient",
+     "severity": "WARN",
+     "subject": "payTo",
+     "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+    }
+   ],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "1000",
+     "human": "0.001",
+     "listed": "1000"
+    },
+    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+    "entries": 6
    }
   },
   {
@@ -960,53 +866,6 @@
    }
   },
   {
-   "sid": 4354,
-   "service": "Otto Portfolio Balances",
-   "asp": "Otto AI",
-   "aspAgentId": "2118",
-   "endpoint": "https://xlayer.ottoai.services/portfolio",
-   "listed": {
-    "feeAmount": 0.001,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "WARN",
-   "reasons": [
-    "fresh_recipient"
-   ],
-   "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
-   "findings": [
-    {
-     "code": "fresh_recipient",
-     "severity": "WARN",
-     "subject": "payTo",
-     "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
-    }
-   ],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "1000",
-     "human": "0.001",
-     "listed": "1000"
-    },
-    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
-    "entries": 6
-   }
-  },
-  {
    "sid": 4341,
    "service": "Otto All Tokens",
    "asp": "Otto AI",
@@ -1051,6 +910,44 @@
     },
     "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
     "entries": 6
+   }
+  },
+  {
+   "sid": 38405,
+   "service": "Japan Market Ledger",
+   "asp": "Asia Pulse",
+   "aspAgentId": "5537",
+   "endpoint": "https://asia-pulse.com/okx/japan",
+   "listed": {
+    "feeAmount": 0.1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "ALLOW",
+   "reasons": [],
+   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+   "findings": [],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "100000",
+     "human": "0.1",
+     "listed": "100000"
+    },
+    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+    "entries": 1
    }
   },
   {
@@ -1130,11 +1027,87 @@
    }
   },
   {
-   "sid": 36980,
-   "service": "Crypto analysis team",
-   "asp": "玄学交易师 · StarTrade",
-   "aspAgentId": "7514",
-   "endpoint": "https://x402.0xq.uk/agent7",
+   "sid": 16720,
+   "service": "Market Regime Read",
+   "asp": "AlgoVault Quant Signal",
+   "aspAgentId": "3417",
+   "endpoint": "https://api.algovault.com/a2mcp/get_market_regime",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "ALLOW",
+   "reasons": [],
+   "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x6236…75B9 for api.algovault.com (accepts[0], exact). No risk rules triggered.",
+   "findings": [],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "20000",
+     "human": "0.02",
+     "listed": "20000"
+    },
+    "payTo": "0x62366C50e1bB14ed4ff2B6C8C143f6049DF075B9",
+    "entries": 1
+   }
+  },
+  {
+   "sid": 16721,
+   "service": "Multi-Asset Signal Scan",
+   "asp": "AlgoVault Quant Signal",
+   "aspAgentId": "3417",
+   "endpoint": "https://api.algovault.com/a2mcp/scan_trade_calls",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "ALLOW",
+   "reasons": [],
+   "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x6236…75B9 for api.algovault.com (accepts[0], exact). No risk rules triggered.",
+   "findings": [],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "20000",
+     "human": "0.02",
+     "listed": "20000"
+    },
+    "payTo": "0x62366C50e1bB14ed4ff2B6C8C143f6049DF075B9",
+    "entries": 1
+   }
+  },
+  {
+   "sid": 35435,
+   "service": "Korea Defense Chain Analysis",
+   "asp": "Asia Pulse",
+   "aspAgentId": "5537",
+   "endpoint": "https://asia-pulse.com/okx/chain/defense",
    "listed": {
     "feeAmount": 0.1,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -1147,7 +1120,7 @@
    "probe": "challenge",
    "verdict": "ALLOW",
    "reasons": [],
-   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xfcA3…3b1a for x402.0xq.uk (accepts[0], exact). No risk rules triggered.",
+   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
    "findings": [],
    "challenge": {
     "network": "eip155:196",
@@ -1163,7 +1136,45 @@
      "human": "0.1",
      "listed": "100000"
     },
-    "payTo": "0xfcA39c788199A0De3FE5569d16C5091B980b3b1a",
+    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
+    "entries": 1
+   }
+  },
+  {
+   "sid": 35436,
+   "service": "Korea Power Chain Analysis",
+   "asp": "Asia Pulse",
+   "aspAgentId": "5537",
+   "endpoint": "https://asia-pulse.com/okx/chain/power",
+   "listed": {
+    "feeAmount": 0.1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "ALLOW",
+   "reasons": [],
+   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xEBE7…C14d for asia-pulse.com (accepts[0], exact). No risk rules triggered.",
+   "findings": [],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "100000",
+     "human": "0.1",
+     "listed": "100000"
+    },
+    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
     "entries": 1
    }
   },
@@ -1206,24 +1217,24 @@
    }
   },
   {
-   "sid": 11171,
-   "service": "Token DD Verdict",
-   "asp": "ChainSentry",
-   "aspAgentId": "2361",
-   "endpoint": "https://verdict.gougoubi.uk/screen/verdict",
+   "sid": 35351,
+   "service": "冲前风险检查卡",
+   "asp": "Before Series",
+   "aspAgentId": "6656",
+   "endpoint": "https://before.stoneup.xyz/api/before/ape",
    "listed": {
-    "feeAmount": 0.05,
+    "feeAmount": 0.01,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
-    "method": "GET",
+    "method": "MCP initialize",
     "status": 402
    },
    "probe": "challenge",
    "verdict": "ALLOW",
    "reasons": [],
-   "summary": "Payment of 0.05 USDT0 (50000) on xlayer to 0x62fC…52Bf for verdict.gougoubi.uk (accepts[0], exact). No risk rules triggered.",
+   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x73b3…3687 for before.stoneup.xyz (accepts[0], exact). No risk rules triggered.",
    "findings": [],
    "challenge": {
     "network": "eip155:196",
@@ -1235,49 +1246,11 @@
      "canonical": true
     },
     "amount": {
-     "atomic": "50000",
-     "human": "0.05",
-     "listed": "50000"
+     "atomic": "10000",
+     "human": "0.01",
+     "listed": "10000"
     },
-    "payTo": "0x62fCc335876A454B284FB2D8D3654eA0DdfD52Bf",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 33200,
-   "service": "Meme 交易情报扫描",
-   "asp": "RIPTIDE",
-   "aspAgentId": "5412",
-   "endpoint": "https://asp.btc-vip.online/mcp",
-   "listed": {
-    "feeAmount": 0.1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "ALLOW",
-   "reasons": [],
-   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xdD1F…5241 for asp.btc-vip.online (accepts[0], exact). No risk rules triggered.",
-   "findings": [],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "100000",
-     "human": "0.1",
-     "listed": "100000"
-    },
-    "payTo": "0xdD1F170dA5c654391cd88D45843F4B405C3a5241",
+    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
     "entries": 1
    }
   },
@@ -1320,13 +1293,13 @@
    }
   },
   {
-   "sid": 39830,
-   "service": "TradeDesk 指标体验引流",
-   "asp": "缠论趋势指标 · TradeDesk",
-   "aspAgentId": "11167",
-   "endpoint": "https://api-ai.online/okxai/trial",
+   "sid": 40920,
+   "service": "Kerb Exit Check",
+   "asp": "Kerb",
+   "aspAgentId": "13887",
+   "endpoint": "https://api.usekerb.xyz/agents/exit-check",
    "listed": {
-    "feeAmount": 0.1,
+    "feeAmount": 0.01,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
@@ -1337,7 +1310,7 @@
    "probe": "challenge",
    "verdict": "ALLOW",
    "reasons": [],
-   "summary": "Payment of 0.1 USDT0 (100000) on xlayer to 0xa8d5…3939 for api-ai.online (accepts[0], exact). No risk rules triggered.",
+   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x0d63…53F2 for api.usekerb.xyz (accepts[0], exact). No risk rules triggered.",
    "findings": [],
    "challenge": {
     "network": "eip155:196",
@@ -1349,49 +1322,11 @@
      "canonical": true
     },
     "amount": {
-     "atomic": "100000",
-     "human": "0.1",
-     "listed": "100000"
+     "atomic": "10000",
+     "human": "0.01",
+     "listed": "10000"
     },
-    "payTo": "0xa8d5cBD517fC74Df2B75121f49ce74a5240b3939",
-    "entries": 1
-   }
-  },
-  {
-   "sid": 39856,
-   "service": "URL Change Check API",
-   "asp": "PagePulse",
-   "aspAgentId": "11185",
-   "endpoint": "https://pagepulse.167-179-80-192.sslip.io/v1/a2mcp/url-change-check",
-   "listed": {
-    "feeAmount": 0.005,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "POST",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "ALLOW",
-   "reasons": [],
-   "summary": "Payment of 0.005 USDT0 (5000) on xlayer to 0xc462…9d60 for pagepulse.167-179-80-192.sslip.io (accepts[0], exact). No risk rules triggered.",
-   "findings": [],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "5000",
-     "human": "0.005",
-     "listed": "5000"
-    },
-    "payTo": "0xc4622689Eb6C38c929fe254777B449a5DEdF9d60",
+    "payTo": "0x0d63f9EeB86813230B72017444cea16Cd4A453F2",
     "entries": 1
    }
   },
@@ -1434,6 +1369,44 @@
    }
   },
   {
+   "sid": 41342,
+   "service": "Waypoint Plan",
+   "asp": "Waypoint",
+   "aspAgentId": "14101",
+   "endpoint": "https://waypoint.cjlin.com/asp/plan",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "POST",
+    "status": 402
+   },
+   "probe": "challenge",
+   "verdict": "ALLOW",
+   "reasons": [],
+   "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x7A80…bf0f for waypoint.cjlin.com (accepts[0], exact). No risk rules triggered.",
+   "findings": [],
+   "challenge": {
+    "network": "eip155:196",
+    "scheme": "exact",
+    "asset": {
+     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+     "symbol": "USDT0",
+     "decimals": 6,
+     "canonical": true
+    },
+    "amount": {
+     "atomic": "20000",
+     "human": "0.02",
+     "listed": "20000"
+    },
+    "payTo": "0x7A80299a84C3775d62Da1CD4A9d59B1524D7bf0f",
+    "entries": 1
+   }
+  },
+  {
    "sid": 7494,
    "service": "Crypto Market Context Feed",
    "asp": "MarketContext API",
@@ -1468,19 +1441,19 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 39824,
-   "service": "X Layer Token Analysis",
-   "asp": "XLayer Token Intel",
-   "aspAgentId": "11160",
-   "endpoint": "https://xlayer-api.167-179-80-192.sslip.io/v1/a2mcp/analyze",
+   "sid": 17483,
+   "service": "地址行为分析服务",
+   "asp": "MistTrack",
+   "aspAgentId": "2139",
+   "endpoint": "https://openapi.misttrack.io/okxai/address_action",
    "listed": {
-    "feeAmount": 0.05,
+    "feeAmount": 0.5,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
     "method": "GET",
-    "status": 404
+    "status": 400
    },
    "probe": "no_payment_challenge"
   },
@@ -1519,6 +1492,40 @@
    "probe": "no_payment_challenge"
   },
   {
+   "sid": 41271,
+   "service": "Supplied Shock Stress Analysis",
+   "asp": "Hawre Portfolio Math",
+   "aspAgentId": "13994",
+   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/shock-stress-analysis",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 16633,
+   "service": "Wallet Reputation",
+   "asp": "XAgent",
+   "aspAgentId": "2183",
+   "endpoint": "https://api.xerpaai.com/provider/a2mcp/wallet/profile",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 200
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
    "sid": 16632,
    "service": "Token Security Scan",
    "asp": "XAgent",
@@ -1536,33 +1543,36 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 40014,
-   "service": "Token Risk Analysis",
-   "asp": "NEXARA Token Risk Engine",
-   "aspAgentId": "11275",
-   "endpoint": "https://token-risk-engine.onrender.com/v1/risk-scan",
+   "sid": 34718,
+   "service": "Sniffer Deep Report",
+   "asp": "Sniffer",
+   "aspAgentId": "6149",
+   "endpoint": "https://sniffer-alpha.duckdns.org/report",
    "listed": {
-    "feeAmount": 1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "probe": "unreachable",
-   "detail": "timeout"
-  },
-  {
-   "sid": 16633,
-   "service": "Wallet Reputation",
-   "asp": "XAgent",
-   "aspAgentId": "2183",
-   "endpoint": "https://api.xerpaai.com/provider/a2mcp/wallet/profile",
-   "listed": {
-    "feeAmount": 0.01,
+    "feeAmount": 1.99,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
     "method": "GET",
-    "status": 200
+    "status": 400
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 34717,
+   "service": "Sniffer Risk Check",
+   "asp": "Sniffer",
+   "aspAgentId": "6149",
+   "endpoint": "https://sniffer-alpha.duckdns.org/check",
+   "listed": {
+    "feeAmount": 0.1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 400
    },
    "probe": "no_payment_challenge"
   },
@@ -1597,6 +1607,23 @@
    "http": {
     "method": "GET",
     "status": 400
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 41527,
+   "service": "Token Risk Gate",
+   "asp": "Sharkflow Token Risk",
+   "aspAgentId": "14702",
+   "endpoint": "https://x402.sharkflow.top/safety_gate",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
    },
    "probe": "no_payment_challenge"
   },
@@ -1652,40 +1679,6 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 41587,
-   "service": "Luc Trend State",
-   "asp": "Luc Intelligence",
-   "aspAgentId": "14801",
-   "endpoint": "https://intelligence.lucxu.com/v1/trend-state",
-   "listed": {
-    "feeAmount": 0.1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 41549,
-   "service": "Luc Daily Asset Brief",
-   "asp": "Luc Intelligence",
-   "aspAgentId": "14801",
-   "endpoint": "https://intelligence.lucxu.com/v1/daily-asset-brief",
-   "listed": {
-    "feeAmount": 0.1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
    "sid": 4348,
    "service": "Otto Filtered News",
    "asp": "Otto AI",
@@ -1693,6 +1686,23 @@
    "endpoint": "https://xlayer.ottoai.services/filtered-news",
    "listed": {
     "feeAmount": 0.001,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 400
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 4338,
+   "service": "Otto Generate Meme",
+   "asp": "Otto AI",
+   "aspAgentId": "2118",
+   "endpoint": "https://xlayer.ottoai.services/generate-meme",
+   "listed": {
+    "feeAmount": 0.15,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
@@ -1730,23 +1740,6 @@
    "http": {
     "method": "GET",
     "status": 200
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 39848,
-   "service": "X Layer Wallet Activity",
-   "asp": "XLayer Wallet Activity",
-   "aspAgentId": "11177",
-   "endpoint": "https://xlayer-wallet.167-179-80-192.sslip.io/v1/a2mcp/wallet-intelligence",
-   "listed": {
-    "feeAmount": 0.05,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 404
    },
    "probe": "no_payment_challenge"
   },
@@ -1819,6 +1812,40 @@
    "probe": "no_payment_challenge"
   },
   {
+   "sid": 3053,
+   "service": "Health Check",
+   "asp": "XBubbleAI",
+   "aspAgentId": "2087",
+   "endpoint": "https://x402.dappos.com/healthz",
+   "listed": {
+    "feeAmount": 0.000001,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 200
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 3054,
+   "service": "Service List",
+   "asp": "XBubbleAI",
+   "aspAgentId": "2087",
+   "endpoint": "https://x402.dappos.com/okx/agent-marketplace/services",
+   "listed": {
+    "feeAmount": 0.000001,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 200
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
    "sid": 34986,
    "service": "Wallet Risk Allowance Audit",
    "asp": "WethAsp",
@@ -1833,19 +1860,53 @@
    "detail": "timeout"
   },
   {
-   "sid": 3053,
-   "service": "Health Check",
-   "asp": "XBubbleAI",
-   "aspAgentId": "2087",
-   "endpoint": "https://x402.dappos.com/healthz",
+   "sid": 40673,
+   "service": "Asset Identifier",
+   "asp": "Uzam",
+   "aspAgentId": "13653",
+   "endpoint": "https://uzam-production-95f9.up.railway.app/api/identify",
    "listed": {
-    "feeAmount": 0.000001,
+    "feeAmount": 0.08,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
     "method": "GET",
-    "status": 200
+    "status": 404
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 40672,
+   "service": "RWA Asset Comparison",
+   "asp": "Uzam",
+   "aspAgentId": "13653",
+   "endpoint": "https://uzam-production-95f9.up.railway.app/api/compare",
+   "listed": {
+    "feeAmount": 0.5,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 404
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 41223,
+   "service": "OpenAPI to MCP Tool Defs",
+   "asp": "Hawre Dev Checks",
+   "aspAgentId": "13990",
+   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/openapi-to-mcp-tools",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
    },
    "probe": "no_payment_challenge"
   },
@@ -1935,23 +1996,6 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 4338,
-   "service": "Otto Generate Meme",
-   "asp": "Otto AI",
-   "aspAgentId": "2118",
-   "endpoint": "https://xlayer.ottoai.services/generate-meme",
-   "listed": {
-    "feeAmount": 0.15,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 400
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
    "sid": 39799,
    "service": "美股AI半导体5分钟信号日报",
    "asp": "0xlong",
@@ -1969,6 +2013,20 @@
    "probe": "no_payment_challenge"
   },
   {
+   "sid": 34985,
+   "service": "EVM Transaction Guardrail",
+   "asp": "WethAsp",
+   "aspAgentId": "6351",
+   "endpoint": "https://weth-asp-api.onrender.com/analyze-transaction",
+   "listed": {
+    "feeAmount": 1,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "probe": "unreachable",
+   "detail": "timeout"
+  },
+  {
    "sid": 17906,
    "service": "Prediction Market Insight",
    "asp": "Facticity AI",
@@ -1984,20 +2042,6 @@
     "status": 405
    },
    "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 34985,
-   "service": "EVM Transaction Guardrail",
-   "asp": "WethAsp",
-   "aspAgentId": "6351",
-   "endpoint": "https://weth-asp-api.onrender.com/analyze-transaction",
-   "listed": {
-    "feeAmount": 1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "probe": "unreachable",
-   "detail": "timeout"
   },
   {
    "sid": 3055,
@@ -2102,11 +2146,11 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 41242,
-   "service": "Image Batch Convert Resize",
+   "sid": 41245,
+   "service": "Near Duplicate Image Finder",
    "asp": "Hawre Image Lab",
    "aspAgentId": "13992",
-   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/image-batch-convert",
+   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/near-duplicate-images",
    "listed": {
     "feeAmount": 0.01,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -2119,11 +2163,11 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 41245,
-   "service": "Near Duplicate Image Finder",
+   "sid": 41242,
+   "service": "Image Batch Convert Resize",
    "asp": "Hawre Image Lab",
    "aspAgentId": "13992",
-   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/near-duplicate-images",
+   "endpoint": "https://a2mcp-tools.danamohammadkhidhir.workers.dev/v2/image-batch-convert",
    "listed": {
     "feeAmount": 0.01,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -2183,23 +2227,6 @@
    "http": {
     "method": "GET",
     "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 39842,
-   "service": "X Layer Contract Risk Scanner",
-   "asp": "X Layer Token Risk Check",
-   "aspAgentId": "11170",
-   "endpoint": "https://xlayer-risk.167-179-80-192.sslip.io/v1/a2mcp/risk-check",
-   "listed": {
-    "feeAmount": 0.05,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 404
    },
    "probe": "no_payment_challenge"
   }

@@ -45,8 +45,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-11",
-  "scannedAt": "2026-10-11T08:01:27.877Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4340": {
   "sid": 4340,
@@ -94,8 +94,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4341": {
   "sid": 4341,
@@ -143,8 +143,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4343": {
   "sid": 4343,
@@ -192,8 +192,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4347": {
   "sid": 4347,
@@ -241,8 +241,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4349": {
   "sid": 4349,
@@ -290,8 +290,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4351": {
   "sid": 4351,
@@ -339,8 +339,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4352": {
   "sid": 4352,
@@ -388,8 +388,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4354": {
   "sid": 4354,
@@ -437,8 +437,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4357": {
   "sid": 4357,
@@ -486,8 +486,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4359": {
   "sid": 4359,
@@ -535,8 +535,106 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
+ },
+ "4360": {
+  "sid": 4360,
+  "service": "Otto Yield Farming Active",
+  "asp": "Otto AI",
+  "aspAgentId": "2118",
+  "endpoint": "https://xlayer.ottoai.services/yield-farming-active",
+  "listed": {
+   "feeAmount": 0.001,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "fresh_recipient"
+  ],
+  "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
+  "findings": [
+   {
+    "code": "fresh_recipient",
+    "severity": "WARN",
+    "subject": "payTo",
+    "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1000",
+    "human": "0.001",
+    "listed": "1000"
+   },
+   "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+   "entries": 6
+  },
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
+ },
+ "4361": {
+  "sid": 4361,
+  "service": "Otto Yield Farming History",
+  "asp": "Otto AI",
+  "aspAgentId": "2118",
+  "endpoint": "https://xlayer.ottoai.services/yield-farming-historical",
+  "listed": {
+   "feeAmount": 0.001,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "WARN",
+  "reasons": [
+   "fresh_recipient"
+  ],
+  "summary": "Payment of 0.001 USDT0 (1000) on xlayer to 0xa3dB…8fcF for xlayer.ottoai.services (accepts[0], exact). WARN: fresh_recipient.",
+  "findings": [
+   {
+    "code": "fresh_recipient",
+    "severity": "WARN",
+    "subject": "payTo",
+    "message": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this."
+   }
+  ],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "1000",
+    "human": "0.001",
+    "listed": "1000"
+   },
+   "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
+   "entries": 6
+  },
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4362": {
   "sid": 4362,
@@ -584,8 +682,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "4367": {
   "sid": 4367,
@@ -633,8 +731,8 @@
    "payTo": "0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF",
    "entries": 6
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "11171": {
   "sid": 11171,
@@ -675,6 +773,86 @@
   },
   "scanDate": "2026-10-13",
   "scannedAt": "2026-10-13T08:01:35.856Z"
+ },
+ "16720": {
+  "sid": 16720,
+  "service": "Market Regime Read",
+  "asp": "AlgoVault Quant Signal",
+  "aspAgentId": "3417",
+  "endpoint": "https://api.algovault.com/a2mcp/get_market_regime",
+  "listed": {
+   "feeAmount": 0.02,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x6236…75B9 for api.algovault.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "20000",
+    "human": "0.02",
+    "listed": "20000"
+   },
+   "payTo": "0x62366C50e1bB14ed4ff2B6C8C143f6049DF075B9",
+   "entries": 1
+  },
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
+ },
+ "16721": {
+  "sid": 16721,
+  "service": "Multi-Asset Signal Scan",
+  "asp": "AlgoVault Quant Signal",
+  "aspAgentId": "3417",
+  "endpoint": "https://api.algovault.com/a2mcp/scan_trade_calls",
+  "listed": {
+   "feeAmount": 0.02,
+   "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+   "symbol": "USDT"
+  },
+  "http": {
+   "method": "GET",
+   "status": 402
+  },
+  "probe": "challenge",
+  "verdict": "ALLOW",
+  "reasons": [],
+  "summary": "Payment of 0.02 USDT0 (20000) on xlayer to 0x6236…75B9 for api.algovault.com (accepts[0], exact). No risk rules triggered.",
+  "findings": [],
+  "challenge": {
+   "network": "eip155:196",
+   "scheme": "exact",
+   "asset": {
+    "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
+    "symbol": "USDT0",
+    "decimals": 6,
+    "canonical": true
+   },
+   "amount": {
+    "atomic": "20000",
+    "human": "0.02",
+    "listed": "20000"
+   },
+   "payTo": "0x62366C50e1bB14ed4ff2B6C8C143f6049DF075B9",
+   "entries": 1
+  },
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "17723": {
   "sid": 17723,
@@ -722,8 +900,8 @@
    "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "17911": {
   "sid": 17911,
@@ -771,8 +949,8 @@
    "payTo": "0x606A5D639A4D767EBD11B6BD3A9e6a5C1dBA6574",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "19874": {
   "sid": 19874,
@@ -860,8 +1038,8 @@
    "payTo": "0x40CEA136fC5C4db728D553a60c976F2Ae4e4E2b7",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "27359": {
   "sid": 27359,
@@ -1060,8 +1238,8 @@
    "payTo": "0xDBe72d90B4A2E99C90c9A11E284BAc1ea71D227D",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "30379": {
   "sid": 30379,
@@ -1220,8 +1398,8 @@
    "payTo": "0xB7d7F6eead40fB475a4a058e4F7440443ACAf0D7",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "33279": {
   "sid": 33279,
@@ -1358,8 +1536,8 @@
    "payTo": "0x7DB2bcAC1B61b5A9eB906b3c22c81200998fb8CC",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "33714": {
   "sid": 33714,
@@ -2061,8 +2239,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-09-19",
-  "scannedAt": "2026-09-19T08:01:44.235Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "35352": {
   "sid": 35352,
@@ -2101,8 +2279,8 @@
    "payTo": "0x73b318c05caae0E33A63476D97353Cf720cE3687",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "35434": {
   "sid": 35434,
@@ -2181,8 +2359,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-10-08",
-  "scannedAt": "2026-10-08T08:01:34.089Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "35436": {
   "sid": 35436,
@@ -2221,8 +2399,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-10-08",
-  "scannedAt": "2026-10-08T08:01:34.089Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "35437": {
   "sid": 35437,
@@ -2590,8 +2768,8 @@
    "payTo": "0xEBE771d3FC1B9D55E3f36ABC9e9c1c45952bC14d",
    "entries": 1
   },
-  "scanDate": "2026-10-11",
-  "scannedAt": "2026-10-11T08:01:27.877Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "39139": {
   "sid": 39139,
@@ -3532,8 +3710,8 @@
    "payTo": "0x2798CDc955902D3D2b143209106Ce1f8265CFf71",
    "entries": 1
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "40832": {
   "sid": 40832,
@@ -3668,8 +3846,8 @@
    "payTo": "0x0d63f9EeB86813230B72017444cea16Cd4A453F2",
    "entries": 1
   },
-  "scanDate": "2026-10-02",
-  "scannedAt": "2026-10-02T08:01:25.652Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "41151": {
   "sid": 41151,
@@ -3855,8 +4033,8 @@
    "payTo": "0x17292fDf0b571E3fddA9419F7334E2acfAF3FAdF",
    "entries": 4
   },
-  "scanDate": "2026-10-13",
-  "scannedAt": "2026-10-13T08:01:35.856Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "41342": {
   "sid": 41342,
@@ -3895,8 +4073,8 @@
    "payTo": "0x7A80299a84C3775d62Da1CD4A9d59B1524D7bf0f",
    "entries": 1
   },
-  "scanDate": "2026-10-08",
-  "scannedAt": "2026-10-08T08:01:34.089Z"
+  "scanDate": "2026-10-14",
+  "scannedAt": "2026-10-14T16:08:24.326Z"
  },
  "41475": {
   "sid": 41475,
