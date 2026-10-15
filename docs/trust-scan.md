@@ -1,13 +1,13 @@
 # OKX.AI Pay-Safe trust scan
 
-Generated 2026-10-14T16:08:24.326Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
+Generated 2026-10-15T08:01:25.136Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
 
 | Metric | Count |
 |---|---|
 | services | 81 |
 | challenge | 32 |
-| allow | 13 |
-| warn | 19 |
+| allow | 15 |
+| warn | 17 |
 | deny | 0 |
 | no_challenge | 46 |
 | unreachable | 3 |
@@ -17,7 +17,7 @@ Generated 2026-10-14T16:08:24.326Z. One unpaid request per endpoint to capture t
 
 | Rule | Services |
 |---|---|
-| `fresh_recipient` | 15 |
+| `fresh_recipient` | 13 |
 | `eip712_domain_mismatch` | 2 |
 | `endpoint_domain_suspicious` | 1 |
 | `long_payment_timeout` | 1 |
@@ -36,8 +36,6 @@ Generated 2026-10-14T16:08:24.326Z. One unpaid request per endpoint to capture t
 - **WARN fresh_recipient** in Otto Sub-Wallet Resolve (sid 4367): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN fresh_recipient** in Otto Idle Capital Scan (sid 4362): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN fresh_recipient** in Otto Portfolio Balances (sid 4354): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
-- **WARN fresh_recipient** in Otto Yield Farming Active (sid 4360): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
-- **WARN fresh_recipient** in Otto Yield Farming History (sid 4361): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN eip712_domain_mismatch** in RoseIntel Evidence API (sid 17723): extra declares the EIP-712 domain name "USD₮0" version "2", but the USDT0 contract on xlayer uses name "USD₮0" version "1" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain.
 - **WARN long_payment_timeout** in 查询经济日历 (sid 40802): maxTimeoutSeconds is 86400 (more than 3600).
 - **WARN fresh_recipient** in Otto TradFi Macro Data (sid 4352): 0xa3dB6825DE8222E9f8BaC136eEb2F65D49a88fcF has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
@@ -60,37 +58,36 @@ Generated 2026-10-14T16:08:24.326Z. One unpaid request per endpoint to capture t
 | WARN | Otto Sub-Wallet Resolve (sid 4367) | 0.01 USDT | 0.01 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Otto Idle Capital Scan (sid 4362) | 0.001 USDT | 0.001 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Otto Portfolio Balances (sid 4354) | 0.001 USDT | 0.001 USDT0 on eip155:196 | fresh_recipient |
-| WARN | Otto Yield Farming Active (sid 4360) | 0.001 USDT | 0.001 USDT0 on eip155:196 | fresh_recipient |
-| WARN | Otto Yield Farming History (sid 4361) | 0.001 USDT | 0.001 USDT0 on eip155:196 | fresh_recipient |
 | WARN | RoseIntel Evidence API (sid 17723) | 0.5 USDT | 0.5 USDT0 on eip155:196 | eip712_domain_mismatch |
 | WARN | 查询经济日历 (sid 40802) | 0.02 USDT | 0.02 USDT0 on eip155:196 | long_payment_timeout |
 | WARN | Otto TradFi Macro Data (sid 4352) | 0.001 USDT | 0.001 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Recent Market Insights Feed (sid 17911) | 0.02 USDT | 0.02 USDT0 on eip155:196 | eip712_domain_mismatch |
 | WARN | Otto All Tokens (sid 4341) | 0.002 USDT | 0.002 USDT0 on eip155:196 | fresh_recipient |
-| ALLOW | Japan Market Ledger (sid 38405) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Marketplace Niche Scan (sid 33278) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | MoonFinder 市场信号扫描 (sid 25864) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
-| ALLOW | Market Regime Read (sid 16720) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
+| ALLOW | Stablecoin Market Trend (sid 27361) | 0.001 USDT | 0.001 USDT0 on eip155:196 |  |
+| ALLOW | Stablecoin Market Overview (sid 27360) | 0.001 USDT | 0.001 USDT0 on eip155:196 |  |
 | ALLOW | Multi-Asset Signal Scan (sid 16721) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | Korea Defense Chain Analysis (sid 35435) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Korea Power Chain Analysis (sid 35436) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Token Approval Checker (sid 41195) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
-| ALLOW | 冲前风险检查卡 (sid 35351) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
+| ALLOW | Market Regime Read (sid 16720) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
+| ALLOW | Stablecoin Yield Radar (sid 27359) | 0.001 USDT | 0.001 USDT0 on eip155:196 |  |
+| ALLOW | Barker Yield Advisor (sid 27362) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
+| ALLOW | Barker Execution Quote (sid 27368) | 0.05 USDT | 0.05 USDT0 on eip155:196 |  |
 | ALLOW | 钱包签名风险提醒 (sid 35352) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | Kerb Exit Check (sid 40920) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | 草台班子检测器 (sid 29539) | 0.05 USDT | 0.05 USDT0 on eip155:196 |  |
-| ALLOW | Waypoint Plan (sid 41342) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | no_payment_challenge | Crypto Market Context Feed (sid 7494) | 0.1 USDT | — |  |
 | no_payment_challenge | Technical Indicators (sid 41550) | 0.001 USDT | — |  |
 | no_payment_challenge | 地址行为分析服务 (sid 17483) | 0.5 USDT | — |  |
 | no_payment_challenge | Token Security Pulse (sid 40595) | 0.01 USDT | — |  |
 | no_payment_challenge | Drawdown Analysis (sid 41264) | 0.01 USDT | — |  |
 | no_payment_challenge | Supplied Shock Stress Analysis (sid 41271) | 0.01 USDT | — |  |
-| no_payment_challenge | Wallet Reputation (sid 16633) | 0.01 USDT | — |  |
 | no_payment_challenge | Token Security Scan (sid 16632) | 0.03 USDT | — |  |
-| no_payment_challenge | Sniffer Deep Report (sid 34718) | 1.99 USDT | — |  |
-| no_payment_challenge | Sniffer Risk Check (sid 34717) | 0.1 USDT | — |  |
+| no_payment_challenge | Wallet Reputation (sid 16633) | 0.01 USDT | — |  |
 | no_payment_challenge | Otto Token Security Audit (sid 4337) | 0.001 USDT | — |  |
+| no_payment_challenge | Sniffer Risk Check (sid 34717) | 0.1 USDT | — |  |
 | no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
 | no_payment_challenge | Token Risk Gate (sid 41527) | 0.01 USDT | — |  |
 | no_payment_challenge | Otto LLM Research (sid 4339) | 0.1 USDT | — |  |
@@ -116,16 +113,17 @@ Generated 2026-10-14T16:08:24.326Z. One unpaid request per endpoint to capture t
 | no_payment_challenge | Check Yield (sid 33550) | 0.1 USDT | — |  |
 | no_payment_challenge | AI饮食运动助手 (sid 30754) | 0.01 USDT | — |  |
 | no_payment_challenge | 美股AI半导体5分钟信号日报 (sid 39799) | 2.98 USDT | — |  |
-| unreachable | EVM Transaction Guardrail (sid 34985) | 1 USDT | — | timeout |
 | no_payment_challenge | Prediction Market Insight (sid 17906) | 0.05 USDT | — |  |
-| no_payment_challenge | Bubble Image (sid 3055) | 0.5 USDT | — |  |
+| unreachable | EVM Transaction Guardrail (sid 34985) | 1 USDT | — | timeout |
 | no_payment_challenge | Candlestick Chart Image (sid 41191) | 0.01 USDT | — |  |
+| no_payment_challenge | Bubble Image (sid 3055) | 0.5 USDT | — |  |
 | no_payment_challenge | Image Layer Composition (sid 41250) | 0.01 USDT | — |  |
 | no_payment_challenge | Image Metadata Remover (sid 41244) | 0.01 USDT | — |  |
 | no_payment_challenge | Audio Waveform Image (sid 41261) | 0.1 USDT | — |  |
 | no_payment_challenge | Target Size Image Compressor (sid 41243) | 0.01 USDT | — |  |
-| no_payment_challenge | Near Duplicate Image Finder (sid 41245) | 0.01 USDT | — |  |
 | no_payment_challenge | Image Batch Convert Resize (sid 41242) | 0.01 USDT | — |  |
+| no_payment_challenge | Near Duplicate Image Finder (sid 41245) | 0.01 USDT | — |  |
+| no_payment_challenge | Social Preview Validator (sid 41209) | 0.01 USDT | — |  |
 | no_payment_challenge | Otto DEX Approval Calldata (sid 4342) | 0.005 USDT | — |  |
 | no_payment_challenge | Otto Token Price (sid 4334) | 0.002 USDT | — |  |
-| no_payment_challenge | Social Preview Validator (sid 41209) | 0.01 USDT | — |  |
+| no_payment_challenge | X Layer Proof Verifier (sid 41109) | 0.01 USDT | — |  |
