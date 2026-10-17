@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-17",
+  "correct": {
+    "name": "USD₮0",
+    "version": "1"
+  },
+  "count": 2,
+  "sellers": [
+    "RoseIntel",
+    "Facticity AI"
+  ],
+  "services": [
+    {
+      "sid": 17723,
+      "service": "RoseIntel Evidence API",
+      "seller": "RoseIntel",
+      "agentId": "3575",
+      "endpoint": "https://roseintel-evidence-api.vercel.app/mcp",
+      "fee": 0.5,
+      "payTo": "0x66565F992E41e908A4D6f315FBA377843EeBeC45",
+      "declared": {
+        "name": "USD₮0",
+        "version": "2"
+      }
+    },
+    {
+      "sid": 17911,
+      "service": "Recent Market Insights Feed",
+      "seller": "Facticity AI",
+      "agentId": "3581",
+      "endpoint": "https://api.facticity.ai/asp/recent-insights",
+      "fee": 0.02,
+      "payTo": "0x606A5D639A4D767EBD11B6BD3A9e6a5C1dBA6574",
+      "declared": {
+        "name": "USDT0",
+        "version": "2"
+      }
+    }
+  ]
+}
