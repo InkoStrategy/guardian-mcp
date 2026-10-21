@@ -1,15 +1,15 @@
 # OKX.AI Pay-Safe trust scan
 
-Generated 2026-10-20T08:01:10.808Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
+Generated 2026-10-21T08:01:15.100Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
 
 | Metric | Count |
 |---|---|
-| services | 67 |
-| challenge | 19 |
-| allow | 12 |
-| warn | 7 |
+| services | 70 |
+| challenge | 15 |
+| allow | 11 |
+| warn | 4 |
 | deny | 0 |
-| no_challenge | 47 |
+| no_challenge | 54 |
 | unreachable | 1 |
 | invalid | 0 |
 
@@ -17,69 +17,68 @@ Generated 2026-10-20T08:01:10.808Z. One unpaid request per endpoint to capture t
 
 | Rule | Services |
 |---|---|
-| `fresh_recipient` | 3 |
 | `eip712_domain_mismatch` | 2 |
+| `fresh_recipient` | 1 |
 | `endpoint_domain_suspicious` | 1 |
-| `multiple_payees` | 1 |
 
 ## Findings
 
-- **WARN fresh_recipient** in Closure Discount by Duration (sid 40894): 0x277cA91276A3801667B76C97Da3872Ccb6E96068 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN eip712_domain_mismatch** in Crypto Top / Bottom, Signal (sid 19874): extra declares the EIP-712 domain name "USDT₀" version "1", but the USDT0 contract on xlayer uses name "USD₮0" version "1" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain.
-- **WARN fresh_recipient** in Closure Calendar (sid 40892): 0x277cA91276A3801667B76C97Da3872Ccb6E96068 has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN fresh_recipient** in Entropy Signal API (sid 40780): 0x19f090a52a6fa82640442D7eed7eB9ce5f5cf9ED has no transaction history and zero balance. Verify it out-of-band; typos and address poisoning look exactly like this.
 - **WARN endpoint_domain_suspicious** in Fusion Strategy Analysis (sid 33556): okxaiagent.vercel.app matches a phishing pattern (brand_impersonation): Hostname contains the brand "okx" but is not an official okx domain. It is the endpoint named in the listing.
 - **WARN eip712_domain_mismatch** in RoseIntel Evidence API (sid 17723): extra declares the EIP-712 domain name "USD₮0" version "2", but the USDT0 contract on xlayer uses name "USD₮0" version "1" (its DOMAIN_SEPARATOR 0xd591d9ba… matches only that pair). A TransferWithAuthorization signed with the declared domain will not verify on-chain.
-- **WARN multiple_payees** in Commitment Verification (sid 38350): accepts[] pays 2 different recipients.
 
 ## Services
 
 | Verdict | Service | Listed | Challenge | Reasons |
 |---|---|---|---|---|
-| WARN | Closure Discount by Duration (sid 40894) | 0.1 USDT | 0.1 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Crypto Top / Bottom, Signal (sid 19874) | 0.01 USDT | 0.01 USDT0 on eip155:196 | eip712_domain_mismatch |
-| WARN | Closure Calendar (sid 40892) | 0.01 USDT | 0.01 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Entropy Signal API (sid 40780) | 0.02 USDT | 0.02 USDT0 on eip155:196 | fresh_recipient |
 | WARN | Fusion Strategy Analysis (sid 33556) | 1 USDT | 0.01 USDT0 on eip155:196 | endpoint_domain_suspicious |
 | WARN | RoseIntel Evidence API (sid 17723) | 0.5 USDT | 0.5 USDT0 on eip155:196 | eip712_domain_mismatch |
-| WARN | Commitment Verification (sid 38350) | 1 USDT | 1 USDT0 on eip155:196 | multiple_payees |
 | ALLOW | Market Regime Read (sid 16720) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | MoonFinder 市场信号扫描 (sid 25864) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
-| ALLOW | Multi-Asset Signal Scan (sid 16721) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | Token Approval Checker (sid 41195) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | Token DD Verdict (sid 11171) | 0.05 USDT | 0.05 USDT0 on eip155:196 |  |
 | ALLOW | Perp Trade-Call Verdict (sid 16719) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
-| ALLOW | DeFi Opportunity Rank API (sid 33686) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
-| ALLOW | Yield Pool Risk Score API (sid 33682) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
-| ALLOW | URL Change Check API (sid 39856) | 0.005 USDT | 0.005 USDT0 on eip155:196 |  |
 | ALLOW | TradeDesk 指标体验引流 (sid 39830) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | 钱包签名风险提醒 (sid 35352) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
+| ALLOW | URL Change Check API (sid 39856) | 0.005 USDT | 0.005 USDT0 on eip155:196 |  |
+| ALLOW | TxPreflight Onchain Tx Guard (sid 40832) | 0.04 USDT | 0.04 USDT0 on eip155:196 |  |
 | ALLOW | 草台班子检测器 (sid 29539) | 0.05 USDT | 0.05 USDT0 on eip155:196 |  |
 | ALLOW | Waypoint Plan (sid 41342) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | no_payment_challenge | Luc Market Regime (sid 41586) | 0.1 USDT | — |  |
 | no_payment_challenge | Service List (sid 3054) | 0.000001 USDT | — |  |
-| no_payment_challenge | Technical Indicators (sid 41550) | 0.001 USDT | — |  |
 | no_payment_challenge | X Layer Token Analysis (sid 39824) | 0.05 USDT | — |  |
 | no_payment_challenge | X Layer Wallet Activity (sid 39848) | 0.05 USDT | — |  |
 | no_payment_challenge | Token Security Pulse (sid 40595) | 0.01 USDT | — |  |
 | no_payment_challenge | Drawdown Analysis (sid 41264) | 0.01 USDT | — |  |
 | no_payment_challenge | Supplied Shock Stress Analysis (sid 41271) | 0.01 USDT | — |  |
-| no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
-| no_payment_challenge | Stablecoin Peg Risk API (sid 33683) | 0.02 USDT | — |  |
-| no_payment_challenge | RWA Research Report (sid 40671) | 0.25 USDT | — |  |
-| no_payment_challenge | Luc Trend State (sid 41587) | 0.1 USDT | — |  |
-| no_payment_challenge | Luc Daily Asset Brief (sid 41549) | 0.1 USDT | — |  |
-| no_payment_challenge | Luc Correlation State (sid 41590) | 0.1 USDT | — |  |
+| no_payment_challenge | URL Drain Risk API (sid 32686) | 0.02 USDT | — |  |
 | unreachable | Token Risk Analysis (sid 40014) | 1 USDT | — | timeout |
+| no_payment_challenge | Address Trust Check API (sid 32683) | 0.01 USDT | — |  |
+| no_payment_challenge | Approval Exposure Check API (sid 32682) | 0.02 USDT | — |  |
+| no_payment_challenge | Token Tradeability Check API (sid 32684) | 0.03 USDT | — |  |
+| no_payment_challenge | Preflight Risk Check API (sid 32681) | 0.01 USDT | — |  |
+| no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
+| no_payment_challenge | RWA Research Report (sid 40671) | 0.25 USDT | — |  |
+| no_payment_challenge | Luc Daily Asset Brief (sid 41549) | 0.1 USDT | — |  |
+| no_payment_challenge | Luc Trend State (sid 41587) | 0.1 USDT | — |  |
+| no_payment_challenge | Luc Correlation State (sid 41590) | 0.1 USDT | — |  |
 | no_payment_challenge | Luc Drawdown & Recovery (sid 41589) | 0.1 USDT | — |  |
-| no_payment_challenge | Luc Asset Risk (sid 41591) | 0.1 USDT | — |  |
-| no_payment_challenge | Protocol Health Score API (sid 33681) | 0.02 USDT | — |  |
-| no_payment_challenge | Chain Momentum API (sid 33684) | 0.01 USDT | — |  |
+| no_payment_challenge | MemePulseSignal (sid 41610) | 0.01 USDT | — |  |
 | no_payment_challenge | Custos Decision Engine (sid 36308) | 0.01 USDT | — |  |
-| no_payment_challenge | Protocol Revenue Signal API (sid 33685) | 0.02 USDT | — |  |
+| no_payment_challenge | Open Interest Anomaly API (sid 33719) | 0.02 USDT | — |  |
+| no_payment_challenge | Long Short Crowding API (sid 33720) | 0.01 USDT | — |  |
+| no_payment_challenge | Liquidation Risk Pulse API (sid 33721) | 0.03 USDT | — |  |
+| no_payment_challenge | Volatility Regime Score API (sid 33722) | 0.02 USDT | — |  |
+| no_payment_challenge | CEX Price Divergence API (sid 33723) | 0.01 USDT | — |  |
+| no_payment_challenge | Trend Strength Score API (sid 33724) | 0.02 USDT | — |  |
 | no_payment_challenge | API Response Regression Diff (sid 41231) | 0.01 USDT | — |  |
 | no_payment_challenge | Structured Data Chart (sid 41247) | 0.01 USDT | — |  |
 | no_payment_challenge | OHLCV Data Gap Check (sid 41189) | 0.01 USDT | — |  |
 | no_payment_challenge | EIP-712 Typed Data Explainer (sid 41196) | 0.01 USDT | — |  |
+| no_payment_challenge | ABI Event Log Decoder (sid 41193) | 0.01 USDT | — |  |
 | no_payment_challenge | Check Yield (sid 33550) | 0.1 USDT | — |  |
 | no_payment_challenge | AI饮食运动助手 (sid 30754) | 0.01 USDT | — |  |
 | no_payment_challenge | X Layer Contract Risk Scanner (sid 39842) | 0.05 USDT | — |  |
