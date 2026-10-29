@@ -1,7 +1,7 @@
 {
- "generatedAt": "2026-10-28T11:30:46.576Z",
+ "generatedAt": "2026-10-29T08:00:57.314Z",
  "source": "OKX.AI paid A2MCP services, probed without paying (Pay-Safe trust scan)",
- "latestDate": "2026-10-28",
+ "latestDate": "2026-10-29",
  "snapshots": [
   {
    "date": "2026-09-16",
@@ -940,6 +940,28 @@
     "endpoint_domain_suspicious": 1
    },
    "eip712Count": 3
+  },
+  {
+   "date": "2026-10-29",
+   "generatedAt": "2026-10-29T08:00:57.314Z",
+   "totals": {
+    "services": 55,
+    "challenge": 29,
+    "allow": 20,
+    "warn": 9,
+    "deny": 0,
+    "no_challenge": 26,
+    "unreachable": 0,
+    "invalid": 0
+   },
+   "denyCount": 0,
+   "deny": [],
+   "warnCodes": {
+    "fresh_recipient": 4,
+    "endpoint_domain_suspicious": 1,
+    "eip712_domain_mismatch": 4
+   },
+   "eip712Count": 4
   }
  ]
 }
