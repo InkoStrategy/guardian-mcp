@@ -1,14 +1,14 @@
 {
- "generatedAt": "2026-11-10T08:00:53.387Z",
+ "generatedAt": "2026-11-11T12:42:58.954Z",
  "source": "OKX.AI marketplace (onchainos agent service-match), paid A2MCP services",
  "method": "One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.",
  "totals": {
   "services": 49,
-  "challenge": 25,
-  "allow": 17,
+  "challenge": 24,
+  "allow": 16,
   "warn": 8,
   "deny": 0,
-  "no_challenge": 24,
+  "no_challenge": 25,
   "unreachable": 0,
   "invalid": 0
  },
@@ -775,11 +775,11 @@
    }
   },
   {
-   "sid": 33686,
-   "service": "DeFi Opportunity Rank API",
+   "sid": 33682,
+   "service": "Yield Pool Risk Score API",
    "asp": "QTrade DeFi Intelligence",
    "aspAgentId": "5570",
-   "endpoint": "https://api.qtrade.top/okx/defi/opportunity-rank",
+   "endpoint": "https://api.qtrade.top/okx/defi/yield-pool-risk",
    "listed": {
     "feeAmount": 0.03,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -813,11 +813,11 @@
    }
   },
   {
-   "sid": 33682,
-   "service": "Yield Pool Risk Score API",
+   "sid": 33686,
+   "service": "DeFi Opportunity Rank API",
    "asp": "QTrade DeFi Intelligence",
    "aspAgentId": "5570",
-   "endpoint": "https://api.qtrade.top/okx/defi/yield-pool-risk",
+   "endpoint": "https://api.qtrade.top/okx/defi/opportunity-rank",
    "listed": {
     "feeAmount": 0.03,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -965,44 +965,6 @@
    }
   },
   {
-   "sid": 16722,
-   "service": "Funding-Rate Spread Scan",
-   "asp": "AlgoVault Quant Signal",
-   "aspAgentId": "3417",
-   "endpoint": "https://api.algovault.com/a2mcp/scan_funding_arb",
-   "listed": {
-    "feeAmount": 0.01,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 402
-   },
-   "probe": "challenge",
-   "verdict": "ALLOW",
-   "reasons": [],
-   "summary": "Payment of 0.01 USDT0 (10000) on xlayer to 0x6236…75B9 for api.algovault.com (accepts[0], exact). No risk rules triggered.",
-   "findings": [],
-   "challenge": {
-    "network": "eip155:196",
-    "scheme": "exact",
-    "asset": {
-     "address": "0x779Ded0c9e1022225f8E0630b35a9b54bE713736",
-     "symbol": "USDT0",
-     "decimals": 6,
-     "canonical": true
-    },
-    "amount": {
-     "atomic": "10000",
-     "human": "0.01",
-     "listed": "10000"
-    },
-    "payTo": "0x62366C50e1bB14ed4ff2B6C8C143f6049DF075B9",
-    "entries": 1
-   }
-  },
-  {
    "sid": 29539,
    "service": "草台班子检测器",
    "asp": "草台班子",
@@ -1126,87 +1088,19 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 32683,
-   "service": "Address Trust Check API",
-   "asp": "QTrade Guard",
-   "aspAgentId": "3884",
-   "endpoint": "https://api.qtrade.top/okx/address-trust",
+   "sid": 17126,
+   "service": "MistEye Security Gate Scan",
+   "asp": "MistEye",
+   "aspAgentId": "2180",
+   "endpoint": "https://x402.misteye.io/okx/x402/detect",
    "listed": {
-    "feeAmount": 0.01,
+    "feeAmount": 0.0001,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
     "symbol": "USDT"
    },
    "http": {
     "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 32686,
-   "service": "URL Drain Risk API",
-   "asp": "QTrade Guard",
-   "aspAgentId": "3884",
-   "endpoint": "https://api.qtrade.top/okx/url-drain-risk",
-   "listed": {
-    "feeAmount": 0.02,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 32682,
-   "service": "Approval Exposure Check API",
-   "asp": "QTrade Guard",
-   "aspAgentId": "3884",
-   "endpoint": "https://api.qtrade.top/okx/approval-exposure",
-   "listed": {
-    "feeAmount": 0.02,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 32684,
-   "service": "Token Tradeability Check API",
-   "asp": "QTrade Guard",
-   "aspAgentId": "3884",
-   "endpoint": "https://api.qtrade.top/okx/token-tradeability",
-   "listed": {
-    "feeAmount": 0.03,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 32681,
-   "service": "Preflight Risk Check API",
-   "asp": "QTrade Guard",
-   "aspAgentId": "3884",
-   "endpoint": "https://api.qtrade.top/preflight",
-   "listed": {
-    "feeAmount": 0.01,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
+    "status": 400
    },
    "probe": "no_payment_challenge"
   },
@@ -1228,28 +1122,11 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 17126,
-   "service": "MistEye Security Gate Scan",
-   "asp": "MistEye",
-   "aspAgentId": "2180",
-   "endpoint": "https://x402.misteye.io/okx/x402/detect",
-   "listed": {
-    "feeAmount": 0.0001,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 400
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 41587,
-   "service": "Luc Trend State",
+   "sid": 41549,
+   "service": "Luc Daily Asset Brief",
    "asp": "Luc Intelligence",
    "aspAgentId": "14801",
-   "endpoint": "https://intelligence.lucxu.com/v1/trend-state",
+   "endpoint": "https://intelligence.lucxu.com/v1/daily-asset-brief",
    "listed": {
     "feeAmount": 0.1,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -1262,11 +1139,11 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 41549,
-   "service": "Luc Daily Asset Brief",
+   "sid": 41587,
+   "service": "Luc Trend State",
    "asp": "Luc Intelligence",
    "aspAgentId": "14801",
-   "endpoint": "https://intelligence.lucxu.com/v1/daily-asset-brief",
+   "endpoint": "https://intelligence.lucxu.com/v1/trend-state",
    "listed": {
     "feeAmount": 0.1,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -1364,11 +1241,11 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 33685,
-   "service": "Protocol Revenue Signal API",
-   "asp": "QTrade DeFi Intelligence",
-   "aspAgentId": "5570",
-   "endpoint": "https://api.qtrade.top/okx/defi/protocol-revenue",
+   "sid": 33719,
+   "service": "Open Interest Anomaly API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/open-interest-anomaly",
    "listed": {
     "feeAmount": 0.02,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -1381,11 +1258,130 @@
    "probe": "no_payment_challenge"
   },
   {
-   "sid": 33681,
-   "service": "Protocol Health Score API",
+   "sid": 33721,
+   "service": "Liquidation Risk Pulse API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/liquidation-risk",
+   "listed": {
+    "feeAmount": 0.03,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33720,
+   "service": "Long Short Crowding API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/long-short-crowding",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33722,
+   "service": "Volatility Regime Score API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/volatility-regime",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33723,
+   "service": "CEX Price Divergence API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/cex-price-divergence",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33724,
+   "service": "Trend Strength Score API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/trend-strength",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33725,
+   "service": "Breakout Fakeout Risk API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/breakout-fakeout",
+   "listed": {
+    "feeAmount": 0.02,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33718,
+   "service": "Funding Rate Stress Score API",
+   "asp": "QTrade Market Pulse",
+   "aspAgentId": "5578",
+   "endpoint": "https://api.qtrade.top/okx/market/funding-stress",
+   "listed": {
+    "feeAmount": 0.01,
+    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
+    "symbol": "USDT"
+   },
+   "http": {
+    "method": "GET",
+    "status": 405
+   },
+   "probe": "no_payment_challenge"
+  },
+  {
+   "sid": 33685,
+   "service": "Protocol Revenue Signal API",
    "asp": "QTrade DeFi Intelligence",
    "aspAgentId": "5570",
-   "endpoint": "https://api.qtrade.top/okx/defi/protocol-health",
+   "endpoint": "https://api.qtrade.top/okx/defi/protocol-revenue",
    "listed": {
     "feeAmount": 0.02,
     "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
@@ -1428,23 +1424,6 @@
    "http": {
     "method": "GET",
     "status": 200
-   },
-   "probe": "no_payment_challenge"
-  },
-  {
-   "sid": 41588,
-   "service": "Luc Volatility State",
-   "asp": "Luc Intelligence",
-   "aspAgentId": "14801",
-   "endpoint": "https://intelligence.lucxu.com/v1/volatility-state",
-   "listed": {
-    "feeAmount": 0.1,
-    "feeToken": "0x779ded0c9e1022225f8e0630b35a9b54be713736",
-    "symbol": "USDT"
-   },
-   "http": {
-    "method": "GET",
-    "status": 405
    },
    "probe": "no_payment_challenge"
   }
