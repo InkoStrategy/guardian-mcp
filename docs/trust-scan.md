@@ -1,6 +1,6 @@
 # OKX.AI Pay-Safe trust scan
 
-Generated 2026-11-13T09:11:36.802Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
+Generated 2026-11-14T18:19:45.232Z. One unpaid request per endpoint to capture the x402 challenge; Pay-Safe /check-payment against the listing. No payments, no signatures.
 
 | Metric | Count |
 |---|---|
@@ -49,46 +49,46 @@ Generated 2026-11-13T09:11:36.802Z. One unpaid request per endpoint to capture t
 | WARN | Smart Money (sid 40012) | 0.03 USDT | 0.03 USDT0 on eip155:196 | fresh_recipient |
 | WARN | RoseIntel Evidence API (sid 17723) | 0.5 USDT | 0.5 USDT0 on eip155:196 | eip712_domain_mismatch |
 | WARN | Commitment Verification (sid 38350) | 1 USDT | 1 USDT0 on eip155:196 | multiple_payees |
-| ALLOW | Japan Market Ledger (sid 38405) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
-| ALLOW | MoonFinder 市场信号扫描 (sid 25864) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
-| ALLOW | 玄学智慧投研 (sid 36392) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
-| ALLOW | Candlestick Star (sid 36978) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | 交易洞察分析 (sid 36394) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | Japan Market Ledger (sid 38405) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | Candlestick Star (sid 36978) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | Crypto analysis team (sid 36980) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
+| ALLOW | 玄学智慧投研 (sid 36392) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Market Regime Read (sid 16720) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | Multi-Asset Signal Scan (sid 16721) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | TradeDesk 指标体验引流 (sid 39830) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Korea Defense Chain Analysis (sid 35435) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | Korea Power Chain Analysis (sid 35436) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
-| ALLOW | Crypto analysis team (sid 36980) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
-| ALLOW | 冲前风险检查卡 (sid 35351) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | Perp Trade-Call Verdict (sid 16719) | 0.02 USDT | 0.02 USDT0 on eip155:196 |  |
 | ALLOW | Asia Session Regime Report (sid 33714) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
-| ALLOW | DeFi Opportunity Rank API (sid 33686) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
 | ALLOW | Yield Pool Risk Score API (sid 33682) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
-| ALLOW | 钱包签名风险提醒 (sid 35352) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
+| ALLOW | DeFi Opportunity Rank API (sid 33686) | 0.03 USDT | 0.03 USDT0 on eip155:196 |  |
 | ALLOW | Korea Semiconductor Chain (sid 35434) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | ALLOW | 随机小姐姐视频地址 (sid 41475) | 0.2 USDT | 0.2 USDT0 on eip155:196 |  |
+| ALLOW | Funding-Rate Spread Scan (sid 16722) | 0.01 USDT | 0.01 USDT0 on eip155:196 |  |
 | ALLOW | 草台班子检测器 (sid 29539) | 0.05 USDT | 0.05 USDT0 on eip155:196 |  |
+| ALLOW | Korea Equity Chain Bundle (sid 35437) | 0.2 USDT | 0.2 USDT0 on eip155:196 |  |
+| ALLOW | Asia Session Premium Intel (sid 33715) | 0.1 USDT | 0.1 USDT0 on eip155:196 |  |
 | no_payment_challenge | Luc Market Regime (sid 41586) | 0.1 USDT | — |  |
+| no_payment_challenge | Protocol Revenue Signal API (sid 33685) | 0.02 USDT | — |  |
 | no_payment_challenge | 美股AI半导体5分钟信号日报 (sid 39799) | 2.98 USDT | — |  |
 | no_payment_challenge | Token Security Pulse (sid 40595) | 0.01 USDT | — |  |
 | no_payment_challenge | Bitcoin Mining Profitability Analysis (sid 41980) | 0.2 USDT | — |  |
-| no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
+| no_payment_challenge | URL Drain Risk API (sid 32686) | 0.02 USDT | — |  |
+| no_payment_challenge | Approval Exposure Check API (sid 32682) | 0.02 USDT | — |  |
+| no_payment_challenge | Address Trust Check API (sid 32683) | 0.01 USDT | — |  |
+| no_payment_challenge | Token Tradeability Check API (sid 32684) | 0.03 USDT | — |  |
+| no_payment_challenge | Preflight Risk Check API (sid 32681) | 0.01 USDT | — |  |
 | no_payment_challenge | Stablecoin Peg Risk API (sid 33683) | 0.02 USDT | — |  |
+| no_payment_challenge | MistEye Security Gate Scan (sid 17126) | 0.0001 USDT | — |  |
 | no_payment_challenge | Luc Trend State (sid 41587) | 0.1 USDT | — |  |
 | no_payment_challenge | Luc Daily Asset Brief (sid 41549) | 0.1 USDT | — |  |
 | no_payment_challenge | Luc Correlation State (sid 41590) | 0.1 USDT | — |  |
 | no_payment_challenge | Luc Drawdown & Recovery (sid 41589) | 0.1 USDT | — |  |
+| no_payment_challenge | Luc Asset Risk (sid 41591) | 0.1 USDT | — |  |
 | no_payment_challenge | Chain Momentum API (sid 33684) | 0.01 USDT | — |  |
 | no_payment_challenge | Custos Decision Engine (sid 36308) | 0.01 USDT | — |  |
-| no_payment_challenge | Long Short Crowding API (sid 33720) | 0.01 USDT | — |  |
-| no_payment_challenge | Open Interest Anomaly API (sid 33719) | 0.02 USDT | — |  |
-| no_payment_challenge | Liquidation Risk Pulse API (sid 33721) | 0.03 USDT | — |  |
-| no_payment_challenge | Volatility Regime Score API (sid 33722) | 0.02 USDT | — |  |
-| no_payment_challenge | CEX Price Divergence API (sid 33723) | 0.01 USDT | — |  |
-| no_payment_challenge | Trend Strength Score API (sid 33724) | 0.02 USDT | — |  |
-| no_payment_challenge | Breakout Fakeout Risk API (sid 33725) | 0.02 USDT | — |  |
 | no_payment_challenge | Protocol Health Score API (sid 33681) | 0.02 USDT | — |  |
-| no_payment_challenge | Protocol Revenue Signal API (sid 33685) | 0.02 USDT | — |  |
 | no_payment_challenge | Check Yield (sid 33550) | 0.1 USDT | — |  |
-| no_payment_challenge | Funding Rate Stress Score API (sid 33718) | 0.01 USDT | — |  |
+| no_payment_challenge | Luc Historical Extremeness (sid 41592) | 0.1 USDT | — |  |
+| no_payment_challenge | Luc Volatility State (sid 41588) | 0.1 USDT | — |  |
